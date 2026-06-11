@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    window.addEventListener('error', function(e) {
+      var errDiv = document.getElementById('debug-error-banner');
+      if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'debug-error-banner';
+        errDiv.style.position = 'fixed';
+        errDiv.style.top = '0';
+        errDiv.style.left = '0';
+        errDiv.style.width = '100%';
+        errDiv.style.background = '#ef4444';
+        errDiv.style.color = '#ffffff';
+        errDiv.style.padding = '12px 20px';
+        errDiv.style.zIndex = '99999';
+        errDiv.style.fontSize = '14px';
+        errDiv.style.fontFamily = 'monospace';
+        errDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
+        errDiv.style.whiteSpace = 'pre-wrap';
+        document.documentElement.appendChild(errDiv);
+      }
+      errDiv.textContent += '\nError: ' + e.message + '\nFile: ' + e.filename + '\nLine: ' + e.lineno + ':' + e.colno + '\n';
+    });
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plotmaster - Scientific Data Visualizer & Plotting Tool</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3v18h18'/%3E%3Cpath d='m19 9-5 5-4-4-3 3'/%3E%3C/svg%3E">
+  <!-- Load Lucide Icons Locally -->
+  <script src="libs/lucide.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Settings Panel -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <i data-lucide="line-chart"></i>
+        <h1>Plotmaster</h1>
+      </div>
+      
+      <div class="sidebar-content">
+        
+        <!-- Section 1: Upload File -->
+        <section class="panel-section">
+          <div class="section-title">
+            <i data-lucide="upload-cloud"></i>
+            <span>1. Data Import</span>
+          </div>
+          <div class="upload-zone" id="upload-zone">
+            <i class="upload-icon" data-lucide="file-spreadsheet"></i>
+            <div class="upload-text">
+              <p>Drag & Drop Data File</p>
+              <span>Supports CSV, XLSX, MD, PZFX, PRISM</span>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.md,.pzfx,.prism" style="display: none;">
+        </section>
+
+        <!-- Section 2: Variable Mapping -->
+        <section class="panel-section" id="mapping-section" style="opacity: 0.5; pointer-events: none;">
+          <div class="section-title">
+            <i data-lucide="git-branch"></i>
+            <span>2. Column Mapping</span>
+          </div>
+          <div class="form-group">
+            <label for="x-axis-select">X-Axis Column (Categorical/Numeric)</label>
+            <select class="form-select" id="x-axis-select"></select>
+          </div>
+          <div class="form-group">
+            <label for="y-axis-select">Y-Axis Column (Numeric)</label>
+            <select class="form-select" id="y-axis-select"></select>
+          </div>
+          <div class="form-group">
+            <label for="group-select">Grouping / Color Variable (Optional)</label>
+            <select class="form-select" id="group-select">
+              <option value="">-- No Grouping --</option>
+            </select>
+          </div>
+          <!-- Group Selection Checkboxes -->
+          <div class="form-group" id="group-options-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 6px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Select Groups to Plot</label>
+            <div id="group-checkboxes-list" style="max-height: 120px; overflow-y: auto; padding: 4px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin: 4px 0;"></div>
+            <label class="checkbox-label" style="margin-top: 4px;">
+              <input type="checkbox" id="group-tabs-checkbox">
+              <span>Split Groups into Tabs (多图展示)</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Section 3: Plot Selection -->
+        <section class="panel-section" id="plot-section" style="opacity: 0.5; pointer-events: none;">
+          <div class="section-title">
+            <i data-lucide="layout-grid"></i>
+            <span>3. Chart Type</span>
+          </div>
+          <div class="chart-type-grid" id="chart-type-grid">
+            <div class="chart-card active" data-chart="scatter">
+              <i data-lucide="circle-dot"></i>
+              <span>Scatter Plot</span>
+            </div>
+            <div class="chart-card" data-chart="line">
+              <i data-lucide="trending-up"></i>
+              <span>Line Plot</span>
+            </div>
+            <div class="chart-card" data-chart="bar">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Bar Plot</span>
+            </div>
+            <div class="chart-card" data-chart="box">
+              <i data-lucide="sliders"></i>
+              <span>Box Plot</span>
+            </div>
+            <div class="chart-card" data-chart="violin">
+              <i data-lucide="music"></i>
+              <span>Violin Plot</span>
+            </div>
+            <div class="chart-card" data-chart="histogram">
+              <i data-lucide="activity"></i>
+              <span>Histogram</span>
+            </div>
+            <div class="chart-card" data-chart="bubble">
+              <i data-lucide="orbit"></i>
+              <span>Bubble Plot</span>
+            </div>
+            <div class="chart-card" data-chart="heatmap">
+              <i data-lucide="grid"></i>
+              <span>Heatmap</span>
+            </div>
+            <div class="chart-card" data-chart="area">
+              <i data-lucide="mountain"></i>
+              <span>Area Chart</span>
+            </div>
+            <div class="chart-card" data-chart="pie">
+              <i data-lucide="pie-chart"></i>
+              <span>Pie / Donut</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Color Palettes -->
+        <section class="panel-section">
+          <div class="section-title">
+            <i data-lucide="palette"></i>
+            <span>4. Color Schemes</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <select class="form-select" id="palette-select"></select>
+            <div id="palette-preview-bar" style="margin-top: 8px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
+          </div>
+        </section>
+
+        <!-- Section 5: Fine Styling Customizer -->
+        <section class="panel-section" id="styling-section">
+          <div class="section-title">
+            <i data-lucide="settings-2"></i>
+            <span>5. Style Settings</span>
+          </div>
+          
+          <div class="style-settings-grid">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Point Size</span>
+                <span id="point-size-val">8</span>
+              </div>
+              <input type="range" id="point-size-slider" min="2" max="25" value="8">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Line Width</span>
+                <span id="line-width-val">2</span>
+              </div>
+              <input type="range" id="line-width-slider" min="1" max="8" value="2">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Bar Padding</span>
+                <span id="bar-padding-val">20%</span>
+              </div>
+              <input type="range" id="bar-padding-slider" min="0" max="80" value="20">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Box Width</span>
+                <span id="box-width-val">50%</span>
+              </div>
+              <input type="range" id="box-width-slider" min="10" max="90" value="50">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Plot Width</span>
+                <span id="plot-width-val">75%</span>
+              </div>
+              <input type="range" id="plot-width-slider" min="30" max="95" value="75">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Plot Height</span>
+                <span id="plot-height-val">65%</span>
+              </div>
+              <input type="range" id="plot-height-slider" min="30" max="85" value="65">
+            </div>
+          </div>
+
+          <!-- Global Plot Options -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Plot Options (绘图选项)</label>
+            <div class="grid-checkbox-group" style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="show-points-checkbox">
+                <span>Show Individual Scatters (显示散点)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="individual-curves-checkbox">
+                <span>Individual Curves (个体曲线 - 折线图/Line)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Box / Violin Overlays (Toggled in JS) -->
+          <div class="form-group" id="box-violin-options" style="display: none; border-top: 1px solid var(--border-color); padding-top: 8px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Box / Violin Options</label>
+            <div class="grid-checkbox-group" style="margin-top: 4px;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="show-mean-checkbox">
+                <span>Show Mean Marker (显示均值标记)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Error Bar dropdown -->
+          <div class="form-group" id="error-bar-options" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label for="error-bar-select">Error Bar Type (Bar/Line/Scatter)</label>
+            <select class="form-select" id="error-bar-select">
+              <option value="none">None (无)</option>
+              <option value="sd">Standard Deviation (SD / 标准差)</option>
+              <option value="sem">Standard Error (SEM / 标准误)</option>
+            </select>
+          </div>
+
+          <!-- Legend Position select -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label for="legend-position-select">Legend Position (图例位置)</label>
+            <select class="form-select" id="legend-position-select">
+              <option value="bottom">Bottom (下方)</option>
+              <option value="top">Top (上方)</option>
+              <option value="left">Left (左侧)</option>
+              <option value="right">Right (右侧)</option>
+              <option value="hide">Hide (隐藏)</option>
+            </select>
+          </div>
+
+          <!-- Size Mode selection -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label for="size-mode-select">Size Mode (尺寸模式)</label>
+            <select class="form-select" id="size-mode-select">
+              <option value="responsive">Responsive (%) (自适应百分比)</option>
+              <option value="absolute">Absolute (cm) (绝对尺寸厘米)</option>
+            </select>
+          </div>
+
+          <div class="style-settings-grid" id="absolute-size-inputs" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div class="slider-group">
+              <div class="slider-header" style="margin-bottom: 2px;">
+                <span style="font-size: 11px;">Width (cm)</span>
+              </div>
+              <input type="number" class="form-input" id="abs-width-input" min="5" max="50" value="15" style="padding: 4px 8px; font-size: 11px;">
+            </div>
+            <div class="slider-group">
+              <div class="slider-header" style="margin-bottom: 2px;">
+                <span style="font-size: 11px;">Height (cm)</span>
+              </div>
+              <input type="number" class="form-input" id="abs-height-input" min="5" max="50" value="12" style="padding: 4px 8px; font-size: 11px;">
+            </div>
+          </div>
+ 
+          <div class="form-group">
+            <label for="font-select">Font Family</label>
+            <select class="form-select" id="font-select">
+              <option value="Inter">Inter (Modern Sans)</option>
+              <option value="Arial">Arial (Standard Sans)</option>
+              <option value="Times New Roman">Times New Roman (Academic Serif)</option>
+              <option value="Courier New">Courier New (Monospace)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="theme-select">Theme Style</label>
+            <select class="form-select" id="theme-select">
+              <option value="minimal">Minimal (White / Gray Grid)</option>
+              <option value="classic">Classic (White / Black Axis)</option>
+              <option value="ggplot2">ggplot2 Classic (Light Gray background)</option>
+              <option value="dark">Dark Academic (Slate / Glow)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Gridlines Toggle</label>
+            <div class="grid-checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="grid-x-checkbox" checked>
+                <span>X-Grid (垂直网格线)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="grid-y-checkbox" checked>
+                <span>Y-Grid (水平网格线)</span>
+              </label>
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">（控制图表背景网格线的显示与隐藏，辅助读取坐标轴具体数值）</span>
+          </div>
+
+          <!-- Axis Guide Lines (标记线) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Axis Guide Lines (标记线)</label>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: var(--radius-sm);">
+              <div style="display: flex; gap: 4px;">
+                <select class="form-select" id="guideline-axis-select" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                  <option value="y">Y-Axis (水平线)</option>
+                  <option value="x">X-Axis (垂直线)</option>
+                </select>
+                <input type="number" step="any" class="form-input" id="guideline-value-input" placeholder="Value" style="font-size: 11px; padding: 4px; flex: 1;">
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <input type="text" class="form-input" id="guideline-label-input" placeholder="Label (Optional)" style="font-size: 11px; padding: 4px; flex: 1;">
+                <input type="color" id="guideline-color-picker" value="#ef4444" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Line Color">
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <select class="form-select" id="guideline-style-select" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                  <option value="dashed">Dashed (虚线)</option>
+                  <option value="solid">Solid (实线)</option>
+                  <option value="dotted">Dotted (点线)</option>
+                </select>
+                <select class="form-select" id="guideline-symbol-select" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                  <option value="none">No Symbol (无符号)</option>
+                  <option value="circle">Circle (圆形)</option>
+                  <option value="rect">Rectangle (矩形)</option>
+                  <option value="triangle">Triangle (三角形)</option>
+                  <option value="diamond">Diamond (菱形)</option>
+                  <option value="arrow">Arrow (箭头)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <label style="font-size: 11px; white-space: nowrap; color: var(--text-secondary);">Width:</label>
+                <input type="number" id="guideline-width-input" min="1" max="10" value="2" style="font-size: 11px; padding: 4px; width: 45px;" class="form-input">
+                <button class="btn btn-secondary" id="btn-add-guideline" style="font-size: 11px; padding: 4px 8px; flex: 1; justify-content: center;">Add Line</button>
+              </div>
+            </div>
+            <div id="guidelines-list" style="margin-top: 6px; max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;"></div>
+          </div>
+        </section>
+
+        <!-- Section 6: Statistics Helper -->
+        <section class="panel-section" id="stats-section" style="opacity: 0.5; pointer-events: none; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <div class="section-title">
+            <i data-lucide="sigma"></i>
+            <span>6. Statistics Helper</span>
+          </div>
+          <div style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+            
+            <div class="form-group" style="margin: 0;">
+              <label for="stats-method-select" style="font-size: 11px; margin-bottom: 2px;">Manual Test Selector (手动选择方法)</label>
+              <select class="form-select" id="stats-method-select" style="font-size: 11px; padding: 4px 8px; height: auto;">
+                <option value="auto">-- Auto Recommend (自动推荐) --</option>
+                <option value="student_t">Student's t-test (Unpaired, equal var)</option>
+                <option value="welch_t">Welch's t-test (Unpaired, unequal var)</option>
+                <option value="paired_t">Paired t-test</option>
+                <option value="mann_whitney">Mann-Whitney U test (Non-parametric)</option>
+                <option value="anova_ordinary">Ordinary One-way ANOVA</option>
+                <option value="anova_welch">Welch's ANOVA (Unequal variances)</option>
+                <option value="kruskal_wallis">Kruskal-Wallis test (Non-parametric)</option>
+                <option value="pearson">Pearson Correlation</option>
+                <option value="spearman">Spearman Correlation</option>
+                <option value="linear_reg">Linear Regression</option>
+                <option value="chi_square">Chi-square Contingency test</option>
+              </select>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Filter Analysis Data (数据分析筛选):</span>
+              <div style="display: flex; gap: 4px;">
+                <select class="form-select" id="stats-filter-col" style="font-size: 11px; padding: 4px; flex: 1; min-width: 0; height: auto;">
+                  <option value="">-- No Filter --</option>
+                </select>
+                <select class="form-select" id="stats-filter-val" style="font-size: 11px; padding: 4px; flex: 1; min-width: 0; height: auto;">
+                  <option value="">-- All --</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" id="btn-run-stats" style="justify-content: center; width: 100%; font-size: 12px; padding: 6px 12px; margin-top: 4px;">Run Statistical Test</button>
+          </div>
+          <div id="stats-results-panel" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--accent-color); border-radius: var(--radius-md); padding: 10px; font-size: 12px; margin-top: 8px;">
+            <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; max-height: 150px; overflow-y: auto;"></div>
+            <button class="btn btn-primary" id="btn-add-sig-bar" style="margin-top: 8px; justify-content: center; width: 100%; font-size: 11px; padding: 6px 12px;">
+              <i data-lucide="plus" style="width:12px; height:12px;"></i> Add Significance Bar
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </aside>
+
+    <!-- Main Workspace Panel -->
+    <main class="main-content">
+      
+      <!-- Top Header Bar -->
+      <header class="top-bar">
+        <div class="file-info-header">
+          <div class="file-status-badge" id="file-status-badge">
+            <span class="status-indicator"></span>
+            <span id="file-status-text">No File Loaded</span>
+          </div>
+          <div class="sheet-selector-group" id="sheet-selector-group" style="display: none;">
+            <label for="sheet-select" style="font-size: 12px; font-weight: 500;">Sheet:</label>
+            <select class="sheet-select" id="sheet-select"></select>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="btn-draw" style="display: none;">
+            <i data-lucide="play"></i> Draw Chart
+          </button>
+        </div>
+      </header>
+
+      <!-- Chart Workspace Wrapper -->
+      <div class="chart-workspace">
+        <!-- Multi-Chart Sheets Tabs Bar -->
+        <div class="chart-tabs-bar" id="chart-tabs-bar">
+          <div class="tabs-list" id="chart-tabs-list">
+            <!-- Tabs dynamically rendered -->
+          </div>
+          <button class="add-tab-btn" id="add-chart-tab" title="Create New Chart Tab"><i data-lucide="plus" style="width:12px; height:12px; display:inline-block; vertical-align:middle;"></i> New Chart</button>
+        </div>
+
+        <!-- Group Split Tab Bar (Optional) -->
+        <div class="group-tabs-bar" id="group-tabs-bar" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px;">
+          <div class="group-tabs-list" id="group-tabs-list" style="display: flex; gap: 8px;">
+            <!-- Sub-tabs for filtered groups -->
+          </div>
+        </div>
+
+        <!-- Chart Title & Labels Quick Editor -->
+        <div class="quick-title-editor" id="quick-title-editor" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: var(--radius-md); display: flex; gap: 10px; align-items: center;">
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">Chart Titles:</label>
+          <input type="text" class="form-input" id="chart-title-input" placeholder="Chart Title" style="padding: 6px 10px; font-size: 12px;">
+          <input type="text" class="form-input" id="chart-xlabel-input" placeholder="X Axis Label" style="padding: 6px 10px; font-size: 12px;">
+          <input type="text" class="form-input" id="chart-ylabel-input" placeholder="Y Axis Label" style="padding: 6px 10px; font-size: 12px;">
+        </div>
+
+        <!-- SVG Annotation Overlay Toolbar -->
+        <div class="annotation-toolbar" id="annotation-toolbar" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div class="toolbar-group" style="display: flex; align-items: center; gap: 6px;">
+            <span class="toolbar-label" style="font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-right: 4px;"><i data-lucide="edit-3" style="width:12px; height:12px; display:inline-block; vertical-align:middle;"></i> Draw tools:</span>
+            <button class="tool-btn active" data-tool="select" id="tool-select" title="Select / Move / Delete annotations" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 4px;"><i data-lucide="mouse-pointer" style="width:12px; height:12px;"></i> Select</button>
+            <button class="tool-btn" data-tool="text" id="tool-text" title="Click chart to add editable text" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 4px;"><i data-lucide="type" style="width:12px; height:12px;"></i> Text</button>
+            <button class="tool-btn" data-tool="arrow" id="tool-arrow" title="Drag to draw pointing arrow" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 4px;"><i data-lucide="move-up-right" style="width:12px; height:12px;"></i> Arrow</button>
+            <button class="tool-btn" data-tool="rect" id="tool-rect" title="Drag to draw rectangle shape" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 4px;"><i data-lucide="square" style="width:12px; height:12px;"></i> Rect</button>
+            <button class="tool-btn" data-tool="circle" id="tool-circle" title="Drag to draw circle shape" style="padding: 4px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 4px;"><i data-lucide="circle" style="width:12px; height:12px;"></i> Circle</button>
+          </div>
+          <div class="toolbar-group" style="display: flex; align-items: center; gap: 8px;">
+            <label for="draw-color-picker" style="font-size: 11px; font-weight: 500; display:flex; align-items:center; gap:4px; margin-right: 4px;">Color: <input type="color" id="draw-color-picker" value="#ef4444" style="border:none; padding:0; width:18px; height:18px; background:none; cursor:pointer;"></label>
+            <button class="btn btn-secondary" id="btn-delete-annotation" title="Delete selected annotation" style="padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:4px;"><i data-lucide="trash" style="width:12px; height:12px;"></i> Delete</button>
+            <button class="btn btn-secondary" id="btn-clear-annotations" title="Clear all annotations" style="padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:4px;"><i data-lucide="trash-2" style="width:12px; height:12px;"></i> Clear All</button>
+          </div>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="placeholder-view" id="placeholder-view">
+            <i data-lucide="pie-chart"></i>
+            <p>Upload a structured dataset to start plotting</p>
+          </div>
+          <!-- ECharts Element -->
+          <div class="canvas-container" id="chart-canvas"></div>
+          <!-- Transparent SVG Annotation Overlay Layer -->
+          <svg id="annotation-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; box-shadow: none; background: transparent; border-radius: var(--radius-lg);"></svg>
+        </div>
+
+        <!-- Export Panel -->
+        <div class="export-panel">
+          <div class="export-title">
+            <i data-lucide="download"></i>
+            <span>Export & Save Data</span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-secondary" id="export-png" disabled>PNG</button>
+            <button class="btn btn-secondary" id="export-jpg" disabled>JPG</button>
+            <button class="btn btn-secondary" id="export-svg" disabled>SVG</button>
+            <button class="btn btn-primary" id="copy-clipboard" disabled style="background-color: var(--success-color);">
+              <i data-lucide="copy" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Copy Graph
+            </button>
+            <button class="btn btn-primary" id="export-pzfx" disabled>Export .PZFX</button>
+            <button class="btn btn-primary" id="export-prism" disabled>Export .PRISM</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Data Grid -->
+      <footer class="data-grid-section" style="display: none;">
+        <div class="grid-header">
+          <div class="grid-title">
+            <i data-lucide="database"></i>
+            <span>Data Grid Editor (Click cells to edit - chart live-updates)</span>
+          </div>
+          <div class="grid-stats" id="grid-stats" style="font-size: 12px; color: var(--text-muted);">
+            0 Rows | 0 Columns
+          </div>
+        </div>
+        <div class="grid-wrapper">
+          <table class="data-table" id="data-table">
+            <thead>
+              <tr id="table-headers"></tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="100%" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                  No active dataset to preview. Upload a CSV, XLSX, MD, PZFX, or PRISM file.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- Local Script Dependencies -->
+  <!-- SheetJS for Excel files -->
+  <script src="libs/xlsx.full.min.js"></script>
+  <!-- PapaParse for CSV files -->
+  <script src="libs/papaparse.min.js"></script>
+  <!-- JSZip for Prism 10 zip files -->
+  <script src="libs/jszip.min.js"></script>
+  <!-- Apache ECharts for scientific rendering -->
+  <script src="libs/echarts.min.js"></script>
+  <!-- App logic -->
+  <script src="app.js"></script>
+</body>
+</html>

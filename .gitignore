@@ -1,0 +1,8 @@
+# Ignore python/streamlit solution files
+streamlit_app.py
+
+# Ignore scratch/diagnostic scripts
+scratch/
+
+# Ignore editor settings
+.vscode/

@@ -1,0 +1,118 @@
+# ==============================================================================
+#                      PRODUCT REQUIREMENT DOCUMENT (PRD)
+#                PROJECT: PLOTMASTER - SCIENTIFIC PLOTTING TOOL
+# ==============================================================================
+
+1. OVERVIEW & OBJECTIVE
+   Plotmaster is a professional, web-based scientific plotting application designed
+   for researchers, clinicians, and data scientists. It provides a visual interface
+   to import structured datasets, map variables, apply academic journal color schemes,
+   and export publication-ready figures. The tool aims to replicate the clean and
+   rigorous aesthetics of R's ggplot2 library and offer seamless integration with
+   GraphPad Prism formats.
+
+2. TARGET AUDIENCE & CRITICAL VALUES
+   - Academic Researchers: Require high-resolution vector exports (SVG) and strict
+     journal-compliant color palettes.
+   - Clinical Scientists: Often work with GraphPad Prism (.prism, .pzfx) files and
+     need to convert or visualize tables quickly.
+   - Usability: Zero-install browser-based interface running entirely client-side,
+     ensuring complete data privacy (no data is uploaded to remote servers).
+
+3. FUNCTIONAL REQUIREMENTS
+
+   3.1. DATA IMPORT & PARSING
+        The system must support the following input formats:
+        - CSV (.csv): Standard comma-separated tabular data.
+        - Excel (.xlsx, .xls): Multiple worksheets, parsing numerical and text cells.
+        - Markdown Tables (.md): Extracts data from standard markdown table syntax.
+        - GraphPad Prism XML (.pzfx): Parses data tables, column headers, and subcolumns.
+        - GraphPad Prism ZIP (.prism): Extracts CSV files from internal data directories.
+        - Dynamic Worksheet Selector: When an uploaded file contains multiple sheets
+          (Excel, Prism), a dropdown must allow the user to select which dataset to load.
+
+   3.2. VARIABLE MAPPING (AESTHETIC MAPPINGS / AES)
+        After data selection, users must be able to map active dataset columns to:
+        - X-Axis: Categorical or numeric data.
+        - Y-Axis: Numeric data (supports multi-column selection for multiple Y values).
+        - Group/Color: Categorical column to segment data series and apply color palettes.
+
+   3.3. PLOT TYPES (10 ggplot2-INSPIRED VISUALIZATIONS)
+        1. Scatter Plot (散点图): Numeric X vs Numeric Y. Supports point size/opacity.
+        2. Line Plot (折线图): Trend lines connecting data points. Supports line thickness.
+        3. Bar Plot (柱状图): Category X vs Numeric Y. Supports grouped or stacked layout.
+        4. Box Plot (箱线图): Shows min, Q1, median, Q3, max, and outliers.
+        5. Violin Plot (小提琴图): Displays density distribution of numerical data.
+        6. Histogram (直方图): Distribution of a single numerical variable.
+        7. Bubble Plot (气泡图): Scatter plot where marker size maps to a third variable.
+        8. Heatmap (热力图): Grid visualization for correlation or matrix data.
+        9. Area Chart (面积图): Shaded area under a line plot.
+        10. Pie/Donut Chart (饼图/环形图): Proportional distribution of categories.
+
+   3.4. COLOR PALETTES (10 PALETTES x 15 COLORS)
+        Plotmaster must support 10 distinct, publication-grade palettes. Each palette
+        must contain exactly 15 hex colors representing progressive, distinct tones.
+
+        1. Nature (Nature Publishing Group style):
+           #203764, #305496, #8FAADC, #D9E1F2, #1F4E79, #2F5597, #8EA9DB, #D9E1F2,
+           #4472C4, #5B9BD5, #A5A5A5, #ED7D31, #70AD47, #264478, #3C64B1
+        2. Science (Science Journal style):
+           #0A2C5C, #325A9B, #6688C3, #99B2DC, #CCD7F0, #0E4D64, #24809C, #5BB0C5,
+           #98D3DF, #D1EDF2, #731F1F, #AB4040, #D27676, #E7A9A9, #F6D4D4
+        3. Lancet (The Lancet style):
+           #C00000, #E06666, #F2B2B2, #F9D9D9, #002060, #1F4E78, #2F5597, #8EA9DB,
+           #008000, #38761D, #55A630, #80ED99, #7030A0, #8E7CC3, #C27BA0
+        4. NEJM (New England Journal of Medicine style):
+           #1E3F66, #2E5B88, #528AAE, #BCD2EE, #E6EEF8, #7E1919, #A63A3A, #C26B6B,
+           #DFACAC, #F4DCDC, #1E6B38, #388E50, #5EAF75, #99D4A7, #D1EED8
+        5. JAMA (Journal of the American Medical Association style):
+           #000000, #333333, #666666, #999999, #CCCCCC, #1C3144, #007E8A, #3F88C5,
+           #A2A7A5, #D00000, #F0803C, #F4D35E, #335C67, #7209B7, #4CC9F0
+        6. Cell (Cell Press style):
+           #800000, #B30000, #E60000, #FF3333, #FF8080, #004D40, #00796B, #009688,
+           #4DB6AC, #80CBC4, #1A237E, #283593, #3F51B5, #7986CB, #9FA8DA
+        7. Classic ggplot2 (HSL ring split):
+           #F8766D, #E7872B, #D39200, #B79F00, #93AA00, #5EB300, #00BA38, #00C19F,
+           #00BFC4, #00B4F0, #619CFF, #B783FF, #D890F0, #F375F3, #FF62BC
+        8. Warm Academic:
+           #A32D22, #D25E4B, #ECA289, #FAD6C6, #D96B27, #F29E53, #FAD291, #8C5333,
+           #BC8161, #DEC1AE, #8A1538, #C43D60, #E2849A, #F7D0D8, #A36B22
+        9. Cool Academic:
+           #0B4F6C, #01BAEF, #8A89C7, #B4B8C5, #FBFBFF, #183A37, #048A81, #54C6BE,
+           #82D8D3, #EBF8F7, #1D2D44, #3E5C76, #748CAB, #A3BCF9, #D0DBF9
+        10. Retro Academic:
+            #4E6151, #7F9F7F, #B8C7B8, #DCE3DC, #8B5A2B, #CD853F, #F4A460, #D2B48C,
+            #8B2500, #CD3700, #FF4500, #FFA07A, #4A708B, #6CA6CD, #B0E2FF
+
+   3.5. CUSTOM STYLE EDITOR
+        Provides visual controls for:
+        - Typography: Selection of Arial, Inter, Helvetica, Times New Roman, Roboto.
+        - Text Sizes: Titles, Axis Labels, Ticks, Legends.
+        - Plot Parameters: Marker Size, Line Width, Bar Gap/Padding, Box Width.
+        - Gridlines: Show/Hide vertical/horizontal gridlines.
+        - Theme Templates:
+          - Classic (white background, thin black axes).
+          - Minimal (no background, light gray gridlines).
+          - Dark (dark slate background, glowing elements).
+          - ggplot2 Grey (light gray background, white gridlines).
+
+   3.6. PUBLICATION-READY EXPORT
+        - JPG & PNG: Adjustable resolution (standard/high DPI).
+        - SVG: Full XML-based vector export.
+        - GraphPad Prism XML (.pzfx): Recreates the tabular structure with column
+          relationships and stores it in Prism's open XML format.
+        - GraphPad Prism ZIP (.prism): Creates a ZIP package containing the dataset
+          exported as `data/tables/table1.csv` and a manifest `document.json`.
+
+4. SYSTEM ARCHITECTURE & DATA FLOW
+   - Client-Side Only: Runs fully in the user's browser via index.html. No backend server.
+   - Excel Parsing: JS SheetJS (XLSX.js) library handles raw parsing.
+   - Zip Extraction/Compression: JSZip library handles reading/writing `.prism` files.
+   - Charting: Apache ECharts library powers the visualizations.
+
+5. NON-FUNCTIONAL REQUIREMENTS
+   - Performance: Immediate rendering for datasets up to 10,000 rows.
+   - Security: Data privacy guaranteed as all processing occurs in local memory.
+   - UI/UX: Rich aesthetics using a dark-theme glassmorphic interface, layout,
+     hover effects, and clean, intuitive controls.
+# ==============================================================================
