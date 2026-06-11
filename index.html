@@ -61,42 +61,11 @@
           <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.md,.pzfx,.prism" style="display: none;">
         </section>
 
-        <!-- Section 2: Variable Mapping -->
-        <section class="panel-section" id="mapping-section" style="opacity: 0.5; pointer-events: none;">
-          <div class="section-title">
-            <i data-lucide="git-branch"></i>
-            <span>2. Column Mapping</span>
-          </div>
-          <div class="form-group">
-            <label for="x-axis-select">X-Axis Column (Categorical/Numeric)</label>
-            <select class="form-select" id="x-axis-select"></select>
-          </div>
-          <div class="form-group">
-            <label for="y-axis-select">Y-Axis Column (Numeric)</label>
-            <select class="form-select" id="y-axis-select"></select>
-          </div>
-          <div class="form-group">
-            <label for="group-select">Grouping / Color Variable (Optional)</label>
-            <select class="form-select" id="group-select">
-              <option value="">-- No Grouping --</option>
-            </select>
-          </div>
-          <!-- Group Selection Checkboxes -->
-          <div class="form-group" id="group-options-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 6px;">
-            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Select Groups to Plot</label>
-            <div id="group-checkboxes-list" style="max-height: 120px; overflow-y: auto; padding: 4px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin: 4px 0;"></div>
-            <label class="checkbox-label" style="margin-top: 4px;">
-              <input type="checkbox" id="group-tabs-checkbox">
-              <span>Split Groups into Tabs (多图展示)</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Section 3: Plot Selection -->
+        <!-- Section 2: Plot Selection -->
         <section class="panel-section" id="plot-section" style="opacity: 0.5; pointer-events: none;">
           <div class="section-title">
             <i data-lucide="layout-grid"></i>
-            <span>3. Chart Type</span>
+            <span>2. Chart Type</span>
           </div>
           <div class="chart-type-grid" id="chart-type-grid">
             <div class="chart-card active" data-chart="scatter">
@@ -139,6 +108,37 @@
               <i data-lucide="pie-chart"></i>
               <span>Pie / Donut</span>
             </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Variable Mapping -->
+        <section class="panel-section" id="mapping-section" style="opacity: 0.5; pointer-events: none;">
+          <div class="section-title">
+            <i data-lucide="git-branch"></i>
+            <span>3. Column Mapping</span>
+          </div>
+          <div class="form-group" id="x-axis-group">
+            <label for="x-axis-select">X-Axis Column (Categorical/Numeric)</label>
+            <select class="form-select" id="x-axis-select"></select>
+          </div>
+          <div class="form-group" id="y-axis-group">
+            <label for="y-axis-select">Y-Axis Column (Numeric)</label>
+            <select class="form-select" id="y-axis-select"></select>
+          </div>
+          <div class="form-group" id="group-axis-group">
+            <label for="group-select">Grouping / Color Variable (Optional)</label>
+            <select class="form-select" id="group-select">
+              <option value="">-- No Grouping --</option>
+            </select>
+          </div>
+          <!-- Group Selection Checkboxes -->
+          <div class="form-group" id="group-options-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 6px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Select Groups to Plot</label>
+            <div id="group-checkboxes-list" style="max-height: 120px; overflow-y: auto; padding: 4px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin: 4px 0;"></div>
+            <label class="checkbox-label" style="margin-top: 4px;">
+              <input type="checkbox" id="group-tabs-checkbox">
+              <span>Split Groups into Tabs (多图展示)</span>
+            </label>
           </div>
         </section>
 
@@ -196,18 +196,18 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span>Plot Width</span>
-                <span id="plot-width-val">75%</span>
+                <span>Plot Width (cm)</span>
+                <span id="plot-width-val">15 cm</span>
               </div>
-              <input type="range" id="plot-width-slider" min="30" max="95" value="75">
+              <input type="range" id="plot-width-slider" min="5" max="30" step="0.5" value="15">
             </div>
 
             <div class="slider-group">
               <div class="slider-header">
-                <span>Plot Height</span>
-                <span id="plot-height-val">65%</span>
+                <span>Plot Height (cm)</span>
+                <span id="plot-height-val">12 cm</span>
               </div>
-              <input type="range" id="plot-height-slider" min="30" max="85" value="65">
+              <input type="range" id="plot-height-slider" min="4" max="25" step="0.5" value="12">
             </div>
           </div>
 
@@ -243,43 +243,27 @@
             <select class="form-select" id="error-bar-select">
               <option value="none">None (无)</option>
               <option value="sd">Standard Deviation (SD / 标准差)</option>
-              <option value="sem">Standard Error (SEM / 标准误)</option>
+              <option value="sem" selected>Standard Error (SEM / 标准误)</option>
             </select>
           </div>
 
-          <!-- Legend Position select -->
+          <!-- Legend Position select & Distance -->
           <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label for="legend-position-select">Legend Position (图例位置)</label>
             <select class="form-select" id="legend-position-select">
               <option value="bottom">Bottom (下方)</option>
               <option value="top">Top (上方)</option>
               <option value="left">Left (左侧)</option>
-              <option value="right">Right (右侧)</option>
+              <option value="right" selected>Right (右侧)</option>
               <option value="hide">Hide (隐藏)</option>
             </select>
-          </div>
-
-          <!-- Size Mode selection -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
-            <label for="size-mode-select">Size Mode (尺寸模式)</label>
-            <select class="form-select" id="size-mode-select">
-              <option value="responsive">Responsive (%) (自适应百分比)</option>
-              <option value="absolute">Absolute (cm) (绝对尺寸厘米)</option>
-            </select>
-          </div>
-
-          <div class="style-settings-grid" id="absolute-size-inputs" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-            <div class="slider-group">
-              <div class="slider-header" style="margin-bottom: 2px;">
-                <span style="font-size: 11px;">Width (cm)</span>
+            
+            <div class="slider-group" style="margin-top: 8px;">
+              <div class="slider-header">
+                <span style="font-size: 11px; font-weight: 500;">Legend Distance (cm)</span>
+                <span id="legend-distance-val" style="font-size: 11px;">0.5 cm</span>
               </div>
-              <input type="number" class="form-input" id="abs-width-input" min="5" max="50" value="15" style="padding: 4px 8px; font-size: 11px;">
-            </div>
-            <div class="slider-group">
-              <div class="slider-header" style="margin-bottom: 2px;">
-                <span style="font-size: 11px;">Height (cm)</span>
-              </div>
-              <input type="number" class="form-input" id="abs-height-input" min="5" max="50" value="12" style="padding: 4px 8px; font-size: 11px;">
+              <input type="range" id="legend-distance-slider" min="0" max="5" step="0.1" value="0.5">
             </div>
           </div>
  
@@ -301,6 +285,41 @@
               <option value="ggplot2">ggplot2 Classic (Light Gray background)</option>
               <option value="dark">Dark Academic (Slate / Glow)</option>
             </select>
+          </div>
+
+          <!-- Y-Axis Scale & Split Options -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Y-Axis Customization (Y轴刻度与段数)</label>
+            
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <label style="font-size: 11px; flex: 1;">Scale (刻度):</label>
+                <select class="form-select" id="y-axis-scale-type" style="font-size: 11px; padding: 4px; flex: 2; height: auto;">
+                  <option value="linear">Linear (线性)</option>
+                  <option value="log">Logarithmic (对数)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <label style="font-size: 11px; flex: 1;">Format (格式):</label>
+                <select class="form-select" id="y-axis-num-format" style="font-size: 11px; padding: 4px; flex: 2; height: auto;">
+                  <option value="std">Standard (常规)</option>
+                  <option value="sci">Scientific (科学计数)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <label style="font-size: 11px; flex: 1;">Split (段数):</label>
+                <select class="form-select" id="y-axis-split-mode" style="font-size: 11px; padding: 4px; flex: 2; height: auto;">
+                  <option value="1">1 Segment (No Split)</option>
+                  <option value="2">2 Segments (2段)</option>
+                  <option value="3">3 Segments (3段)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Split Parameters Container -->
+            <div id="y-axis-split-params-container" style="display: none; margin-top: 8px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: var(--radius-sm); font-size: 11px;">
+              <!-- Dynamically populated via JS -->
+            </div>
           </div>
 
           <div class="form-group">
@@ -338,6 +357,7 @@
                   <option value="dashed">Dashed (虚线)</option>
                   <option value="solid">Solid (实线)</option>
                   <option value="dotted">Dotted (点线)</option>
+                  <option value="none">No Line (无线条)</option>
                 </select>
                 <select class="form-select" id="guideline-symbol-select" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
                   <option value="none">No Symbol (无符号)</option>
@@ -396,10 +416,42 @@
               </div>
             </div>
 
+            <!-- Select Groups to Analyze -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Select Groups to Analyze (分析组别):</span>
+              <div id="stats-group-checkboxes" style="max-height: 100px; overflow-y: auto; padding: 6px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin: 2px 0; display: flex; flex-direction: column; gap: 4px;">
+                <!-- Dynamically populated checkboxes -->
+              </div>
+            </div>
+
+            <!-- Comparison Type Selector -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Comparison Type (比较方式):</span>
+              <select class="form-select" id="stats-comparison-type" style="font-size: 11px; padding: 4px; height: auto;">
+                <option value="all_pairs">Compare all pairs (两两比较)</option>
+                <option value="vs_control">Compare against reference (与对照组比较)</option>
+              </select>
+            </div>
+
+            <!-- Reference Group Container (Toggled by JS) -->
+            <div id="stats-reference-group-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 6px; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Reference Group (对照组):</span>
+              <select class="form-select" id="stats-reference-group" style="font-size: 11px; padding: 4px; height: auto;">
+                <!-- Dynamically populated reference groups -->
+              </select>
+            </div>
+
             <button class="btn btn-secondary" id="btn-run-stats" style="justify-content: center; width: 100%; font-size: 12px; padding: 6px 12px; margin-top: 4px;">Run Statistical Test</button>
           </div>
           <div id="stats-results-panel" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--accent-color); border-radius: var(--radius-md); padding: 10px; font-size: 12px; margin-top: 8px;">
             <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; max-height: 150px; overflow-y: auto;"></div>
+            
+            <!-- Significance Bar Selector (Toggled in JS) -->
+            <div id="stats-comparison-select-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Select Comparison for Bracket (选择比较组):</span>
+              <select class="form-select" id="stats-comparison-select" style="font-size: 11px; padding: 4px; height: auto;"></select>
+            </div>
+            
             <button class="btn btn-primary" id="btn-add-sig-bar" style="margin-top: 8px; justify-content: center; width: 100%; font-size: 11px; padding: 6px 12px;">
               <i data-lucide="plus" style="width:12px; height:12px;"></i> Add Significance Bar
             </button>

@@ -134,6 +134,199 @@ function init() {
   setupAnnotationToolbar();
 }
 
+// Dynamic Variable Mapping Inputs matching
+function updateColumnMappingInputs(chartType) {
+  const xGroup = document.getElementById('x-axis-group');
+  const yGroup = document.getElementById('y-axis-group');
+  const gGroup = document.getElementById('group-axis-group');
+  
+  if (!xGroup || !yGroup || !gGroup) return;
+  
+  const xLabel = xGroup.querySelector('label');
+  const yLabel = yGroup.querySelector('label');
+  const gLabel = gGroup.querySelector('label');
+  
+  if (chartType === 'pie') {
+    xGroup.style.display = 'block';
+    yGroup.style.display = 'block';
+    gGroup.style.display = 'none';
+    if (xLabel) xLabel.textContent = 'Categories / Names Column';
+    if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
+  } else if (chartType === 'histogram') {
+    xGroup.style.display = 'none';
+    yGroup.style.display = 'block';
+    gGroup.style.display = 'none';
+    if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
+  } else if (chartType === 'heatmap') {
+    xGroup.style.display = 'block';
+    yGroup.style.display = 'block';
+    gGroup.style.display = 'block';
+    if (xLabel) xLabel.textContent = 'X-Axis Column (Categories)';
+    if (yLabel) yLabel.textContent = 'Y-Axis Column (Categories)';
+    if (gLabel) gLabel.textContent = 'Cell Value Column (Numeric)';
+  } else {
+    xGroup.style.display = 'block';
+    yGroup.style.display = 'block';
+    gGroup.style.display = 'block';
+    if (xLabel) xLabel.textContent = 'X-Axis Column (Categorical/Numeric)';
+    if (yLabel) yLabel.textContent = 'Y-Axis Column (Numeric)';
+    if (gLabel) gLabel.textContent = 'Grouping / Color Variable (Optional)';
+  }
+}
+
+// Helper to read Y-axis split values from the DOM
+function getYSplitParamsFromDOM() {
+  const mode = document.getElementById('y-axis-split-mode').value;
+  const params = {
+    min1: null, max1: null, height1: 30,
+    min2: null, max2: null, height2: 40,
+    min3: null, max3: null
+  };
+  
+  if (mode === '2') {
+    const min1El = document.getElementById('y-split-min1');
+    const max1El = document.getElementById('y-split-max1');
+    const min2El = document.getElementById('y-split-min2');
+    const max2El = document.getElementById('y-split-max2');
+    const h1El = document.getElementById('y-split-height1');
+    
+    if (min1El) params.min1 = min1El.value !== '' ? parseFloat(min1El.value) : null;
+    if (max1El) params.max1 = max1El.value !== '' ? parseFloat(max1El.value) : null;
+    if (min2El) params.min2 = min2El.value !== '' ? parseFloat(min2El.value) : null;
+    if (max2El) params.max2 = max2El.value !== '' ? parseFloat(max2El.value) : null;
+    if (h1El) params.height1 = parseFloat(h1El.value) || 30;
+  } else if (mode === '3') {
+    const min1El = document.getElementById('y-split-min1');
+    const max1El = document.getElementById('y-split-max1');
+    const min2El = document.getElementById('y-split-min2');
+    const max2El = document.getElementById('y-split-max2');
+    const min3El = document.getElementById('y-split-min3');
+    const max3El = document.getElementById('y-split-max3');
+    const h1El = document.getElementById('y-split-height1');
+    const h2El = document.getElementById('y-split-height2');
+    
+    if (min1El) params.min1 = min1El.value !== '' ? parseFloat(min1El.value) : null;
+    if (max1El) params.max1 = max1El.value !== '' ? parseFloat(max1El.value) : null;
+    if (min2El) params.min2 = min2El.value !== '' ? parseFloat(min2El.value) : null;
+    if (max2El) params.max2 = max2El.value !== '' ? parseFloat(max2El.value) : null;
+    if (min3El) params.min3 = min3El.value !== '' ? parseFloat(min3El.value) : null;
+    if (max3El) params.max3 = max3El.value !== '' ? parseFloat(max3El.value) : null;
+    if (h1El) params.height1 = parseFloat(h1El.value) || 30;
+    if (h2El) params.height2 = parseFloat(h2El.value) || 40;
+  }
+  return params;
+}
+
+// Helper to render Y-axis split input fields in the sidebar
+function renderYSplitControls(mode, params = null) {
+  const container = document.getElementById('y-axis-split-params-container');
+  if (!container) return;
+  
+  if (mode === '1') {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  
+  container.style.display = 'block';
+  
+  const min1 = params && params.min1 !== null ? params.min1 : '';
+  const max1 = params && params.max1 !== null ? params.max1 : '';
+  const min2 = params && params.min2 !== null ? params.min2 : '';
+  const max2 = params && params.max2 !== null ? params.max2 : '';
+  const min3 = params && params.min3 !== null ? params.min3 : '';
+  const max3 = params && params.max3 !== null ? params.max3 : '';
+  const height1 = params ? params.height1 : 30;
+  const height2 = params ? params.height2 : 40;
+  
+  if (mode === '2') {
+    const height2Computed = 100 - height1;
+    container.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: var(--accent-color);">Segment 2 (Top, ${height2Computed}% height):</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <input type="number" step="any" class="form-input" id="y-split-min2" placeholder="Min" style="font-size: 11px; padding: 4px; flex: 1;" value="${min2}">
+        <input type="number" step="any" class="form-input" id="y-split-max2" placeholder="Max" style="font-size: 11px; padding: 4px; flex: 1;" value="${max2}">
+      </div>
+      
+      <div style="font-weight: 600; margin-bottom: 4px; color: var(--accent-color);">Segment 1 (Bottom, ${height1}% height):</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <input type="number" step="any" class="form-input" id="y-split-min1" placeholder="Min" style="font-size: 11px; padding: 4px; flex: 1;" value="${min1}">
+        <input type="number" step="any" class="form-input" id="y-split-max1" placeholder="Max" style="font-size: 11px; padding: 4px; flex: 1;" value="${max1}">
+      </div>
+      
+      <div class="slider-group" style="margin-bottom: 0;">
+        <div class="slider-header" style="font-size: 10px;">
+          <span>Bottom Height Ratio</span>
+          <span id="y-split-height1-val">${height1}%</span>
+        </div>
+        <input type="range" id="y-split-height1" min="10" max="90" value="${height1}" style="height: 4px; margin-top: 4px;">
+      </div>
+    `;
+    
+    document.getElementById('y-split-height1').addEventListener('input', (e) => {
+      document.getElementById('y-split-height1-val').textContent = e.target.value + '%';
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+    
+  } else if (mode === '3') {
+    const height3Computed = 100 - height1 - height2;
+    container.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: var(--accent-color);">Segment 3 (Top, ${height3Computed}% height):</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <input type="number" step="any" class="form-input" id="y-split-min3" placeholder="Min" style="font-size: 11px; padding: 4px; flex: 1;" value="${min3}">
+        <input type="number" step="any" class="form-input" id="y-split-max3" placeholder="Max" style="font-size: 11px; padding: 4px; flex: 1;" value="${max3}">
+      </div>
+      
+      <div style="font-weight: 600; margin-bottom: 4px; color: var(--accent-color);">Segment 2 (Middle, ${height2}% height):</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <input type="number" step="any" class="form-input" id="y-split-min2" placeholder="Min" style="font-size: 11px; padding: 4px; flex: 1;" value="${min2}">
+        <input type="number" step="any" class="form-input" id="y-split-max2" placeholder="Max" style="font-size: 11px; padding: 4px; flex: 1;" value="${max2}">
+      </div>
+      
+      <div style="font-weight: 600; margin-bottom: 4px; color: var(--accent-color);">Segment 1 (Bottom, ${height1}% height):</div>
+      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+        <input type="number" step="any" class="form-input" id="y-split-min1" placeholder="Min" style="font-size: 11px; padding: 4px; flex: 1;" value="${min1}">
+        <input type="number" step="any" class="form-input" id="y-split-max1" placeholder="Max" style="font-size: 11px; padding: 4px; flex: 1;" value="${max1}">
+      </div>
+      
+      <div class="slider-group" style="margin-bottom: 4px;">
+        <div class="slider-header" style="font-size: 10px;">
+          <span>Bottom Height Ratio</span>
+          <span id="y-split-height1-val">${height1}%</span>
+        </div>
+        <input type="range" id="y-split-height1" min="10" max="80" value="${height1}" style="height: 4px; margin-top: 4px;">
+      </div>
+      
+      <div class="slider-group" style="margin-bottom: 0;">
+        <div class="slider-header" style="font-size: 10px;">
+          <span>Middle Height Ratio</span>
+          <span id="y-split-height2-val">${height2}%</span>
+        </div>
+        <input type="range" id="y-split-height2" min="10" max="80" value="${height2}" style="height: 4px; margin-top: 4px;">
+      </div>
+    `;
+    
+    document.getElementById('y-split-height1').addEventListener('input', (e) => {
+      document.getElementById('y-split-height1-val').textContent = e.target.value + '%';
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+    document.getElementById('y-split-height2').addEventListener('input', (e) => {
+      document.getElementById('y-split-height2-val').textContent = e.target.value + '%';
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  
+  container.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  });
+}
+
 // Render the palette choices in the sidebar dropdown
 function renderPalettePicker() {
   if (!DOM.paletteSelect) return;
@@ -215,6 +408,7 @@ function setupEventListeners() {
     document.querySelectorAll('.chart-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active');
     appState.currentChartType = card.dataset.chart;
+    updateColumnMappingInputs(appState.currentChartType);
     if (appState.activeData) drawChart();
   });
 
@@ -224,6 +418,7 @@ function setupEventListeners() {
       if (select === DOM.groupSelect) {
         updateGroupCheckboxes();
       }
+      updateStatsGroupsList();
       saveActiveTabState();
       recommendStatisticalTest();
       if (appState.activeData) drawChart();
@@ -253,16 +448,26 @@ function setupEventListeners() {
   });
 
   DOM.plotWidth.addEventListener('input', (e) => {
-    DOM.plotWidthVal.textContent = e.target.value + '%';
+    DOM.plotWidthVal.textContent = e.target.value + ' cm';
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
 
   DOM.plotHeight.addEventListener('input', (e) => {
-    DOM.plotHeightVal.textContent = e.target.value + '%';
+    DOM.plotHeightVal.textContent = e.target.value + ' cm';
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
+
+  const legDistSlider = document.getElementById('legend-distance-slider');
+  const legDistVal = document.getElementById('legend-distance-val');
+  if (legDistSlider && legDistVal) {
+    legDistSlider.addEventListener('input', (e) => {
+      legDistVal.textContent = e.target.value + ' cm';
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
 
   DOM.paletteSelect.addEventListener('change', (e) => {
     appState.selectedPalette = e.target.value;
@@ -284,29 +489,46 @@ function setupEventListeners() {
     runStatisticalTest();
   });
   
-  // Size mode change triggers resizing & state save
-  document.getElementById('size-mode-select').addEventListener('change', () => {
-    saveActiveTabState();
-    applyCanvasDimensions();
-    if (appState.chartInstance) appState.chartInstance.resize();
-    alignSvgLayer();
-  });
-
-  // Absolute dimensions input triggers resizing & state save
-  ['abs-width-input', 'abs-height-input'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => {
-      saveActiveTabState();
-      applyCanvasDimensions();
-      if (appState.chartInstance) appState.chartInstance.resize();
-      alignSvgLayer();
+  // Stats comparison type toggles reference group container
+  const compType = document.getElementById('stats-comparison-type');
+  if (compType) {
+    compType.addEventListener('change', () => {
+      const refContainer = document.getElementById('stats-reference-group-container');
+      if (refContainer) {
+        refContainer.style.display = compType.value === 'vs_control' ? 'flex' : 'none';
+      }
     });
-  });
+  }
 
   // Legend position change triggers chart redraw
   document.getElementById('legend-position-select').addEventListener('change', () => {
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
+
+  // Y-axis customization listeners
+  const yScaleSelect = document.getElementById('y-axis-scale-type');
+  if (yScaleSelect) {
+    yScaleSelect.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  const yFormatSelect = document.getElementById('y-axis-num-format');
+  if (yFormatSelect) {
+    yFormatSelect.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  const ySplitSelect = document.getElementById('y-axis-split-mode');
+  if (ySplitSelect) {
+    ySplitSelect.addEventListener('change', (e) => {
+      renderYSplitControls(e.target.value);
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
 
   // Individual curves checkbox triggers chart redraw
   document.getElementById('individual-curves-checkbox').addEventListener('change', () => {
@@ -656,6 +878,7 @@ function updateMappingDropdowns() {
     const statsFilterVal = document.getElementById('stats-filter-val');
     if (statsFilterVal) statsFilterVal.value = '';
   }
+  updateStatsGroupsList();
 
   // Sensible default selections
   if (headers.length > 0) DOM.xSelect.value = headers[0];
@@ -666,6 +889,7 @@ function updateMappingDropdowns() {
   }
 
   updateStatsFilterValues();
+  updateColumnMappingInputs(appState.currentChartType);
 }
 
 // Helper to coerce value into numeric if possible
@@ -948,77 +1172,77 @@ function parsePRISM(dataBuffer) {
   });
 }
 
+function getPlotDimensions() {
+  const plotWidthCm = parseFloat(DOM.plotWidth ? DOM.plotWidth.value : 15) || 15;
+  const plotHeightCm = parseFloat(DOM.plotHeight ? DOM.plotHeight.value : 12) || 12;
+  const legendPos = document.getElementById('legend-position-select').value;
+  const legendDistSlider = document.getElementById('legend-distance-slider');
+  const legendDistCm = legendDistSlider ? parseFloat(legendDistSlider.value) : 0.8;
+  const legendDistPx = Math.round(legendDistCm * 37.8);
+
+  const gridWidth = Math.round(plotWidthCm * 37.8);
+  const gridHeight = Math.round(plotHeightCm * 37.8);
+
+  // Define paddings - expanded to allocate enough space for long legend items
+  let gridLeft = 90;
+  let gridTop = 60;
+  let gridRight = 40;
+  let gridBottom = 60;
+
+  if (legendPos === 'left') {
+    gridLeft = 90 + legendDistPx + 250; // 250px for left legend width buffer
+  } else if (legendPos === 'right') {
+    gridRight = 40 + legendDistPx + 300; // 300px for right legend width buffer
+  } else if (legendPos === 'top') {
+    gridTop = 60 + legendDistPx + 80; // 80px for top legend height buffer
+  } else if (legendPos === 'bottom') {
+    gridBottom = 60 + legendDistPx + 80; // 80px for bottom legend height buffer
+  }
+
+  const canvasWidth = gridLeft + gridWidth + gridRight;
+  const canvasHeight = gridTop + gridHeight + gridBottom;
+
+  return { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop };
+}
+
 function applyCanvasDimensions() {
-  const sizeModeSelect = document.getElementById('size-mode-select');
-  if (!sizeModeSelect) return;
-  const sizeMode = sizeModeSelect.value;
   const canvas = DOM.chartCanvas;
   const svgLayer = document.getElementById('annotation-layer');
-  const absoluteInputs = document.getElementById('absolute-size-inputs');
+  if (!canvas || !svgLayer) return;
   const wrapper = canvas.parentElement;
-  
-  if (sizeMode === 'absolute') {
-    if (absoluteInputs) absoluteInputs.style.display = 'grid';
-    const cmW = parseFloat(document.getElementById('abs-width-input').value) || 15;
-    const cmH = parseFloat(document.getElementById('abs-height-input').value) || 12;
-    
-    const pxW = Math.round(cmW * 37.8);
-    const pxH = Math.round(cmH * 37.8);
-    
-    canvas.style.position = 'relative';
-    canvas.style.width = pxW + 'px';
-    canvas.style.height = pxH + 'px';
-    canvas.style.flex = 'none';
-    canvas.style.margin = 'auto';
-    
-    svgLayer.style.position = 'absolute';
-    svgLayer.style.width = pxW + 'px';
-    svgLayer.style.height = pxH + 'px';
-    
-    if (wrapper) {
-      wrapper.style.display = 'flex';
-      wrapper.style.alignItems = 'center';
-      wrapper.style.justifyContent = 'center';
-      wrapper.style.overflow = 'auto';
-    }
-    
-    // Position alignment after layout
-    setTimeout(() => {
-      svgLayer.style.left = canvas.offsetLeft + 'px';
-      svgLayer.style.top = canvas.offsetTop + 'px';
-    }, 0);
-  } else {
-    if (absoluteInputs) absoluteInputs.style.display = 'none';
-    canvas.style.position = 'relative';
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.flex = '1';
-    canvas.style.margin = '0';
-    
-    svgLayer.style.position = 'absolute';
-    svgLayer.style.width = '100%';
-    svgLayer.style.height = '100%';
-    svgLayer.style.left = '0px';
-    svgLayer.style.top = '0px';
-    
-    if (wrapper) {
-      wrapper.style.display = 'flex';
-      wrapper.style.alignItems = '';
-      wrapper.style.justifyContent = '';
-      wrapper.style.overflow = '';
-    }
+
+  const { canvasWidth, canvasHeight } = getPlotDimensions();
+
+  canvas.style.position = 'relative';
+  canvas.style.width = canvasWidth + 'px';
+  canvas.style.height = canvasHeight + 'px';
+  canvas.style.flex = 'none';
+  canvas.style.margin = 'auto';
+
+  svgLayer.style.position = 'absolute';
+  svgLayer.style.width = canvasWidth + 'px';
+  svgLayer.style.height = canvasHeight + 'px';
+
+  if (wrapper) {
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.overflow = 'auto';
   }
+
+  // Position alignment after layout
+  setTimeout(() => {
+    svgLayer.style.left = canvas.offsetLeft + 'px';
+    svgLayer.style.top = canvas.offsetTop + 'px';
+  }, 0);
 }
 
 function alignSvgLayer() {
-  const sizeModeSelect = document.getElementById('size-mode-select');
-  if (sizeModeSelect && sizeModeSelect.value === 'absolute') {
-    const canvas = DOM.chartCanvas;
-    const svgLayer = document.getElementById('annotation-layer');
-    if (canvas && svgLayer) {
-      svgLayer.style.left = canvas.offsetLeft + 'px';
-      svgLayer.style.top = canvas.offsetTop + 'px';
-    }
+  const canvas = DOM.chartCanvas;
+  const svgLayer = document.getElementById('annotation-layer');
+  if (canvas && svgLayer) {
+    svgLayer.style.left = canvas.offsetLeft + 'px';
+    svgLayer.style.top = canvas.offsetTop + 'px';
   }
 }
 
@@ -1144,29 +1368,27 @@ function drawChart() {
   const chartXLabel = document.getElementById('chart-xlabel-input').value.trim();
   const chartYLabel = document.getElementById('chart-ylabel-input').value.trim();
 
-  const plotWidth = DOM.plotWidth ? parseInt(DOM.plotWidth.value) : 75;
-  const plotHeight = DOM.plotHeight ? parseInt(DOM.plotHeight.value) : 65;
+  const { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop } = getPlotDimensions();
 
   const legendData = [];
-  const legendPos = document.getElementById('legend-position-select').value;
   let legendConfig = {
     show: legendPos !== 'hide',
     textStyle: textStyle
   };
   if (legendPos === 'bottom') {
-    legendConfig.bottom = 10;
+    legendConfig.top = gridTop + gridHeight + legendDistPx + 25; // 25px for X-axis labels and ticks
     legendConfig.left = 'center';
     legendConfig.orient = 'horizontal';
   } else if (legendPos === 'top') {
-    legendConfig.top = 10;
+    legendConfig.bottom = canvasHeight - gridTop + legendDistPx + 10; // 10px above the grid (using bottom offset for auto height)
     legendConfig.left = 'center';
     legendConfig.orient = 'horizontal';
   } else if (legendPos === 'left') {
-    legendConfig.left = 10;
+    legendConfig.right = canvasWidth - gridLeft + legendDistPx + 10; // 10px to the left of the grid (using right offset for auto width)
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   } else if (legendPos === 'right') {
-    legendConfig.right = 10;
+    legendConfig.left = gridLeft + gridWidth + legendDistPx + 10; // 10px to the right of the grid (using left offset for auto width)
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   }
@@ -1178,11 +1400,11 @@ function drawChart() {
     tooltip: { trigger: 'axis' },
     legend: legendConfig,
     grid: {
-      left: 'center',
-      top: 'center',
-      width: plotWidth + '%',
-      height: plotHeight + '%',
-      containLabel: true
+      left: gridLeft,
+      top: gridTop,
+      width: gridWidth,
+      height: gridHeight,
+      containLabel: false
     },
     xAxis: {
       type: 'category',
@@ -1270,6 +1492,9 @@ function drawChart() {
     }
   }
 
+  // Get full list of unique groups in filteredRows to ensure stable colors across split tabs
+  const allGroupsList = gCol ? (activeGroups.length > 0 ? activeGroups : [...new Set(filteredRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))]) : [];
+
   const type = appState.currentChartType;
   const errorBarType = document.getElementById('error-bar-select').value;
 
@@ -1285,8 +1510,9 @@ function drawChart() {
     // Scatter Plot mapping
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
         const seriesData = matchRows
@@ -1343,8 +1569,9 @@ function drawChart() {
     // Line Plot mapping (shows means connected by lines + error bars)
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
         const rawPoints = matchRows
@@ -1474,8 +1701,9 @@ function drawChart() {
 
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         legendData.push(seriesName);
         const showPoints = document.getElementById('show-points-checkbox').checked;
@@ -1551,8 +1779,9 @@ function drawChart() {
     
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         // Calculate box stats per category
         const boxData = xCategories.map(cat => {
@@ -1581,8 +1810,9 @@ function drawChart() {
     if (showPoints || showMean) {
       yCols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const seriesName = gCol ? `${yCol} (${g})` : yCol;
-          const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = gCol ? String(g) : yCol;
+          const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
           
           const jitterData = [];
           const meanData = [];
@@ -1656,8 +1886,9 @@ function drawChart() {
     
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         legendData.push(seriesName);
         xCategories.forEach((cat, catIdx) => {
@@ -1736,8 +1967,9 @@ function drawChart() {
     if (showPoints || showMean) {
       yCols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const seriesName = gCol ? `${yCol} (${g})` : yCol;
-          const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = gCol ? String(g) : yCol;
+          const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
           
           const jitterData = [];
           const meanData = [];
@@ -1927,8 +2159,9 @@ function drawChart() {
   } else if (type === 'area') {
     yCols.forEach((yCol, yIdx) => {
       groups.forEach((g, gIdx) => {
-        const seriesName = gCol ? `${yCol} (${g})` : yCol;
-        const color = paletteColors[(yIdx + gIdx * yCols.length) % paletteColors.length];
+        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+        const seriesName = gCol ? String(g) : yCol;
+        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
         
         const seriesData = plotRows
           .filter(r => !gCol || String(r[gCol]) === g)
@@ -2005,16 +2238,16 @@ function drawChart() {
       const item = {
         name: ml.label || '',
         lineStyle: {
-          color: ml.color,
-          type: ml.style,
-          width: ml.width
+          color: ml.style === 'none' ? 'transparent' : ml.color,
+          type: ml.style === 'none' ? 'solid' : ml.style,
+          width: ml.style === 'none' ? 0 : ml.width
         },
         label: {
-          show: true,
-          position: isY ? 'end' : 'start',
+          show: ml.label ? true : false,
+          position: isY ? 'start' : 'start',
           formatter: ml.label ? `${ml.label}: {c}` : '{c}'
         },
-        symbol: ['none', symbolType]
+        symbol: [symbolType, 'none']
       };
       
       if (isY) {
@@ -2035,6 +2268,226 @@ function drawChart() {
       },
       tooltip: { show: false }
     });
+  }
+
+  // ========== Y-AXIS POST-PROCESSING: Log / Scientific / Multi-Grid Split ==========
+  // Only apply to Cartesian chart types with a numeric Y-axis (not pie, heatmap, histogram)
+  const _skipYAxisPostProcess = type === 'pie' || type === 'heatmap' || type === 'histogram';
+  if (!_skipYAxisPostProcess && option.xAxis && option.yAxis && !(option.yAxis instanceof Array)) {
+    const yScaleType = document.getElementById('y-axis-scale-type')?.value || 'linear';
+    const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
+    const ySplitMode = document.getElementById('y-axis-split-mode')?.value || '1';
+
+    // Helper: scientific notation formatter
+    const sciFormatter = (val) => {
+      if (val === 0) return '0';
+      return Number(val).toExponential(2);
+    };
+
+    if (ySplitMode === '1') {
+      // ---------- Single grid: just apply scale + format ----------
+      if (yScaleType === 'log') {
+        option.yAxis.type = 'log';
+        option.yAxis.logBase = 10;
+      }
+      if (yNumFormat === 'sci') {
+        option.yAxis.axisLabel = {
+          ...option.yAxis.axisLabel,
+          formatter: sciFormatter
+        };
+      }
+    } else {
+      // ---------- Multi-segment Y-axis split ----------
+      const splitParams = getYSplitParamsFromDOM();
+      const numSegments = parseInt(ySplitMode);
+
+      // Collect global data range from series for auto-range fallback
+      let globalMin = Infinity, globalMax = -Infinity;
+      option.series.forEach(s => {
+        if (!s.data) return;
+        s.data.forEach(d => {
+          let yVal = NaN;
+          if (Array.isArray(d)) {
+            yVal = Number(d[1]);
+          } else if (d && typeof d === 'object' && d.value !== undefined) {
+            yVal = Number(Array.isArray(d.value) ? d.value[1] : d.value);
+          } else {
+            yVal = Number(d);
+          }
+          if (!isNaN(yVal) && isFinite(yVal)) {
+            if (yVal < globalMin) globalMin = yVal;
+            if (yVal > globalMax) globalMax = yVal;
+          }
+        });
+      });
+      if (!isFinite(globalMin)) globalMin = 0;
+      if (!isFinite(globalMax)) globalMax = 100;
+
+      // Resolve segment ranges with auto-defaults
+      const segments = []; // ordered bottom-to-top
+      if (numSegments === 2) {
+        const h1 = splitParams.height1 || 30; // bottom height %
+        const h2 = 100 - h1;                  // top height %
+        const midPoint = globalMin + (globalMax - globalMin) * 0.4;
+        segments.push({
+          min: splitParams.min1 !== null ? splitParams.min1 : globalMin,
+          max: splitParams.max1 !== null ? splitParams.max1 : midPoint,
+          heightPct: h1
+        });
+        segments.push({
+          min: splitParams.min2 !== null ? splitParams.min2 : midPoint,
+          max: splitParams.max2 !== null ? splitParams.max2 : globalMax,
+          heightPct: h2
+        });
+      } else if (numSegments === 3) {
+        const h1 = splitParams.height1 || 30;
+        const h2 = splitParams.height2 || 40;
+        const h3 = 100 - h1 - h2;
+        const third1 = globalMin + (globalMax - globalMin) * 0.3;
+        const third2 = globalMin + (globalMax - globalMin) * 0.7;
+        segments.push({
+          min: splitParams.min1 !== null ? splitParams.min1 : globalMin,
+          max: splitParams.max1 !== null ? splitParams.max1 : third1,
+          heightPct: h1
+        });
+        segments.push({
+          min: splitParams.min2 !== null ? splitParams.min2 : third1,
+          max: splitParams.max2 !== null ? splitParams.max2 : third2,
+          heightPct: h2
+        });
+        segments.push({
+          min: splitParams.min3 !== null ? splitParams.min3 : third2,
+          max: splitParams.max3 !== null ? splitParams.max3 : globalMax,
+          heightPct: h3
+        });
+      }
+
+      // Calculate grid positions (bottom-to-top stacking)
+      const gapPx = 15; // gap between segments
+      const totalGapPx = gapPx * (numSegments - 1);
+      const { gridWidth: gW, gridHeight: gH, gridLeft: gL, gridTop: gT } = getPlotDimensions();
+      const availableHeight = gH - totalGapPx;
+
+      const grids = [];
+      const xAxes = [];
+      const yAxes = [];
+
+      // Build from top segment to bottom segment for rendering order
+      // segments[0] = bottom, segments[last] = top
+      // Grid positions: top-most grid starts at gridTop, going downwards
+      let currentTop = gT;
+      for (let si = segments.length - 1; si >= 0; si--) {
+        const seg = segments[si];
+        const segHeight = Math.round(availableHeight * seg.heightPct / 100);
+        const gridIdx = segments.length - 1 - si; // 0 = top grid, etc.
+
+        grids.push({
+          left: gL,
+          top: currentTop,
+          width: gW,
+          height: segHeight,
+          containLabel: false
+        });
+
+        // X-axis: only show labels/ticks on the bottom-most segment
+        const isBottomSegment = si === 0;
+        xAxes.push({
+          ...option.xAxis,
+          gridIndex: gridIdx,
+          position: 'bottom',
+          axisLabel: isBottomSegment ? option.xAxis.axisLabel : { show: false },
+          axisTick: isBottomSegment ? option.xAxis.axisTick : { show: false },
+          axisLine: isBottomSegment ? option.xAxis.axisLine : { show: false },
+          name: isBottomSegment ? option.xAxis.name : '',
+          nameGap: isBottomSegment ? (option.xAxis.nameGap || 30) : 0,
+          splitLine: option.xAxis.splitLine
+        });
+
+        // Y-axis: show name only on the middle (or top for 2-segment) segment
+        const isNameSegment = numSegments === 2 ? si === 1 : si === 1;
+        const yAxisEntry = {
+          ...option.yAxis,
+          gridIndex: gridIdx,
+          type: yScaleType === 'log' ? 'log' : 'value',
+          min: seg.min,
+          max: seg.max,
+          name: isNameSegment ? option.yAxis.name : '',
+          nameGap: isNameSegment ? (option.yAxis.nameGap || 45) : 0,
+          axisLabel: {
+            ...option.yAxis.axisLabel,
+            ...(yNumFormat === 'sci' ? { formatter: sciFormatter } : {})
+          },
+          splitLine: option.yAxis.splitLine
+        };
+        if (yScaleType === 'log') yAxisEntry.logBase = 10;
+        yAxes.push(yAxisEntry);
+
+        currentTop += segHeight + gapPx;
+      }
+
+      // Duplicate original series across all grid segments
+      const originalSeries = [...option.series];
+      const newSeries = [];
+      const totalGrids = grids.length;
+
+      originalSeries.forEach(s => {
+        // Guide Lines series (markLine only) need special handling
+        if (s.markLine && s.data && s.data.length === 0) {
+          // Distribute guide lines to their matching segments
+          for (let gi = 0; gi < totalGrids; gi++) {
+            const segIdx = segments.length - 1 - gi; // map grid index back to segment
+            const seg = segments[segIdx];
+            const filteredMarkData = s.markLine.data.filter(ml => {
+              if (ml.yAxis !== undefined) {
+                // Horizontal Y-axis line: belongs to the segment whose range contains the value
+                return ml.yAxis >= seg.min && ml.yAxis <= seg.max;
+              }
+              // Vertical X-axis line: show on all segments
+              return true;
+            });
+            if (filteredMarkData.length > 0) {
+              newSeries.push({
+                ...s,
+                xAxisIndex: gi,
+                yAxisIndex: gi,
+                markLine: { ...s.markLine, data: filteredMarkData },
+                clip: true
+              });
+            }
+          }
+        } else {
+          // Normal data series: clone to all grids
+          for (let gi = 0; gi < totalGrids; gi++) {
+            newSeries.push({
+              ...s,
+              xAxisIndex: gi,
+              yAxisIndex: gi,
+              clip: true
+            });
+          }
+        }
+      });
+
+      // Replace option with multi-grid config
+      option.grid = grids;
+      option.xAxis = xAxes;
+      option.yAxis = yAxes;
+      option.series = newSeries;
+
+      // Fix legend position if it references the old single-grid layout
+      if (option.legend) {
+        const lastGrid = grids[grids.length - 1]; // bottom-most grid
+        const legendPos = document.getElementById('legend-position-select')?.value || 'right';
+        const legendDistPx = getPlotDimensions().legendDistPx;
+        if (legendPos === 'bottom') {
+          option.legend.top = lastGrid.top + lastGrid.height + legendDistPx + 25;
+        } else if (legendPos === 'top') {
+          option.legend.bottom = undefined;
+          option.legend.top = gT - legendDistPx - 40;
+        }
+        // left and right positions remain valid from original calculation
+      }
+    }
   }
 
   // Draw options
@@ -2255,8 +2708,8 @@ function createChartTab(name = null, config = null) {
     lineWidth: parseInt(DOM.lineWidth.value) || 2,
     barPadding: parseInt(DOM.barPadding.value) || 20,
     boxWidth: parseInt(DOM.boxWidth.value) || 50,
-    plotWidth: parseInt(DOM.plotWidth.value) || 75,
-    plotHeight: parseInt(DOM.plotHeight.value) || 65,
+    plotWidth: parseInt(DOM.plotWidth.value) || 15,
+    plotHeight: parseInt(DOM.plotHeight.value) || 12,
     showPoints: document.getElementById('show-points-checkbox').checked,
     showMean: document.getElementById('show-mean-checkbox').checked,
     errorBarType: document.getElementById('error-bar-select').value || 'none',
@@ -2267,9 +2720,7 @@ function createChartTab(name = null, config = null) {
     
     // Size and legend settings
     legendPosition: document.getElementById('legend-position-select').value || 'bottom',
-    sizeMode: document.getElementById('size-mode-select').value || 'responsive',
-    absWidth: parseFloat(document.getElementById('abs-width-input').value) || 15,
-    absHeight: parseFloat(document.getElementById('abs-height-input').value) || 12,
+    legendDistance: document.getElementById('legend-distance-slider') ? parseFloat(document.getElementById('legend-distance-slider').value) : 0.8,
     individualCurves: document.getElementById('individual-curves-checkbox').checked,
     markingLines: [],
     
@@ -2281,6 +2732,12 @@ function createChartTab(name = null, config = null) {
     chartTitle: '',
     chartXLabel: '',
     chartYLabel: '',
+    
+    // Y-axis customization
+    yScaleType: 'linear',
+    yNumFormat: 'std',
+    ySplitMode: '1',
+    ySplitParams: null,
     
     // SVG annotations array
     annotations: []
@@ -2323,9 +2780,8 @@ function saveActiveTabState() {
   
   // Size and legend settings
   tab.legendPosition = document.getElementById('legend-position-select').value;
-  tab.sizeMode = document.getElementById('size-mode-select').value;
-  tab.absWidth = parseFloat(document.getElementById('abs-width-input').value) || 15;
-  tab.absHeight = parseFloat(document.getElementById('abs-height-input').value) || 12;
+  const legDistSlider = document.getElementById('legend-distance-slider');
+  tab.legendDistance = legDistSlider ? parseFloat(legDistSlider.value) : 0.8;
   tab.individualCurves = document.getElementById('individual-curves-checkbox').checked;
   if (!tab.markingLines) tab.markingLines = [];
   
@@ -2342,6 +2798,15 @@ function saveActiveTabState() {
   tab.chartTitle = document.getElementById('chart-title-input').value;
   tab.chartXLabel = document.getElementById('chart-xlabel-input').value;
   tab.chartYLabel = document.getElementById('chart-ylabel-input').value;
+  
+  // Y-axis customization
+  const yScaleEl = document.getElementById('y-axis-scale-type');
+  const yFmtEl = document.getElementById('y-axis-num-format');
+  const ySplitEl = document.getElementById('y-axis-split-mode');
+  tab.yScaleType = yScaleEl ? yScaleEl.value : 'linear';
+  tab.yNumFormat = yFmtEl ? yFmtEl.value : 'std';
+  tab.ySplitMode = ySplitEl ? ySplitEl.value : '1';
+  tab.ySplitParams = (tab.ySplitMode !== '1') ? getYSplitParamsFromDOM() : null;
   
   // Annotations
   tab.annotations = serializeAnnotations();
@@ -2408,11 +2873,11 @@ function applyChartTabState(tab) {
 
   if (tab.plotWidth) {
     DOM.plotWidth.value = tab.plotWidth;
-    DOM.plotWidthVal.textContent = tab.plotWidth + '%';
+    DOM.plotWidthVal.textContent = tab.plotWidth + ' cm';
   }
   if (tab.plotHeight) {
     DOM.plotHeight.value = tab.plotHeight;
-    DOM.plotHeightVal.textContent = tab.plotHeight + '%';
+    DOM.plotHeightVal.textContent = tab.plotHeight + ' cm';
   }
   
   document.getElementById('show-points-checkbox').checked = !!tab.showPoints;
@@ -2429,10 +2894,16 @@ function applyChartTabState(tab) {
   
   // Restore size and legend settings
   document.getElementById('legend-position-select').value = tab.legendPosition || 'bottom';
-  document.getElementById('size-mode-select').value = tab.sizeMode || 'responsive';
-  document.getElementById('abs-width-input').value = tab.absWidth || 15;
-  document.getElementById('abs-height-input').value = tab.absHeight || 12;
+  
+  const legDistSlider = document.getElementById('legend-distance-slider');
+  const legDistVal = document.getElementById('legend-distance-val');
+  if (legDistSlider) {
+    legDistSlider.value = tab.legendDistance !== undefined ? tab.legendDistance : 0.8;
+    if (legDistVal) legDistVal.textContent = legDistSlider.value + ' cm';
+  }
+  
   document.getElementById('individual-curves-checkbox').checked = !!tab.individualCurves;
+  updateStatsGroupsList();
   
   // Restore marking lines array
   if (!tab.markingLines) {
@@ -2446,6 +2917,18 @@ function applyChartTabState(tab) {
   document.getElementById('chart-title-input').value = tab.chartTitle || '';
   document.getElementById('chart-xlabel-input').value = tab.chartXLabel || '';
   document.getElementById('chart-ylabel-input').value = tab.chartYLabel || '';
+  
+  // Restore Y-axis customization
+  const yScaleEl = document.getElementById('y-axis-scale-type');
+  const yFmtEl = document.getElementById('y-axis-num-format');
+  const ySplitEl = document.getElementById('y-axis-split-mode');
+  if (yScaleEl) yScaleEl.value = tab.yScaleType || 'linear';
+  if (yFmtEl) yFmtEl.value = tab.yNumFormat || 'std';
+  if (ySplitEl) ySplitEl.value = tab.ySplitMode || '1';
+  renderYSplitControls(tab.ySplitMode || '1', tab.ySplitParams);
+  
+  // Restore Column Mapping labels for active chart type
+  updateColumnMappingInputs(tab.chartType || appState.currentChartType);
   
   // Group selection checkboxes
   updateGroupCheckboxes(tab.activeGroups, tab.splitGroups);
@@ -2969,7 +3452,7 @@ function recommendStatisticalTest() {
   // Recommendation removed per user request
 }
 
-function runStatisticalTest() {
+function runStatisticalTestOld() {
   const xCol = DOM.xSelect.value;
   const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
   const gCol = DOM.groupSelect.value;
@@ -3412,14 +3895,14 @@ function runStatisticalTest() {
   panel.style.display = 'block';
 }
 
-function getPValueSymbol(p) {
+function getPValueSymbolOld(p) {
   if (p < 0.001) return '***';
   if (p < 0.01) return '**';
   if (p < 0.05) return '*';
   return 'ns';
 }
 
-function addSignificanceBar() {
+function addSignificanceBarOld() {
   if (!lastStatsResults || !appState.chartInstance) {
     alert('Please run a statistical test first.');
     return;
@@ -4132,6 +4615,147 @@ function deserializeAnnotations(annotationsList) {
 // 10. Publication File Exporters
 // ==============================================================================
 
+// Helper to crop canvas to its content bounds, leaving a 15px padding
+function cropCanvas(canvas) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  // Get all pixel data
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+  
+  // Read corner pixel as reference background
+  const bgR = data[0];
+  const bgG = data[1];
+  const bgB = data[2];
+  const bgA = data[3];
+  
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  let found = false;
+  
+  const tolerance = 5; // Tolerance for small color differences (anti-aliasing, etc.)
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const a = data[idx + 3];
+      
+      let isBackground = false;
+      if (bgA === 0) {
+        // Transparent background
+        isBackground = (a === 0);
+      } else {
+        // Opaque background - check Euclidean distance in RGBA space
+        const diffR = Math.abs(r - bgR);
+        const diffG = Math.abs(g - bgG);
+        const diffB = Math.abs(b - bgB);
+        const diffA = Math.abs(a - bgA);
+        isBackground = (diffR <= tolerance && diffG <= tolerance && diffB <= tolerance && diffA <= tolerance);
+      }
+      
+      if (!isBackground) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        found = true;
+      }
+    }
+  }
+  
+  if (!found) {
+    return canvas;
+  }
+  
+  // Add 15px safety padding (corresponds to 30px on 2x high-res canvas)
+  const padding = 30;
+  minX = Math.max(0, minX - padding);
+  minY = Math.max(0, minY - padding);
+  maxX = Math.min(width - 1, maxX + padding);
+  maxY = Math.min(height - 1, maxY + padding);
+  
+  const croppedWidth = maxX - minX + 1;
+  const croppedHeight = maxY - minY + 1;
+  
+  const croppedCanvas = document.createElement('canvas');
+  croppedCanvas.width = croppedWidth;
+  croppedCanvas.height = croppedHeight;
+  const croppedCtx = croppedCanvas.getContext('2d');
+  
+  // Fill background
+  croppedCtx.fillStyle = bgA === 0 ? 'rgba(0,0,0,0)' : `rgb(${bgR},${bgG},${bgB})`;
+  croppedCtx.fillRect(0, 0, croppedWidth, croppedHeight);
+  
+  // Draw cropped section
+  croppedCtx.drawImage(canvas, minX, minY, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+  
+  return croppedCanvas;
+}
+
+// Helper to calculate content bounding box for SVG vector export, relative to root ECharts SVG
+function getSVGContentBBox(originalSvg, annotationsSvg) {
+  const rootRect = originalSvg.getBoundingClientRect();
+  
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let found = false;
+  
+  // Visual drawing element tags to look for
+  const selector = 'path, text, rect, circle, line, polygon, polyline, ellipse, image';
+  const elements1 = originalSvg.querySelectorAll(selector);
+  const elements2 = annotationsSvg.querySelectorAll(selector);
+  const allElements = [...elements1, ...elements2];
+  
+  allElements.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    
+    // Check if it's the background rect (covers the whole canvas size)
+    if (el.tagName.toLowerCase() === 'rect') {
+      const isBackground = Math.abs(rect.width - rootRect.width) < 5 && Math.abs(rect.height - rootRect.height) < 5;
+      if (isBackground) return;
+    }
+    
+    const left = rect.left - rootRect.left;
+    const top = rect.top - rootRect.top;
+    const right = rect.right - rootRect.left;
+    const bottom = rect.bottom - rootRect.top;
+    
+    if (left < minX) minX = left;
+    if (top < minY) minY = top;
+    if (right > maxX) maxX = right;
+    if (bottom > maxY) maxY = bottom;
+    found = true;
+  });
+  
+  if (!found) {
+    return { x: 0, y: 0, width: rootRect.width, height: rootRect.height };
+  }
+  
+  // Add 15px safety padding
+  const padding = 15;
+  minX = Math.max(0, minX - padding);
+  minY = Math.max(0, minY - padding);
+  maxX = Math.min(rootRect.width, maxX + padding);
+  maxY = Math.min(rootRect.height, maxY + padding);
+  
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
+}
+
 // Generate a combined canvas with ECharts and SVG overlay annotations
 function getCombinedCanvas(callback) {
   if (!appState.chartInstance) return;
@@ -4174,7 +4798,8 @@ function getCombinedCanvas(callback) {
       ctx.drawImage(chartImg, 0, 0, width * 2, height * 2);
       ctx.drawImage(annImg, 0, 0, width * 2, height * 2);
       
-      callback(canvas);
+      const croppedCanvas = cropCanvas(canvas);
+      callback(croppedCanvas);
     }
   }
   
@@ -4198,7 +4823,7 @@ function exportImage(type) {
   });
 }
 
-// SVG vector export (merges annotations overlay)
+// SVG vector export (merges annotations overlay and crops content)
 function exportSVGFile() {
   if (!appState.chartInstance) return;
 
@@ -4222,6 +4847,12 @@ function exportSVGFile() {
         clone.classList.remove('annotation-selected');
         clonedSvg.appendChild(clone);
       });
+      
+      // Calculate crop box relative to original elements
+      const bbox = getSVGContentBBox(svgEl, annotationsSvg);
+      clonedSvg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+      clonedSvg.setAttribute('width', bbox.width);
+      clonedSvg.setAttribute('height', bbox.height);
       
       const svgText = new XMLSerializer().serializeToString(clonedSvg);
       const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
@@ -4388,6 +5019,703 @@ function copyChartToClipboard() {
       });
     }, 'image/png');
   });
+}
+
+function updateStatsGroupsList() {
+  const xCol = DOM.xSelect ? DOM.xSelect.value : '';
+  const gCol = DOM.groupSelect ? DOM.groupSelect.value : '';
+  const compareCol = gCol || xCol;
+  
+  const container = document.getElementById('stats-group-checkboxes');
+  const refSelect = document.getElementById('stats-reference-group');
+  if (!container || !refSelect) return;
+  
+  if (!compareCol || !appState.activeData) {
+    container.innerHTML = '';
+    refSelect.innerHTML = '';
+    return;
+  }
+  
+  const rows = appState.activeData.rows;
+  const uniqueVals = [...new Set(rows.map(r => String(r[compareCol])).filter(v => v !== null && v !== undefined && v !== ''))].sort();
+  
+  container.innerHTML = '';
+  uniqueVals.forEach(v => {
+    const label = document.createElement('label');
+    label.className = 'checkbox-label';
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '4px';
+    label.style.margin = '2px 0';
+    
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'stats-group-checkbox';
+    cb.value = v;
+    cb.checked = true;
+    cb.addEventListener('change', updateStatsReferenceGroupOptions);
+    
+    const span = document.createElement('span');
+    span.textContent = v;
+    
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+  
+  updateStatsReferenceGroupOptions();
+}
+
+function updateStatsReferenceGroupOptions() {
+  const refSelect = document.getElementById('stats-reference-group');
+  if (!refSelect) return;
+  const currentRef = refSelect.value;
+  refSelect.innerHTML = '';
+  
+  const checkedCbs = Array.from(document.querySelectorAll('.stats-group-checkbox')).filter(cb => cb.checked);
+  checkedCbs.forEach(cb => {
+    const opt = document.createElement('option');
+    opt.value = cb.value;
+    opt.textContent = cb.value;
+    refSelect.appendChild(opt);
+  });
+  
+  if (Array.from(refSelect.options).some(o => o.value === currentRef)) {
+    refSelect.value = currentRef;
+  }
+}
+
+function runPairwiseTest(grpA, grpB, method, groupData) {
+  const valsA = groupData.get(grpA) || [];
+  const valsB = groupData.get(grpB) || [];
+  if (valsA.length < 2 || valsB.length < 2) {
+    return { p: 1.0, stat: 0, desc: 'N too small (both groups must have >= 2 replicates)' };
+  }
+  if (method === 'student_t') {
+    const res = calculateStudentTTest(valsA, valsB);
+    return { p: res.p, stat: res.t, desc: `t=${res.t.toFixed(4)}, df=${res.df}` };
+  } else if (method === 'welch_t' || method === 'auto') {
+    const res = calculateWelchTTest(valsA, valsB);
+    return { p: res.p, stat: res.t, desc: `t=${res.t.toFixed(4)}, df=${res.df.toFixed(2)}` };
+  } else if (method === 'paired_t') {
+    try {
+      const res = calculatePairedTTest(valsA, valsB);
+      return { p: res.p, stat: res.t, desc: `t=${res.t.toFixed(4)}, df=${res.df}` };
+    } catch (e) {
+      return { p: 1.0, stat: 0, desc: `error: ${e.message}` };
+    }
+  } else if (method === 'mann_whitney') {
+    const res = calculateMannWhitneyU(valsA, valsB);
+    return { p: res.p, stat: res.U, desc: `U=${res.U}` };
+  }
+  const res = calculateWelchTTest(valsA, valsB);
+  return { p: res.p, stat: res.t, desc: `t=${res.t.toFixed(4)}` };
+}
+
+function runStatisticalTest() {
+  const xCol = DOM.xSelect.value;
+  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const gCol = DOM.groupSelect.value;
+  let rows = getFilteredRows();
+  
+  if (!xCol || yCols.length === 0 || rows.length === 0) {
+    alert('Please load data and map columns first.');
+    return;
+  }
+  
+  const yCol = yCols[0];
+  const compareCol = gCol || xCol;
+  
+  // Stats filter evaluation
+  const filterCol = document.getElementById('stats-filter-col').value;
+  const filterVal = document.getElementById('stats-filter-val').value.trim();
+  if (filterCol && filterVal !== '') {
+    rows = rows.filter(r => {
+      const cellVal = r[filterCol];
+      if (cellVal === undefined || cellVal === null) return false;
+      return String(cellVal).toLowerCase() === filterVal.toLowerCase();
+    });
+  }
+  
+  const method = document.getElementById('stats-method-select').value;
+  
+  let cleanRows;
+  if (method === 'chi_square') {
+    cleanRows = rows.filter(r => r[compareCol] !== null && r[compareCol] !== undefined && r[yCol] !== null && r[yCol] !== undefined);
+  } else {
+    cleanRows = rows.filter(r => r[compareCol] !== null && r[compareCol] !== undefined && r[yCol] !== null && r[yCol] !== undefined && !isNaN(Number(r[yCol])));
+  }
+  
+  if (cleanRows.length < 3) {
+    alert('Not enough valid rows to perform statistical analysis (minimum 3).');
+    return;
+  }
+  
+  // Identify which groups to analyze using checkboxes
+  const checkedCbs = Array.from(document.querySelectorAll('.stats-group-checkbox')).filter(cb => cb.checked);
+  let groupsToAnalyze = checkedCbs.map(cb => cb.value);
+  if (groupsToAnalyze.length === 0) {
+    groupsToAnalyze = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort();
+  }
+  
+  let summary = '';
+  lastStatsResults = null;
+  
+  if (method === 'pearson' || method === 'spearman' || method === 'linear_reg') {
+    const xVals = cleanRows.map(r => Number(r[compareCol]));
+    const yVals = cleanRows.map(r => Number(r[yCol]));
+    if (xVals.some(isNaN) || yVals.some(isNaN)) {
+      alert('Both variables must contain numeric data to run correlation/regression.');
+      return;
+    }
+    
+    if (method === 'pearson') {
+      try {
+        const res = calculateCorrelation(xVals, yVals, 'pearson');
+        summary += `PEARSON CORRELATION\n`;
+        summary += `-------------------\n`;
+        summary += `Variable X : ${compareCol}\n`;
+        summary += `Variable Y : ${yCol}\n`;
+        summary += `Sample Size (N): ${xVals.length}\n`;
+        summary += `Correlation (r): ${res.r.toFixed(4)}\n`;
+        summary += `R-squared (R²): ${res.r2.toFixed(4)}\n`;
+        summary += `t-statistic: ${res.t.toFixed(4)}\n`;
+        summary += `df         : ${res.df}\n`;
+        summary += `p-value    : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance: ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}`;
+        
+        lastStatsResults = {
+          type: 'regression',
+          xCol: compareCol, yCol, N: xVals.length, slope: 0, intercept: 0, r: res.r, r2: res.r2, p: res.p,
+          sigSymbol: getPValueSymbol(res.p)
+        };
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+    } else if (method === 'spearman') {
+      try {
+        const res = calculateCorrelation(xVals, yVals, 'spearman');
+        summary += `SPEARMAN RANK CORRELATION (NON-PARAMETRIC)\n`;
+        summary += `-------------------------------------------\n`;
+        summary += `Variable X : ${compareCol}\n`;
+        summary += `Variable Y : ${yCol}\n`;
+        summary += `Sample Size (N): ${xVals.length}\n`;
+        summary += `Spearman r     : ${res.r.toFixed(4)}\n`;
+        summary += `t-statistic    : ${res.t.toFixed(4)}\n`;
+        summary += `df             : ${res.df}\n`;
+        summary += `p-value        : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance   : ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}`;
+        
+        lastStatsResults = {
+          type: 'regression',
+          xCol: compareCol, yCol, N: xVals.length, slope: 0, intercept: 0, r: res.r, r2: res.r2, p: res.p,
+          sigSymbol: getPValueSymbol(res.p)
+        };
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+    } else if (method === 'linear_reg') {
+      const N = cleanRows.length;
+      const xMean = xVals.reduce((a, b) => a + b, 0) / N;
+      const yMean = yVals.reduce((a, b) => a + b, 0) / N;
+      
+      let num = 0;
+      let denX = 0;
+      let denY = 0;
+      for (let i = 0; i < N; i++) {
+        const dx = xVals[i] - xMean;
+        const dy = yVals[i] - yMean;
+        num += dx * dy;
+        denX += dx * dx;
+        denY += dy * dy;
+      }
+      
+      const slope = denX !== 0 ? num / denX : 0;
+      const intercept = yMean - slope * xMean;
+      const r = (denX !== 0 && denY !== 0) ? num / Math.sqrt(denX * denY) : 0;
+      const r2 = r * r;
+      
+      const df = N - 2;
+      let t = 0;
+      let p = 1.0;
+      if (r2 < 1.0 && df > 0) {
+        t = r * Math.sqrt(df / (1 - r2));
+        p = studentTProbability(t, df);
+      }
+      
+      summary += `LINEAR REGRESSION\n`;
+      summary += `-----------------\n`;
+      summary += `Variable X : ${compareCol}\n`;
+      summary += `Variable Y : ${yCol}\n`;
+      summary += `Sample Size (N): ${N}\n`;
+      summary += `Slope (m)  : ${slope.toFixed(4)}\n`;
+      summary += `Intercept(c): ${intercept.toFixed(4)}\n`;
+      summary += `Equation   : Y = ${slope.toFixed(4)}*X + ${intercept.toFixed(4)}\n`;
+      summary += `Correlation (r): ${r.toFixed(4)}\n`;
+      summary += `R-squared (R²): ${r2.toFixed(4)}\n`;
+      summary += `t-statistic: ${t.toFixed(4)}\n`;
+      summary += `p-value    : ${p < 0.0001 ? '< 0.0001' : p.toFixed(4)}\n`;
+      summary += `Significance: ${p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}`;
+      
+      lastStatsResults = {
+        type: 'regression',
+        xCol: compareCol, yCol, N, slope, intercept, r, r2, p,
+        sigSymbol: getPValueSymbol(p)
+      };
+    }
+  } else if (method === 'chi_square') {
+    const uniqueX = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort();
+    const uniqueY = [...new Set(cleanRows.map(r => String(r[yCol])))].sort();
+    
+    if (uniqueX.length < 2 || uniqueY.length < 2) {
+      alert('Both variables must have at least 2 unique categories to perform Chi-square test.');
+      return;
+    }
+    
+    const observed = uniqueX.map(() => uniqueY.map(() => 0));
+    cleanRows.forEach(r => {
+      const xVal = String(r[compareCol]);
+      const yVal = String(r[yCol]);
+      const ix = uniqueX.indexOf(xVal);
+      const iy = uniqueY.indexOf(yVal);
+      if (ix !== -1 && iy !== -1) {
+        observed[ix][iy]++;
+      }
+    });
+    
+    try {
+      const res = calculateChiSquareContingency(observed, uniqueX, uniqueY);
+      summary += `CHI-SQUARE CONTINGENCY TEST\n`;
+      summary += `---------------------------\n`;
+      summary += `Variable X : ${compareCol} (${uniqueX.length} categories)\n`;
+      summary += `Variable Y : ${yCol} (${uniqueY.length} categories)\n`;
+      summary += `Total N    : ${res.N}\n\n`;
+      
+      summary += `OBSERVED FREQUENCIES:\n`;
+      summary += `X \\ Y | ` + uniqueY.join(' | ') + ` | Total\n`;
+      for (let i = 0; i < uniqueX.length; i++) {
+        summary += `${uniqueX[i]} | ` + observed[i].join(' | ') + ` | ${res.rowTotals[i]}\n`;
+      }
+      summary += `Total | ` + res.colTotals.join(' | ') + ` | ${res.N}\n\n`;
+      
+      summary += `EXPECTED FREQUENCIES:\n`;
+      for (let i = 0; i < uniqueX.length; i++) {
+        summary += `${uniqueX[i]} | ` + res.expectedTable[i].map(v => v.toFixed(2)).join(' | ') + `\n`;
+      }
+      summary += `\n`;
+      
+      summary += `Chi-square Statistic: ${res.chiSq.toFixed(4)}\n`;
+      summary += `df                  : ${res.df}\n`;
+      summary += `p-value             : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+      summary += `Significance        : ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}`;
+      
+      lastStatsResults = null;
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
+  } else {
+    // Group comparison tests
+    if (groupsToAnalyze.length < 2) {
+      alert('Please select at least 2 groups to perform analysis.');
+      return;
+    }
+    
+    const statsRows = cleanRows.filter(r => groupsToAnalyze.includes(String(r[compareCol])));
+    
+    const groupData = new Map();
+    statsRows.forEach(r => {
+      const cat = String(r[compareCol]);
+      const val = Number(r[yCol]);
+      if (!groupData.has(cat)) groupData.set(cat, []);
+      groupData.get(cat).push(val);
+    });
+    groupsToAnalyze.forEach(g => {
+      if (!groupData.has(g)) groupData.set(g, []);
+    });
+    
+    let activeMethod = method;
+    if (activeMethod === 'auto') {
+      activeMethod = groupsToAnalyze.length === 2 ? 'welch_t' : 'anova_ordinary';
+    }
+    
+    // 1. Calculate overall test results
+    if (activeMethod === 'anova_ordinary') {
+      const K = groupsToAnalyze.length;
+      let totalN = 0;
+      let grandSum = 0;
+      
+      const groupStats = groupsToAnalyze.map(g => {
+        const vals = groupData.get(g) || [];
+        const n = vals.length;
+        const mean = n > 0 ? vals.reduce((a, b) => a + b, 0) / n : 0;
+        const variance = n > 1 ? vals.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (n - 1) : 0;
+        totalN += n;
+        grandSum += vals.reduce((a, b) => a + b, 0);
+        return { name: g, n, mean, variance };
+      });
+      
+      const grandMean = totalN > 0 ? grandSum / totalN : 0;
+      
+      let ssb = 0;
+      let ssw = 0;
+      groupStats.forEach(gs => {
+        ssb += gs.n * Math.pow(gs.mean - grandMean, 2);
+        ssw += (gs.n - 1) * gs.variance;
+      });
+      
+      const dfB = K - 1;
+      const dfW = totalN - K;
+      const msb = ssb / dfB;
+      const msw = dfW > 0 ? ssw / dfW : 0;
+      const f = msw > 0 ? msb / msw : 0;
+      const p = fDistributionPValue(f, dfB, dfW);
+      
+      summary += `ONE-WAY ORDINARY ANOVA (总体检验)\n`;
+      summary += `-------------------------------\n`;
+      groupStats.forEach(gs => {
+        summary += `${gs.name}: N=${gs.n}, Mean=${gs.mean.toFixed(4)}, SD=${Math.sqrt(gs.variance).toFixed(4)}\n`;
+      });
+      summary += `Grand Mean: ${grandMean.toFixed(4)}\n`;
+      summary += `F-statistic: ${f.toFixed(4)}\n`;
+      summary += `df (between, within): ${dfB}, ${dfW}\n`;
+      summary += `p-value: ${p < 0.0001 ? '< 0.0001' : p.toFixed(4)}\n`;
+      summary += `Significance: ${p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+    } else if (activeMethod === 'anova_welch') {
+      try {
+        const filteredGroupData = new Map();
+        groupsToAnalyze.forEach(g => filteredGroupData.set(g, groupData.get(g) || []));
+        const res = calculateWelchANOVA(filteredGroupData);
+        summary += `WELCH'S ANOVA (UNEQUAL VARIANCES) (总体检验)\n`;
+        summary += `-----------------------------------------\n`;
+        for (let i = 0; i < res.keys.length; i++) {
+          summary += `${res.keys[i]}: N=${res.n[i]}, Mean=${res.means[i].toFixed(4)}, SD=${Math.sqrt(res.vars[i]).toFixed(4)}\n`;
+        }
+        summary += `Welch F-statistic: ${res.f.toFixed(4)}\n`;
+        summary += `df (between, within): ${res.df1}, ${res.df2.toFixed(2)}\n`;
+        summary += `p-value: ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance: ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+    } else if (activeMethod === 'kruskal_wallis') {
+      const filteredGroupData = new Map();
+      groupsToAnalyze.forEach(g => filteredGroupData.set(g, groupData.get(g) || []));
+      const res = calculateKruskalWallis(filteredGroupData);
+      summary += `KRUSKAL-WALLIS TEST (NON-PARAMETRIC) (总体检验)\n`;
+      summary += `----------------------------------------------\n`;
+      res.keys.forEach(k => {
+        const vals = groupData.get(k) || [];
+        const R = res.rankSums[k] || 0;
+        summary += `${k}: N=${vals.length}, Rank Sum=${R.toFixed(1)}, Mean Rank=${vals.length > 0 ? (R / vals.length).toFixed(2) : 0}\n`;
+      });
+      summary += `H statistic (Chi-sq): ${res.H.toFixed(4)}\n`;
+      summary += `df                  : ${res.df}\n`;
+      summary += `p-value             : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+      summary += `Significance        : ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+    } else if (groupsToAnalyze.length === 2) {
+      const grpA = groupsToAnalyze[0];
+      const grpB = groupsToAnalyze[1];
+      const valsA = groupData.get(grpA) || [];
+      const valsB = groupData.get(grpB) || [];
+      
+      if (valsA.length < 2 || valsB.length < 2) {
+        alert('Both groups must have at least 2 replicates.');
+        return;
+      }
+      
+      if (activeMethod === 'student_t') {
+        const res = calculateStudentTTest(valsA, valsB);
+        summary += `STUDENT'S T-TEST (EQUAL VARIANCE)\n`;
+        summary += `-----------------------------------\n`;
+        summary += `Group A : ${grpA} (N=${res.nA}, Mean=${res.meanA.toFixed(4)})\n`;
+        summary += `Group B : ${grpB} (N=${res.nB}, Mean=${res.meanB.toFixed(4)})\n`;
+        summary += `Difference in Means: ${(res.meanA - res.meanB).toFixed(4)}\n`;
+        summary += `t-statistic : ${res.t.toFixed(4)}\n`;
+        summary += `df          : ${res.df}\n`;
+        summary += `p-value     : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance: ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+      } else if (activeMethod === 'welch_t') {
+        const res = calculateWelchTTest(valsA, valsB);
+        summary += `WELCH'S T-TEST (UNEQUAL VARIANCE)\n`;
+        summary += `---------------------------------\n`;
+        summary += `Group A : ${grpA} (N=${res.nA}, Mean=${res.meanA.toFixed(4)})\n`;
+        summary += `Group B : ${grpB} (N=${res.nB}, Mean=${res.meanB.toFixed(4)})\n`;
+        summary += `Difference in Means: ${(res.meanA - res.meanB).toFixed(4)}\n`;
+        summary += `t-statistic : ${res.t.toFixed(4)}\n`;
+        summary += `df (Satterthwaite): ${res.df.toFixed(2)}\n`;
+        summary += `p-value     : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance: ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+      } else if (activeMethod === 'paired_t') {
+        try {
+          const res = calculatePairedTTest(valsA, valsB);
+          const meanA = valsA.reduce((a, b) => a + b, 0) / valsA.length;
+          const meanB = valsB.reduce((a, b) => a + b, 0) / valsB.length;
+          summary += `PAIRED T-TEST\n`;
+          summary += `-------------\n`;
+          summary += `Group A : ${grpA} (N=${valsA.length}, Mean=${meanA.toFixed(4)})\n`;
+          summary += `Group B : ${grpB} (N=${valsB.length}, Mean=${meanB.toFixed(4)})\n`;
+          summary += `Number of pairs: ${res.n}\n`;
+          summary += `Mean Difference: ${res.meanDiff.toFixed(4)}\n`;
+          summary += `t-statistic    : ${res.t.toFixed(4)}\n`;
+          summary += `df             : ${res.df}\n`;
+          summary += `p-value        : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+          summary += `Significance   : ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else if (activeMethod === 'mann_whitney') {
+        const res = calculateMannWhitneyU(valsA, valsB);
+        summary += `MANN-WHITNEY U TEST\n`;
+        summary += `-------------------\n`;
+        summary += `Group A : ${grpA} (N=${res.nA})\n`;
+        summary += `Group B : ${grpB} (N=${res.nB})\n`;
+        summary += `U statistic : ${res.U}\n`;
+        summary += `Expected U  : ${res.meanU}\n`;
+        summary += `p-value     : ${res.p < 0.0001 ? '< 0.0001' : res.p.toFixed(4)}\n`;
+        summary += `Significance: ${res.p < 0.05 ? 'Significant (*)' : 'ns (not sig)'}\n`;
+      }
+    }
+    
+    // 2. Generate pairwise comparisons
+    const pairs = [];
+    const comparisonType = document.getElementById('stats-comparison-type').value;
+    if (comparisonType === 'vs_control') {
+      const refGroup = document.getElementById('stats-reference-group').value;
+      groupsToAnalyze.forEach(g => {
+        if (g !== refGroup) {
+          pairs.push([refGroup, g]);
+        }
+      });
+    } else {
+      // all_pairs
+      for (let i = 0; i < groupsToAnalyze.length; i++) {
+        for (let j = i + 1; j < groupsToAnalyze.length; j++) {
+          pairs.push([groupsToAnalyze[i], groupsToAnalyze[j]]);
+        }
+      }
+    }
+    
+    const m = pairs.length;
+    const comparisons = [];
+    
+    let pairwiseMethod = activeMethod;
+    if (activeMethod === 'anova_ordinary') pairwiseMethod = 'student_t';
+    if (activeMethod === 'anova_welch') pairwiseMethod = 'welch_t';
+    if (activeMethod === 'kruskal_wallis') pairwiseMethod = 'mann_whitney';
+    
+    pairs.forEach(pair => {
+      const grpA = pair[0];
+      const grpB = pair[1];
+      const testRes = runPairwiseTest(grpA, grpB, pairwiseMethod, groupData);
+      const pCorrected = Math.min(1.0, testRes.p * m);
+      const sigSymbol = getPValueSymbol(pCorrected);
+      comparisons.push({
+        grpA,
+        grpB,
+        pUncorrected: testRes.p,
+        pCorrected,
+        sigSymbol,
+        stat: testRes.stat,
+        desc: testRes.desc
+      });
+    });
+    
+    if (m > 0) {
+      summary += `\n`;
+      summary += `BONFERRONI MULTIPLE COMPARISONS (多重比较 - Bonferroni 校正)\n`;
+      summary += `----------------------------------------------------------\n`;
+      summary += `Number of Comparisons (m) = ${m}\n\n`;
+      comparisons.forEach((c, idx) => {
+        summary += `${idx + 1}. ${c.grpA} vs ${c.grpB}:\n`;
+        summary += `   Uncorrected p = ${c.pUncorrected < 0.0001 ? '< 0.0001' : c.pUncorrected.toFixed(4)}\n`;
+        summary += `   Corrected p   = ${c.pCorrected < 0.0001 ? '< 0.0001' : c.pCorrected.toFixed(4)} (${c.sigSymbol})\n`;
+        summary += `   Test detail   : ${c.desc}\n`;
+      });
+    }
+    
+    // Save to lastStatsResults
+    lastStatsResults = {
+      type: 'anova',
+      groups: groupsToAnalyze,
+      comparisons: comparisons
+    };
+    
+    // Populate dropdown selector
+    const select = document.getElementById('stats-comparison-select');
+    if (select) {
+      select.innerHTML = '';
+      comparisons.forEach((c, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${c.grpA} vs ${c.grpB} (p=${c.pCorrected < 0.0001 ? '<0.0001' : c.pCorrected.toFixed(4)}, ${c.sigSymbol})`;
+        select.appendChild(opt);
+      });
+      
+      const selectContainer = document.getElementById('stats-comparison-select-container');
+      if (selectContainer) {
+        selectContainer.style.display = comparisons.length > 0 ? 'flex' : 'none';
+      }
+    }
+  }
+  
+  const panel = document.getElementById('stats-results-panel');
+  const summaryText = document.getElementById('stats-summary-text');
+  summaryText.textContent = summary;
+  panel.style.display = 'block';
+}
+
+function getPValueSymbol(p) {
+  if (p < 0.0001) return '****';
+  if (p < 0.001) return '***';
+  if (p < 0.01) return '**';
+  if (p < 0.05) return '*';
+  return 'ns';
+}
+
+function addSignificanceBar() {
+  if (!lastStatsResults || !appState.chartInstance) {
+    alert('Please run a statistical test first.');
+    return;
+  }
+  
+  const select = document.getElementById('stats-comparison-select');
+  if (!select || select.options.length === 0) {
+    alert('No comparisons available. Please run a statistical test first.');
+    return;
+  }
+  
+  const idx = parseInt(select.value, 10);
+  const comp = lastStatsResults.comparisons[idx];
+  if (!comp) {
+    alert('Selected comparison not found.');
+    return;
+  }
+  
+  const grpA = comp.grpA;
+  const grpB = comp.grpB;
+  const sigSymbol = comp.sigSymbol;
+  
+  const tab = getActiveTab();
+  if (!tab) return;
+  
+  const xCol = DOM.xSelect.value;
+  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const yCol = yCols[0];
+  const gCol = DOM.groupSelect.value;
+  
+  const rows = appState.activeData.rows;
+  let idxA, idxB;
+  
+  if (gCol) {
+    const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort();
+    const gIdxA = groupsList.indexOf(grpA);
+    const gIdxB = groupsList.indexOf(grpB);
+    if (gIdxA === -1 || gIdxB === -1) {
+      alert('Could not locate group categories on the chart.');
+      return;
+    }
+    const totalSeriesCount = yCols.length * groupsList.length;
+    const currentSeriesIndexA = yCols.indexOf(yCol) + gIdxA * yCols.length;
+    const currentSeriesIndexB = yCols.indexOf(yCol) + gIdxB * yCols.length;
+    
+    const catIdx = 0;
+    let offset = 0.22;
+    if (appState.currentChartType === 'bar') {
+      offset = 0.65 / totalSeriesCount;
+    }
+    idxA = catIdx + (currentSeriesIndexA - (totalSeriesCount - 1) / 2) * offset;
+    idxB = catIdx + (currentSeriesIndexB - (totalSeriesCount - 1) / 2) * offset;
+  } else {
+    const xCategories = [...new Set(rows.map(r => String(r[xCol])))];
+    idxA = xCategories.indexOf(grpA);
+    idxB = xCategories.indexOf(grpB);
+  }
+  
+  if (idxA === -1 || idxB === -1) {
+    alert('Could not locate group categories on the chart.');
+    return;
+  }
+  
+  const valsA = rows.filter(r => (!gCol && String(r[xCol]) === grpA) || (gCol && String(r[gCol]) === grpA)).map(r => Number(r[yCol])).filter(v => !isNaN(v));
+  const valsB = rows.filter(r => (!gCol && String(r[xCol]) === grpB) || (gCol && String(r[gCol]) === grpB)).map(r => Number(r[yCol])).filter(v => !isNaN(v));
+  const maxVal = Math.max(...valsA, ...valsB) || 0;
+  
+  // Stagger significance bars if there are already some significance bars
+  const sigAnns = tab.annotations.filter(ann => ann.isSig && ann.id.endsWith('_line_main'));
+  const staggerFactor = 1 + sigAnns.length * 0.45;
+  const range = (maxVal === 0) ? 10 : maxVal * 0.12 * staggerFactor;
+  const barYVal = maxVal + range;
+  
+  const pixelA = appState.chartInstance.convertToPixel({ finder: { seriesIndex: 0 } }, [idxA, barYVal]);
+  const pixelB = appState.chartInstance.convertToPixel({ finder: { seriesIndex: 0 } }, [idxB, barYVal]);
+  
+  if (!pixelA || !pixelB) {
+    alert('Failed to calculate chart pixel locations. Make sure the chart is drawn.');
+    return;
+  }
+  
+  const bracketId = 'ann_sig_' + Date.now();
+  const barColor = '#64748b';
+  const yBar = pixelA[1];
+  const yTickLow = yBar + 8;
+  
+  tab.annotations.push({
+    id: bracketId + '_line_main',
+    type: 'arrow',
+    x1: pixelA[0],
+    y1: yBar,
+    x2: pixelB[0],
+    y2: yBar,
+    color: barColor,
+    strokeWidth: 1.5,
+    isSig: true,
+    noArrow: true
+  });
+  
+  tab.annotations.push({
+    id: bracketId + '_line_left',
+    type: 'arrow',
+    x1: pixelA[0],
+    y1: yBar,
+    x2: pixelA[0],
+    y2: yTickLow,
+    color: barColor,
+    strokeWidth: 1.5,
+    isSig: true,
+    noArrow: true
+  });
+  
+  tab.annotations.push({
+    id: bracketId + '_line_right',
+    type: 'arrow',
+    x1: pixelB[0],
+    y1: yBar,
+    x2: pixelB[0],
+    y2: yTickLow,
+    color: barColor,
+    strokeWidth: 1.5,
+    isSig: true,
+    noArrow: true
+  });
+  
+  const xCenter = (pixelA[0] + pixelB[0]) / 2;
+  tab.annotations.push({
+    id: bracketId + '_text',
+    type: 'text',
+    x: xCenter - 6,
+    y: yBar - 6,
+    text: sigSymbol,
+    color: barColor,
+    fontSize: 14,
+    isSig: true
+  });
+  
+  drawAnnotations();
 }
 
 // ==============================================================================
