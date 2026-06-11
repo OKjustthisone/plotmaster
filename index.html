@@ -140,6 +140,17 @@
               <span>Split Groups into Tabs (多图展示)</span>
             </label>
           </div>
+          
+          <!-- Data Filtering (数据筛选) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Data Filters (数据筛选)</label>
+            <div id="chart-filters-container" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+              <!-- Dynamic filters will be rendered here -->
+            </div>
+            <button class="btn btn-secondary" id="btn-add-chart-filter" style="font-size: 11px; padding: 4px 8px; margin-top: 6px; width: 100%; justify-content: center; display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="plus" style="width:12px; height:12px;"></i> Add Filter Condition
+            </button>
+          </div>
         </section>
 
         <!-- Section 4: Color Palettes -->
@@ -275,6 +286,53 @@
               <option value="Times New Roman">Times New Roman (Academic Serif)</option>
               <option value="Courier New">Courier New (Monospace)</option>
             </select>
+          </div>
+
+          <!-- Font Size and Color Customization -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Font Settings (字体与颜色)</label>
+            
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Chart Title Font -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Title (标题):</span>
+                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                  <input type="number" id="title-font-size" value="16" min="8" max="48" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
+                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <input type="color" id="title-font-color" value="#334155" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Title Color">
+                </div>
+              </div>
+              
+              <!-- Axis Titles Font -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Axis Title (轴标题):</span>
+                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                  <input type="number" id="axis-title-font-size" value="13" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
+                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <input type="color" id="axis-title-font-color" value="#334155" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Axis Title Color">
+                </div>
+              </div>
+
+              <!-- Axis Values Font -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Axis Value (轴数值):</span>
+                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                  <input type="number" id="axis-value-font-size" value="12" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
+                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <input type="color" id="axis-value-font-color" value="#475569" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Axis Value Color">
+                </div>
+              </div>
+
+              <!-- Legend Font -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Legend (图例):</span>
+                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                  <input type="number" id="legend-font-size" value="12" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
+                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <input type="color" id="legend-font-color" value="#475569" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Legend Color">
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -444,7 +502,7 @@
             <button class="btn btn-secondary" id="btn-run-stats" style="justify-content: center; width: 100%; font-size: 12px; padding: 6px 12px; margin-top: 4px;">Run Statistical Test</button>
           </div>
           <div id="stats-results-panel" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--accent-color); border-radius: var(--radius-md); padding: 10px; font-size: 12px; margin-top: 8px;">
-            <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; max-height: 150px; overflow-y: auto;"></div>
+            <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; max-height: 350px; overflow-y: auto;"></div>
             
             <!-- Significance Bar Selector (Toggled in JS) -->
             <div id="stats-comparison-select-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; flex-direction: column; gap: 4px;">

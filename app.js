@@ -581,7 +581,22 @@ function setupEventListeners() {
   });
   
   DOM.fontSelect.addEventListener('change', () => { saveActiveTabState(); if (appState.activeData) drawChart(); });
-  DOM.themeSelect.addEventListener('change', () => { saveActiveTabState(); if (appState.activeData) drawChart(); });
+  DOM.themeSelect.addEventListener('change', () => {
+    const theme = DOM.themeSelect.value;
+    if (theme === 'dark') {
+      document.getElementById('title-font-color').value = '#f8fafc';
+      document.getElementById('axis-title-font-color').value = '#f8fafc';
+      document.getElementById('axis-value-font-color').value = '#cbd5e1';
+      document.getElementById('legend-font-color').value = '#cbd5e1';
+    } else {
+      document.getElementById('title-font-color').value = '#334155';
+      document.getElementById('axis-title-font-color').value = '#334155';
+      document.getElementById('axis-value-font-color').value = '#475569';
+      document.getElementById('legend-font-color').value = '#475569';
+    }
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
   DOM.gridX.addEventListener('change', () => { saveActiveTabState(); if (appState.activeData) drawChart(); });
   DOM.gridY.addEventListener('change', () => { saveActiveTabState(); if (appState.activeData) drawChart(); });
 
@@ -640,6 +655,28 @@ function setupEventListeners() {
   // Stats buttons
   document.getElementById('btn-run-stats').addEventListener('click', runStatisticalTest);
   document.getElementById('btn-add-sig-bar').addEventListener('click', addSignificanceBar);
+
+  // Add chart filter button
+  const addFilterBtn = document.getElementById('btn-add-chart-filter');
+  if (addFilterBtn) {
+    addFilterBtn.addEventListener('click', () => {
+      addChartFilterRow();
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  // Font style event listeners
+  ['title-font-size', 'title-font-color', 'axis-title-font-size', 'axis-title-font-color',
+   'axis-value-font-size', 'axis-value-font-color', 'legend-font-size', 'legend-font-color'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        saveActiveTabState();
+        if (appState.activeData) drawChart();
+      });
+    }
+  });
   
   // Tab buttons
   document.getElementById('add-chart-tab').addEventListener('click', () => {
@@ -864,6 +901,19 @@ function updateMappingDropdowns() {
     DOM.groupSelect.appendChild(optG);
   });
 
+  // Also update any active chart filter column selects
+  document.querySelectorAll('.chart-filter-col').forEach(colSelect => {
+    const selectedVal = colSelect.value;
+    colSelect.innerHTML = '';
+    headers.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      if (h === selectedVal) opt.selected = true;
+      colSelect.appendChild(opt);
+    });
+  });
+
   // Populate Stats Filter Column Dropdown
   const statsFilterCol = document.getElementById('stats-filter-col');
   if (statsFilterCol) {
@@ -890,6 +940,136 @@ function updateMappingDropdowns() {
 
   updateStatsFilterValues();
   updateColumnMappingInputs(appState.currentChartType);
+}
+
+// Add filter row dynamically inside Column Mapping Data Filters
+function addChartFilterRow(colName = '', operator = '=', value = '') {
+  const container = document.getElementById('chart-filters-container');
+  const data = appState.activeData;
+  if (!data) return;
+  
+  const row = document.createElement('div');
+  row.className = 'chart-filter-row';
+  row.style = 'display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.15); padding: 4px; border-radius: var(--radius-sm); margin-top: 4px;';
+  
+  // 1. Column select
+  const colSelect = document.createElement('select');
+  colSelect.className = 'form-select chart-filter-col';
+  colSelect.style = 'font-size: 11px; padding: 2px; flex: 2; height: auto; min-width: 0;';
+  data.headers.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h;
+    if (h === colName) opt.selected = true;
+    colSelect.appendChild(opt);
+  });
+  
+  // 2. Operator select
+  const opSelect = document.createElement('select');
+  opSelect.className = 'form-select chart-filter-op';
+  opSelect.style = 'font-size: 11px; padding: 2px; flex: 1.5; height: auto; min-width: 0;';
+  const ops = [
+    { value: '=', label: '=' },
+    { value: '!=', label: '≠' },
+    { value: '>', label: '>' },
+    { value: '>=', label: '≥' },
+    { value: '<', label: '<' },
+    { value: '<=', label: '≤' },
+    { value: 'contains', label: 'contains' },
+    { value: 'not_contains', label: 'not contains' }
+  ];
+  ops.forEach(op => {
+    const opt = document.createElement('option');
+    opt.value = op.value;
+    opt.textContent = op.label;
+    if (op.value === operator) opt.selected = true;
+    opSelect.appendChild(opt);
+  });
+  
+  // 3. Value input
+  const valInput = document.createElement('input');
+  valInput.type = 'text';
+  valInput.className = 'form-input chart-filter-val';
+  valInput.placeholder = 'Value';
+  valInput.value = value;
+  valInput.style = 'font-size: 11px; padding: 2px 4px; flex: 2; min-width: 0; height: auto;';
+  
+  // 4. Remove button
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'btn btn-secondary';
+  removeBtn.style = 'padding: 2px 4px; font-size: 11px; height: auto; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);';
+  removeBtn.innerHTML = '✕';
+  removeBtn.title = 'Remove Filter';
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  
+  row.appendChild(colSelect);
+  row.appendChild(opSelect);
+  row.appendChild(valInput);
+  row.appendChild(removeBtn);
+  
+  // Add change listeners to auto-draw/save on change
+  [colSelect, opSelect].forEach(el => {
+    el.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  });
+  valInput.addEventListener('input', () => {
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  
+  container.appendChild(row);
+  return row;
+}
+
+// Evaluate both global data table filters and tab-specific mapping filters
+function getPlotFilteredRows() {
+  const rows = getFilteredRows();
+  const filterRows = document.querySelectorAll('.chart-filter-row');
+  if (filterRows.length === 0) return rows;
+  
+  return rows.filter(row => {
+    return Array.from(filterRows).every(rowEl => {
+      const col = rowEl.querySelector('.chart-filter-col').value;
+      const op = rowEl.querySelector('.chart-filter-op').value;
+      const val = rowEl.querySelector('.chart-filter-val').value.trim();
+      
+      if (val === '') return true; // ignore empty filter values
+      
+      const rawVal = row[col];
+      if (rawVal === undefined || rawVal === null) return false;
+      
+      const valStr = String(rawVal);
+      const valNum = parseFloat(rawVal);
+      const filterNum = parseFloat(val);
+      
+      switch (op) {
+        case '=':
+          return (!isNaN(valNum) && !isNaN(filterNum)) ? valNum === filterNum : valStr.toLowerCase() === val.toLowerCase();
+        case '!=':
+          return (!isNaN(valNum) && !isNaN(filterNum)) ? valNum !== filterNum : valStr.toLowerCase() !== val.toLowerCase();
+        case '>':
+          return !isNaN(valNum) && !isNaN(filterNum) && valNum > filterNum;
+        case '>=':
+          return !isNaN(valNum) && !isNaN(filterNum) && valNum >= filterNum;
+        case '<':
+          return !isNaN(valNum) && !isNaN(filterNum) && valNum < filterNum;
+        case '<=':
+          return !isNaN(valNum) && !isNaN(filterNum) && valNum <= filterNum;
+        case 'contains':
+          return valStr.toLowerCase().includes(val.toLowerCase());
+        case 'not_contains':
+          return !valStr.toLowerCase().includes(val.toLowerCase());
+        default:
+          return true;
+      }
+    });
+  });
 }
 
 // Helper to coerce value into numeric if possible
@@ -1347,6 +1527,16 @@ function drawChart() {
   let axisLineStyle = { lineStyle: { color: '#64748b' } };
   let backgroundColor = '#ffffff';
 
+  // Retrieve user Font and Color preferences
+  const titleSize = parseInt(document.getElementById('title-font-size').value, 10) || 16;
+  const titleColor = document.getElementById('title-font-color').value;
+  const axisTitleSize = parseInt(document.getElementById('axis-title-font-size').value, 10) || 13;
+  const axisTitleColor = document.getElementById('axis-title-font-color').value;
+  const axisValSize = parseInt(document.getElementById('axis-value-font-size').value, 10) || 12;
+  const axisValColor = document.getElementById('axis-value-font-color').value;
+  const legendSize = parseInt(document.getElementById('legend-font-size').value, 10) || 12;
+  const legendColor = document.getElementById('legend-font-color').value;
+
   if (theme === 'dark') {
     textStyle.color = '#f8fafc';
     gridLineStyle.lineStyle.color = 'rgba(255,255,255,0.06)';
@@ -1373,7 +1563,11 @@ function drawChart() {
   const legendData = [];
   let legendConfig = {
     show: legendPos !== 'hide',
-    textStyle: textStyle
+    textStyle: {
+      fontFamily: font,
+      fontSize: legendSize,
+      color: legendColor
+    }
   };
   if (legendPos === 'bottom') {
     legendConfig.top = gridTop + gridHeight + legendDistPx + 25; // 25px for X-axis labels and ticks
@@ -1411,8 +1605,17 @@ function drawChart() {
       name: chartXLabel || xCol,
       nameLocation: 'middle',
       nameGap: 30,
-      axisLabel: textStyle,
-      nameTextStyle: { ...textStyle, fontWeight: 'bold' },
+      axisLabel: {
+        fontFamily: font,
+        fontSize: axisValSize,
+        color: axisValColor
+      },
+      nameTextStyle: {
+        fontFamily: font,
+        fontSize: axisTitleSize,
+        color: axisTitleColor,
+        fontWeight: 'bold'
+      },
       axisLine: axisLineStyle,
       axisTick: axisLineStyle,
       splitLine: {
@@ -1425,8 +1628,17 @@ function drawChart() {
       name: chartYLabel || yCols.join(' / '),
       nameLocation: 'middle',
       nameGap: 45,
-      axisLabel: textStyle,
-      nameTextStyle: { ...textStyle, fontWeight: 'bold' },
+      axisLabel: {
+        fontFamily: font,
+        fontSize: axisValSize,
+        color: axisValColor
+      },
+      nameTextStyle: {
+        fontFamily: font,
+        fontSize: axisTitleSize,
+        color: axisTitleColor,
+        fontWeight: 'bold'
+      },
       axisLine: axisLineStyle,
       axisTick: axisLineStyle,
       splitLine: {
@@ -1442,7 +1654,12 @@ function drawChart() {
       text: chartTitle,
       left: 'center',
       top: 15,
-      textStyle: { ...textStyle, fontSize: 16, fontWeight: 'bold' }
+      textStyle: {
+        fontFamily: font,
+        fontSize: titleSize,
+        color: titleColor,
+        fontWeight: 'bold'
+      }
     };
   }
 
@@ -1453,13 +1670,13 @@ function drawChart() {
   const boxWidthPercent = parseInt(DOM.boxWidth.value);
   
   // Group selection checklist filtering
-  const rows = getFilteredRows();
+  const rows = getPlotFilteredRows();
   const activeGroupCheckboxes = document.querySelectorAll('.group-filter-checkbox');
   let activeGroups = [];
   if (activeGroupCheckboxes.length > 0) {
     activeGroups = Array.from(activeGroupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
   }
-
+  
   let filteredRows = rows;
   if (gCol && activeGroupCheckboxes.length > 0) {
     filteredRows = rows.filter(r => activeGroups.includes(String(r[gCol])));
@@ -2235,28 +2452,55 @@ function drawChart() {
     activeTab.markingLines.forEach(ml => {
       const isY = ml.axis === 'y';
       const symbolType = ml.symbol === 'none' ? 'none' : ml.symbol;
-      const item = {
-        name: ml.label || '',
-        lineStyle: {
-          color: ml.style === 'none' ? 'transparent' : ml.color,
-          type: ml.style === 'none' ? 'solid' : ml.style,
-          width: ml.style === 'none' ? 0 : ml.width
-        },
-        label: {
-          show: ml.label ? true : false,
-          position: isY ? 'start' : 'start',
-          formatter: ml.label ? `${ml.label}: {c}` : '{c}'
-        },
-        symbol: [symbolType, 'none']
-      };
       
-      if (isY) {
-        item.yAxis = ml.value;
-      } else {
-        item.xAxis = ml.value;
+      // 1. Line component (if style !== 'none')
+      if (ml.style !== 'none') {
+        const lineItem = {
+          name: ml.label || '',
+          lineStyle: {
+            color: ml.color,
+            type: ml.style,
+            width: ml.width
+          },
+          label: {
+            show: ml.label ? true : false,
+            position: isY ? 'start' : 'start',
+            formatter: ml.label ? `${ml.label}: {c}` : '{c}'
+          },
+          symbol: ['none', 'none']
+        };
+        if (isY) {
+          lineItem.yAxis = ml.value;
+        } else {
+          lineItem.xAxis = ml.value;
+        }
+        markLineData.push(lineItem);
       }
       
-      markLineData.push(item);
+      // 2. Symbol component (if symbol !== 'none')
+      if (symbolType !== 'none') {
+        const symbolItem = {
+          name: ml.label || '',
+          lineStyle: {
+            color: 'transparent',
+            type: 'solid',
+            width: 0
+          },
+          label: {
+            show: (ml.style === 'none' && ml.label) ? true : false,
+            position: isY ? 'start' : 'start',
+            formatter: ml.label ? `${ml.label}: {c}` : '{c}'
+          },
+          symbol: [symbolType, 'none'],
+          symbolSize: 8
+        };
+        if (isY) {
+          symbolItem.yAxis = ml.value;
+        } else {
+          symbolItem.xAxis = ml.value;
+        }
+        markLineData.push(symbolItem);
+      }
     });
     
     option.series.push({
@@ -2739,6 +2983,19 @@ function createChartTab(name = null, config = null) {
     ySplitMode: '1',
     ySplitParams: null,
     
+    // Tab filters
+    chartFilters: appState.activeData ? [{ col: appState.activeData.headers[0] || '', op: '=', val: '' }] : [],
+
+    // Tab Font overrides
+    titleFontSize: 16,
+    titleFontColor: '#334155',
+    axisTitleFontSize: 13,
+    axisTitleFontColor: '#334155',
+    axisValueFontSize: 12,
+    axisValueFontColor: '#475569',
+    legendFontSize: 12,
+    legendFontColor: '#475569',
+
     // SVG annotations array
     annotations: []
   };
@@ -2807,6 +3064,38 @@ function saveActiveTabState() {
   tab.yNumFormat = yFmtEl ? yFmtEl.value : 'std';
   tab.ySplitMode = ySplitEl ? ySplitEl.value : '1';
   tab.ySplitParams = (tab.ySplitMode !== '1') ? getYSplitParamsFromDOM() : null;
+
+  // Chart Filters saving
+  const filterRows = document.querySelectorAll('.chart-filter-row');
+  const filters = [];
+  filterRows.forEach(row => {
+    const colSelect = row.querySelector('.chart-filter-col');
+    const opSelect = row.querySelector('.chart-filter-op');
+    const valInput = row.querySelector('.chart-filter-val');
+    if (colSelect && opSelect && valInput) {
+      filters.push({ col: colSelect.value, op: opSelect.value, val: valInput.value });
+    }
+  });
+  tab.chartFilters = filters;
+
+  // Font settings saving
+  const titleSizeEl = document.getElementById('title-font-size');
+  const titleColorEl = document.getElementById('title-font-color');
+  const axisTitleSizeEl = document.getElementById('axis-title-font-size');
+  const axisTitleColorEl = document.getElementById('axis-title-font-color');
+  const axisValueSizeEl = document.getElementById('axis-value-font-size');
+  const axisValueColorEl = document.getElementById('axis-value-font-color');
+  const legendSizeEl = document.getElementById('legend-font-size');
+  const legendColorEl = document.getElementById('legend-font-color');
+
+  if (titleSizeEl) tab.titleFontSize = parseInt(titleSizeEl.value, 10) || 16;
+  if (titleColorEl) tab.titleFontColor = titleColorEl.value;
+  if (axisTitleSizeEl) tab.axisTitleFontSize = parseInt(axisTitleSizeEl.value, 10) || 13;
+  if (axisTitleColorEl) tab.axisTitleFontColor = axisTitleColorEl.value;
+  if (axisValueSizeEl) tab.axisValueFontSize = parseInt(axisValueSizeEl.value, 10) || 12;
+  if (axisValueColorEl) tab.axisValueFontColor = axisValueColorEl.value;
+  if (legendSizeEl) tab.legendFontSize = parseInt(legendSizeEl.value, 10) || 12;
+  if (legendColorEl) tab.legendFontColor = legendColorEl.value;
   
   // Annotations
   tab.annotations = serializeAnnotations();
@@ -2926,6 +3215,41 @@ function applyChartTabState(tab) {
   if (yFmtEl) yFmtEl.value = tab.yNumFormat || 'std';
   if (ySplitEl) ySplitEl.value = tab.ySplitMode || '1';
   renderYSplitControls(tab.ySplitMode || '1', tab.ySplitParams);
+
+  // Restore Font style customization
+  const titleSizeEl = document.getElementById('title-font-size');
+  const titleColorEl = document.getElementById('title-font-color');
+  const axisTitleSizeEl = document.getElementById('axis-title-font-size');
+  const axisTitleColorEl = document.getElementById('axis-title-font-color');
+  const axisValueSizeEl = document.getElementById('axis-value-font-size');
+  const axisValueColorEl = document.getElementById('axis-value-font-color');
+  const legendSizeEl = document.getElementById('legend-font-size');
+  const legendColorEl = document.getElementById('legend-font-color');
+
+  if (titleSizeEl) titleSizeEl.value = tab.titleFontSize !== undefined ? tab.titleFontSize : 16;
+  if (titleColorEl) titleColorEl.value = tab.titleFontColor || '#334155';
+  if (axisTitleSizeEl) axisTitleSizeEl.value = tab.axisTitleFontSize !== undefined ? tab.axisTitleFontSize : 13;
+  if (axisTitleColorEl) axisTitleColorEl.value = tab.axisTitleFontColor || '#334155';
+  if (axisValueSizeEl) axisValueSizeEl.value = tab.axisValueFontSize !== undefined ? tab.axisValueFontSize : 12;
+  if (axisValueColorEl) axisValueColorEl.value = tab.axisValueFontColor || '#475569';
+  if (legendSizeEl) legendSizeEl.value = tab.legendFontSize !== undefined ? tab.legendFontSize : 12;
+  if (legendColorEl) legendColorEl.value = tab.legendFontColor || '#475569';
+
+  // Restore tab-specific data filters
+  const filtersContainer = document.getElementById('chart-filters-container');
+  if (filtersContainer) {
+    filtersContainer.innerHTML = '';
+    if (tab.chartFilters && tab.chartFilters.length > 0) {
+      tab.chartFilters.forEach(f => {
+        addChartFilterRow(f.col, f.op, f.val);
+      });
+    } else {
+      // If no filters exist, by default add one empty filter row
+      if (appState.activeData) {
+        addChartFilterRow();
+      }
+    }
+  }
   
   // Restore Column Mapping labels for active chart type
   updateColumnMappingInputs(tab.chartType || appState.currentChartType);
@@ -5116,7 +5440,7 @@ function runStatisticalTest() {
   const xCol = DOM.xSelect.value;
   const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
   const gCol = DOM.groupSelect.value;
-  let rows = getFilteredRows();
+  let rows = getPlotFilteredRows();
   
   if (!xCol || yCols.length === 0 || rows.length === 0) {
     alert('Please load data and map columns first.');
