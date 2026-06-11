@@ -6,27 +6,27 @@
 const PALETTES = {
   nature: {
     name: 'Nature Publishing Group',
-    colors: ['#203764', '#ED7D31', '#8FAADC', '#70AD47', '#1F4E79', '#A5A5A5', '#8EA9DB', '#D9E1F2', '#2F5597', '#5B9BD5', '#4472C4', '#264478', '#3C64B1', '#305496', '#8FAADC']
+    colors: ['#0C457D', '#E87D22', '#169E57', '#8E28B0', '#EEB609', '#00A896', '#C1121F', '#5C677D', '#9A8C98', '#6F7F1C', '#D90429', '#028090', '#3D348B', '#E76F51', '#7F4F24']
   },
   science: {
     name: 'Science Journal',
-    colors: ['#0A2C5C', '#D1EDF2', '#325A9B', '#AB4040', '#6688C3', '#0E4D64', '#99B2DC', '#24809C', '#CCD7F0', '#5BB0C5', '#731F1F', '#98D3DF', '#D27676', '#E7A9A9', '#F6D4D4']
+    colors: ['#1D3557', '#E63946', '#F4A261', '#2A9D8F', '#9B5DE5', '#00BBF9', '#8C3B1A', '#2B2D42', '#3F37C9', '#4895EF', '#F72585', '#7209B7', '#344E41', '#E7C169', '#E07A5F']
   },
   lancet: {
     name: 'The Lancet',
-    colors: ['#C00000', '#002060', '#E06666', '#1F4E78', '#F2B2B2', '#2F5597', '#F9D9D9', '#8EA9DB', '#008000', '#7030A0', '#38761D', '#8E7CC3', '#55A630', '#C27BA0', '#80ED99']
+    colors: ['#BC0000', '#002060', '#FFC000', '#00B050', '#7030A0', '#00A2E8', '#8B0000', '#2E4057', '#0B6623', '#F26419', '#6B2D5C', '#5C3D2E', '#3A86C8', '#FF6B6B', '#5A189A']
   },
   nejm: {
     name: 'New England Journal of Medicine',
-    colors: ['#1E3F66', '#A63A3A', '#2E5B88', '#C26B6B', '#528AAE', '#DFACAC', '#BCD2EE', '#F4DCDC', '#E6EEF8', '#1E6B38', '#7E1919', '#388E50', '#5EAF75', '#99D4A7', '#D1EED8']
+    colors: ['#184A7A', '#B22222', '#008080', '#6F4E37', '#DAA520', '#6A7B83', '#7A2240', '#48C9B0', '#2B6CB0', '#EC7063', '#808000', '#2ECC71', '#F5B041', '#E59866', '#5D4037']
   },
   jama: {
     name: 'JAMA (Amer. Medical Assoc.)',
-    colors: ['#000000', '#D00000', '#333333', '#F0803C', '#666666', '#F4D35E', '#999999', '#3F88C5', '#CCCCCC', '#007E8A', '#1C3144', '#7209B7', '#A2A7A5', '#4CC9F0', '#335C67']
+    colors: ['#111111', '#E63946', '#1D3557', '#F4A261', '#4A4E69', '#9B5DE5', '#560BAD', '#84A59D', '#D90429', '#00B4D8', '#F26419', '#FFD166', '#03045E', '#7209B7', '#2A9D8F']
   },
   cell: {
     name: 'Cell Press',
-    colors: ['#800000', '#004D40', '#B30000', '#00796B', '#E60000', '#009688', '#FF3333', '#4DB6AC', '#FF8080', '#80CBC4', '#1A237E', '#283593', '#3F51B5', '#7986CB', '#9FA8DA']
+    colors: ['#8E0000', '#0E6251', '#1A5276', '#D68910', '#5B2C6F', '#CA6F1E', '#D01C8B', '#2C3E50', '#27AE60', '#FF85A2', '#8A6D3B', '#3498DB', '#196F3D', '#B03A2E', '#6C3483']
   },
   ggplot2: {
     name: 'Classic ggplot2',
@@ -34,17 +34,43 @@ const PALETTES = {
   },
   warm: {
     name: 'Warm Academic',
-    colors: ['#A32D22', '#FAD291', '#D25E4B', '#8C5333', '#ECA289', '#BC8161', '#FAD6C6', '#DEC1AE', '#D96B27', '#8A1538', '#F29E53', '#C43D60', '#E2849A', '#F7D0D8', '#A36B22']
+    colors: ['#C0392B', '#F39C12', '#E59866', '#7E5109', '#922B21', '#D35400', '#F1948A', '#F5C242', '#641E16', '#7D3C98', '#E67E22', '#BA4A00', '#A04000', '#EDBB99', '#78281F']
   },
   cool: {
     name: 'Cool Academic',
-    colors: ['#0B4F6C', '#54C6BE', '#01BAEF', '#82D8D3', '#8A89C7', '#EBF8F7', '#B4B8C5', '#1D2D44', '#FBFBFF', '#3E5C76', '#183A37', '#748CAB', '#048A81', '#A3BCF9', '#D0DBF9']
+    colors: ['#2E4053', '#16A085', '#2980B9', '#27AE60', '#8E44AD', '#A3E4D7', '#7FB3D5', '#1B4F72', '#4A235A', '#2471A3', '#117A65', '#1F3A60', '#A569BD', '#388E8E', '#48C9B0']
   },
   retro: {
     name: 'Retro Academic',
-    colors: ['#4E6151', '#CD3700', '#7F9F7F', '#FF4500', '#B8C7B8', '#FFA07A', '#DCE3DC', '#4A708B', '#8B5A2B', '#6CA6CD', '#CD5C5C', '#B0E2FF', '#8B2500', '#D2B48C', '#F4A460']
+    colors: ['#556B2F', '#D35400', '#5D6D7E', '#C0392B', '#B7950B', '#2C3E50', '#A9DFBF', '#78281F', '#17A589', '#D4AC0D', '#5B2C6F', '#EC7063', '#7D3C98', '#A04000', '#1E8449']
+  },
+  red_grad: {
+    name: 'Red Gradient (红色渐变)',
+    colors: ['#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#80000a', '#540005']
+  },
+  green_grad: {
+    name: 'Green Gradient (绿色渐变)',
+    colors: ['#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#004d1f', '#003010']
+  },
+  blue_grad: {
+    name: 'Blue Gradient (蓝色渐变)',
+    colors: ['#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594', '#082d6b', '#051b40']
+  },
+  orange_grad: {
+    name: 'Orange Gradient (橙色渐变)',
+    colors: ['#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#a63603', '#7f2704', '#541500']
+  },
+  purple_grad: {
+    name: 'Purple Gradient (紫色渐变)',
+    colors: ['#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d', '#280050']
   }
 };
+
+// Prepend black (#000000) to all palettes, shift others, and remove the last color
+Object.keys(PALETTES).forEach(key => {
+  PALETTES[key].colors.unshift('#000000');
+  PALETTES[key].colors.pop();
+});
 
 // 2. Global State Management
 let appState = {
@@ -53,8 +79,8 @@ let appState = {
   sheets: {},            // Map of sheetName -> { headers: [], rows: [] }
   activeSheetName: '',
   activeData: null,      // Reference to the active sheet's { headers: [], rows: [] }
-  currentChartType: 'scatter',
-  selectedPalette: 'nature',
+  currentChartType: 'line',
+  selectedPalette: 'ggplot2',
   chartInstance: null,
   renderer: 'canvas',     // 'canvas' or 'svg' for vector export
   savedCharts: [],        // Saved chart sheets tabs
@@ -132,6 +158,7 @@ function init() {
   renderPalettePicker();
   setupEventListeners();
   setupAnnotationToolbar();
+  loadStyleTemplatesDropdown();
 }
 
 // Dynamic Variable Mapping Inputs matching
@@ -331,6 +358,12 @@ function renderYSplitControls(mode, params = null) {
 function renderPalettePicker() {
   if (!DOM.paletteSelect) return;
   DOM.paletteSelect.innerHTML = '';
+  
+  const bulkPaletteSelect = document.getElementById('bulk-manual-palette');
+  if (bulkPaletteSelect) {
+    bulkPaletteSelect.innerHTML = '<option value="">-- Select Palette --</option>';
+  }
+
   Object.keys(PALETTES).forEach(key => {
     const pal = PALETTES[key];
     const opt = document.createElement('option');
@@ -340,6 +373,13 @@ function renderPalettePicker() {
       opt.selected = true;
     }
     DOM.paletteSelect.appendChild(opt);
+
+    if (bulkPaletteSelect) {
+      const optBulk = document.createElement('option');
+      optBulk.value = key;
+      optBulk.textContent = pal.name;
+      bulkPaletteSelect.appendChild(optBulk);
+    }
   });
   updatePalettePreviewBar();
 }
@@ -348,7 +388,7 @@ function updatePalettePreviewBar() {
   const previewBar = document.getElementById('palette-preview-bar');
   if (!previewBar) return;
   previewBar.innerHTML = '';
-  const key = appState.selectedPalette || 'nature';
+  const key = appState.selectedPalette || 'ggplot2';
   const pal = PALETTES[key];
   if (pal && pal.colors) {
     pal.colors.slice(0, 15).forEach(c => {
@@ -418,6 +458,7 @@ function setupEventListeners() {
       if (select === DOM.groupSelect) {
         updateGroupCheckboxes();
       }
+      updateManualStylesList();
       updateStatsGroupsList();
       saveActiveTabState();
       recommendStatisticalTest();
@@ -677,7 +718,147 @@ function setupEventListeners() {
       });
     }
   });
-  
+  // Point Shape Change
+  const pointShapeSelect = document.getElementById('point-shape-select');
+  if (pointShapeSelect) {
+    pointShapeSelect.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  // Axis Limits Inputs Changes
+  ['axis-xmin', 'axis-xmax', 'axis-ymin', 'axis-ymax'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        saveActiveTabState();
+        if (appState.activeData) drawChart();
+      });
+    }
+  });
+
+  // Restore Defaults click listener
+  const btnRestoreFont = document.getElementById('btn-restore-font-defaults');
+  if (btnRestoreFont) {
+    btnRestoreFont.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('title-font-size').value = 16;
+      document.getElementById('axis-title-font-size').value = 13;
+      document.getElementById('axis-value-font-size').value = 12;
+      document.getElementById('legend-font-size').value = 12;
+      
+      const theme = DOM.themeSelect.value;
+      if (theme === 'dark') {
+        document.getElementById('title-font-color').value = '#f8fafc';
+        document.getElementById('axis-title-font-color').value = '#f8fafc';
+        document.getElementById('axis-value-font-color').value = '#cbd5e1';
+        document.getElementById('legend-font-color').value = '#cbd5e1';
+      } else {
+        document.getElementById('title-font-color').value = '#334155';
+        document.getElementById('axis-title-font-color').value = '#334155';
+        document.getElementById('axis-value-font-color').value = '#475569';
+        document.getElementById('legend-font-color').value = '#475569';
+      }
+      
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  // Style Templates listeners
+  const btnSaveTemplate = document.getElementById('btn-save-template');
+  if (btnSaveTemplate) {
+    btnSaveTemplate.addEventListener('click', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('template-name-input').value;
+      saveStyleTemplate(name);
+    });
+  }
+
+  const btnDeleteTemplate = document.getElementById('btn-delete-template');
+  if (btnDeleteTemplate) {
+    btnDeleteTemplate.addEventListener('click', (e) => {
+      e.preventDefault();
+      const select = document.getElementById('template-select');
+      if (select && select.value) {
+        deleteStyleTemplate(select.value);
+      } else {
+        alert('Please select a template to delete.');
+      }
+    });
+  }
+
+  const templateSelect = document.getElementById('template-select');
+  if (templateSelect) {
+    templateSelect.addEventListener('change', () => {
+      if (templateSelect.value) {
+        applyStyleTemplate(templateSelect.value);
+      }
+    });
+  }
+
+  // Manual styling checkbox and bulk apply button
+  const manualStyleCheckbox = document.getElementById('manual-style-checkbox');
+  if (manualStyleCheckbox) {
+    manualStyleCheckbox.addEventListener('change', () => {
+      updateManualStylesList();
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  const btnApplyBulkStyle = document.getElementById('btn-apply-bulk-style');
+  if (btnApplyBulkStyle) {
+    btnApplyBulkStyle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const bulkColor = document.getElementById('bulk-manual-color').value;
+      const bulkPalette = document.getElementById('bulk-manual-palette').value;
+      const bulkShape = document.getElementById('bulk-manual-shape').value;
+      
+      const rows = Array.from(document.querySelectorAll('#manual-styles-list .manual-style-row'));
+      const checkedRows = rows.filter(row => {
+        const cb = row.querySelector('.manual-target-enable');
+        return cb && cb.checked;
+      });
+
+      if (checkedRows.length === 0) {
+        alert('Please check at least one group in the list below to apply styles.');
+        return;
+      }
+
+      let changed = false;
+
+      if (bulkPalette && PALETTES[bulkPalette]) {
+        const colors = PALETTES[bulkPalette].colors;
+        checkedRows.forEach((row, idx) => {
+          const cp = row.querySelector('.manual-target-color');
+          const ss = row.querySelector('.manual-target-shape');
+          if (cp) {
+            cp.value = colors[idx % colors.length];
+          }
+          if (ss && bulkShape) {
+            ss.value = bulkShape;
+          }
+          changed = true;
+        });
+      } else {
+        checkedRows.forEach(row => {
+          const cp = row.querySelector('.manual-target-color');
+          const ss = row.querySelector('.manual-target-shape');
+          if (cp && bulkColor) cp.value = bulkColor;
+          if (ss && bulkShape) ss.value = bulkShape;
+          changed = true;
+        });
+      }
+
+      if (changed) {
+        saveActiveTabState();
+        if (appState.activeData) drawChart();
+      }
+    });
+  }
+
   // Tab buttons
   document.getElementById('add-chart-tab').addEventListener('click', () => {
     saveActiveTabState();
@@ -940,6 +1121,7 @@ function updateMappingDropdowns() {
 
   updateStatsFilterValues();
   updateColumnMappingInputs(appState.currentChartType);
+  updateManualStylesList();
 }
 
 // Add filter row dynamically inside Column Mapping Data Filters
@@ -1357,26 +1539,110 @@ function getPlotDimensions() {
   const plotHeightCm = parseFloat(DOM.plotHeight ? DOM.plotHeight.value : 12) || 12;
   const legendPos = document.getElementById('legend-position-select').value;
   const legendDistSlider = document.getElementById('legend-distance-slider');
-  const legendDistCm = legendDistSlider ? parseFloat(legendDistSlider.value) : 0.8;
+  const legendDistCm = legendDistSlider ? parseFloat(legendDistSlider.value) : 0.5;
   const legendDistPx = Math.round(legendDistCm * 37.8);
 
   const gridWidth = Math.round(plotWidthCm * 37.8);
   const gridHeight = Math.round(plotHeightCm * 37.8);
 
-  // Define paddings - expanded to allocate enough space for long legend items
-  let gridLeft = 90;
+  // Dynamic Y-axis values length calculations to prevent overlap
+  const yNumFormat = document.getElementById('y-axis-num-format') ? document.getElementById('y-axis-num-format').value : 'std';
+  const axisValSize = parseInt(document.getElementById('axis-value-font-size') ? document.getElementById('axis-value-font-size').value : 12, 10) || 12;
+  const axisTitleSize = parseInt(document.getElementById('axis-title-font-size') ? document.getElementById('axis-title-font-size').value : 13, 10) || 13;
+
+  let maxYCharCount = 4;
+  const formatLength = (val) => {
+    let s = val.toString();
+    const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
+    if (yNumFormat === 'sci') {
+      return 8;
+    }
+    if (s.includes('.')) {
+      const parts = s.split('.');
+      s = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    return s.length;
+  };
+  if (yNumFormat === 'sci') {
+    maxYCharCount = 8;
+  } else if (appState.activeData) {
+    const selectedYOptions = Array.from(document.getElementById('y-axis-select') ? document.getElementById('y-axis-select').selectedOptions : []);
+    const yCols = selectedYOptions.map(opt => opt.value);
+    let maxVal = -Infinity;
+    let minVal = Infinity;
+    const rows = typeof getPlotFilteredRows === 'function' ? getPlotFilteredRows() : appState.activeData.rows;
+    rows.forEach(r => {
+      yCols.forEach(col => {
+        const val = parseFloat(r[col]);
+        if (!isNaN(val)) {
+          if (val > maxVal) maxVal = val;
+          if (val < minVal) minVal = val;
+        }
+      });
+    });
+    if (isFinite(maxVal) && isFinite(minVal)) {
+      maxYCharCount = Math.max(formatLength(minVal), formatLength(maxVal), 4);
+      maxYCharCount += 1; // buffer for tick/minus
+    }
+  }
+
+  const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.5) + 18);
+  const calculatedLeft = Math.round(dynamicNameGap + axisTitleSize + 15);
+
+  // Define paddings - expanded dynamically
+  let gridLeft = Math.max(75, calculatedLeft);
   let gridTop = 60;
   let gridRight = 40;
   let gridBottom = 60;
 
+  // Dynamic Legend calculations for spacing/layout
+  let numLegendItems = 1;
+  let maxLegendCharCount = 0;
+  if (appState.activeData) {
+    const gCol = document.getElementById('group-select') ? document.getElementById('group-select').value : '';
+    if (gCol) {
+      const activeGroupCheckboxes = document.querySelectorAll('.group-filter-checkbox');
+      let activeGroups = [];
+      if (activeGroupCheckboxes.length > 0) {
+        activeGroups = Array.from(activeGroupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+      }
+      if (activeGroups.length > 0) {
+        numLegendItems = activeGroups.length;
+        activeGroups.forEach(g => {
+          const s = String(g);
+          if (s.length > maxLegendCharCount) maxLegendCharCount = s.length;
+        });
+      } else {
+        const rows = appState.activeData.rows;
+        const uniqueGroups = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))];
+        numLegendItems = uniqueGroups.length;
+        uniqueGroups.forEach(g => {
+          const s = String(g);
+          if (s.length > maxLegendCharCount) maxLegendCharCount = s.length;
+        });
+      }
+    } else {
+      const selectedYOptions = Array.from(document.getElementById('y-axis-select') ? document.getElementById('y-axis-select').selectedOptions : []);
+      numLegendItems = Math.max(1, selectedYOptions.length);
+      selectedYOptions.forEach(opt => {
+        const s = String(opt.text || opt.value || '');
+        if (s.length > maxLegendCharCount) maxLegendCharCount = s.length;
+      });
+    }
+  }
+
+  const legendSize = parseInt(document.getElementById('legend-font-size')?.value || 12, 10) || 12;
+  const legendWidthEst = Math.max(120, Math.round(maxLegendCharCount * (legendSize * 0.65) + 30));
+  const legendHeightPx = legendPos !== 'hide' ? (numLegendItems * 20) : 0;
+
   if (legendPos === 'left') {
-    gridLeft = 90 + legendDistPx + 250; // 250px for left legend width buffer
+    gridLeft = Math.max(95, calculatedLeft) + legendDistPx + legendWidthEst; // buffer for left legend
   } else if (legendPos === 'right') {
-    gridRight = 40 + legendDistPx + 300; // 300px for right legend width buffer
+    gridRight = 40 + legendDistPx + legendWidthEst; // buffer for right legend
   } else if (legendPos === 'top') {
-    gridTop = 60 + legendDistPx + 80; // 80px for top legend height buffer
+    gridTop = 60 + legendDistPx + legendHeightPx; // adjust Top margin dynamically
   } else if (legendPos === 'bottom') {
-    gridBottom = 60 + legendDistPx + 80; // 80px for bottom legend height buffer
+    gridBottom = 60 + legendDistPx + legendHeightPx; // adjust Bottom margin dynamically
   }
 
   const canvasWidth = gridLeft + gridWidth + gridRight;
@@ -1507,6 +1773,92 @@ function drawChart() {
 
   const gCol = DOM.groupSelect.value;
 
+  const pointShape = document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle';
+  
+  function getSymbolConfig(color, size, isOverlay = false, shapeOverride = null) {
+    let symbol = 'circle';
+    let itemStyle = {};
+    const opacity = isOverlay ? 0.65 : 0.8;
+    const activeShape = shapeOverride || pointShape;
+    
+    if (activeShape.endsWith('-hollow')) {
+      symbol = activeShape.split('-')[0];
+      itemStyle = {
+        color: '#ffffff', // hollow fill
+        borderColor: color,
+        borderWidth: 2,
+        opacity: opacity
+      };
+    } else {
+      symbol = activeShape;
+      itemStyle = {
+        color: color,
+        opacity: opacity
+      };
+    }
+    
+    return {
+      symbol: symbol,
+      symbolSize: size,
+      itemStyle: itemStyle
+    };
+  }
+
+  function getGlobalYBounds(allRows, xCol, yCols, gCol, errorBarType, showPoints, type) {
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+    
+    yCols.forEach(yCol => {
+      // 1. Gather all raw values
+      allRows.forEach(r => {
+        const v = Number(r[yCol]);
+        if (!isNaN(v) && r[yCol] !== null && r[yCol] !== undefined && r[yCol] !== '') {
+          if (v < minVal) minVal = v;
+          if (v > maxVal) maxVal = v;
+        }
+      });
+      
+      // 2. Gather group/X means and error bars
+      const groups = gCol ? [...new Set(allRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))] : ['All'];
+      const xVals = [...new Set(allRows.map(r => String(r[xCol])))];
+      
+      xVals.forEach(x => {
+        groups.forEach(g => {
+          const matchRows = allRows.filter(r => String(r[xCol]) === x && (!gCol || String(r[gCol]) === g));
+          const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
+          if (vals.length > 0) {
+            const stats = getErrorBarStats(vals, errorBarType);
+            if (stats.mean < minVal) minVal = stats.mean;
+            if (stats.mean > maxVal) maxVal = stats.mean;
+            if (errorBarType !== 'none') {
+              if (stats.low < minVal) minVal = stats.low;
+              if (stats.high > maxVal) maxVal = stats.high;
+            }
+          }
+        });
+      });
+    });
+    
+    // For bar charts, Y-axis typically starts at 0 or includes 0
+    if (type === 'bar') {
+      if (minVal > 0) minVal = 0;
+      if (maxVal < 0) maxVal = 0;
+    }
+    
+    if (minVal !== Infinity && maxVal !== -Infinity) {
+      const range = maxVal - minVal;
+      if (range > 0) {
+        minVal = minVal - range * 0.05;
+        maxVal = maxVal + range * 0.05;
+      } else {
+        minVal = minVal - 1;
+        maxVal = maxVal + 1;
+      }
+      return { min: minVal, max: maxVal };
+    }
+    return null;
+  }
+
   // Initialize ECharts instance if not already done
   if (appState.chartInstance) {
     appState.chartInstance.dispose();
@@ -1572,11 +1924,11 @@ function drawChart() {
   if (legendPos === 'bottom') {
     legendConfig.top = gridTop + gridHeight + legendDistPx + 25; // 25px for X-axis labels and ticks
     legendConfig.left = 'center';
-    legendConfig.orient = 'horizontal';
+    legendConfig.orient = 'vertical';
   } else if (legendPos === 'top') {
     legendConfig.bottom = canvasHeight - gridTop + legendDistPx + 10; // 10px above the grid (using bottom offset for auto height)
     legendConfig.left = 'center';
-    legendConfig.orient = 'horizontal';
+    legendConfig.orient = 'vertical';
   } else if (legendPos === 'left') {
     legendConfig.right = canvasWidth - gridLeft + legendDistPx + 10; // 10px to the left of the grid (using right offset for auto width)
     legendConfig.top = 'center';
@@ -1586,6 +1938,43 @@ function drawChart() {
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   }
+
+  // Dynamic Y-axis values length calculations to prevent overlap
+  const yNumFormat = document.getElementById('y-axis-num-format') ? document.getElementById('y-axis-num-format').value : 'std';
+  let maxYCharCount = 4;
+  const formatLength = (val) => {
+    let s = val.toString();
+    const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
+    if (yNumFormat === 'sci') {
+      return 8;
+    }
+    if (s.includes('.')) {
+      const parts = s.split('.');
+      s = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    return s.length;
+  };
+  if (yNumFormat === 'sci') {
+    maxYCharCount = 8;
+  } else if (appState.activeData) {
+    let maxVal = -Infinity;
+    let minVal = Infinity;
+    const rows = getPlotFilteredRows();
+    rows.forEach(r => {
+      yCols.forEach(col => {
+        const val = parseFloat(r[col]);
+        if (!isNaN(val)) {
+          if (val > maxVal) maxVal = val;
+          if (val < minVal) minVal = val;
+        }
+      });
+    });
+    if (isFinite(maxVal) && isFinite(minVal)) {
+      maxYCharCount = Math.max(formatLength(minVal), formatLength(maxVal), 4);
+      maxYCharCount += 1; // buffer for tick/minus
+    }
+  }
+  const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.5) + 18);
 
   // Common ECharts Option templates
   let option = {
@@ -1627,7 +2016,7 @@ function drawChart() {
       type: 'value',
       name: chartYLabel || yCols.join(' / '),
       nameLocation: 'middle',
-      nameGap: 45,
+      nameGap: dynamicNameGap,
       axisLabel: {
         fontFamily: font,
         fontSize: axisValSize,
@@ -1729,7 +2118,10 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+        const color = styleOverride.color;
+        const currentShape = styleOverride.shape;
         
         const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
         const seriesData = matchRows
@@ -1744,12 +2136,13 @@ function drawChart() {
 
         // Draw raw points
         legendData.push(seriesName);
+        const symbolConfig = getSymbolConfig(color, pointSize, false, currentShape);
         option.series.push({
           name: seriesName,
           type: 'scatter',
-          symbolSize: pointSize,
-          opacity: 0.8,
-          itemStyle: { color: color },
+          symbol: symbolConfig.symbol,
+          symbolSize: symbolConfig.symbolSize,
+          itemStyle: symbolConfig.itemStyle,
           data: seriesData
         });
 
@@ -1788,7 +2181,10 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+        const color = styleOverride.color;
+        const currentShape = styleOverride.shape;
         
         const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
         const rawPoints = matchRows
@@ -1856,25 +2252,27 @@ function drawChart() {
             });
             
             if (curveData.length > 0) {
+              const curveSymbolConfig = getSymbolConfig(color, Math.max(3, pointSize - 2), true, currentShape);
               option.series.push({
                 name: seriesName, // same name for unified legend toggle
                 type: 'line',
-                lineStyle: { width: Math.max(1, lineWidth - 1), opacity: 0.6 },
-                symbol: 'circle',
-                symbolSize: Math.max(3, pointSize - 2),
-                itemStyle: { color: color },
+                lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6 },
+                symbol: curveSymbolConfig.symbol,
+                symbolSize: curveSymbolConfig.symbolSize,
+                itemStyle: curveSymbolConfig.itemStyle,
                 data: curveData
               });
             }
           }
         } else {
+          const meanSymbolConfig = getSymbolConfig(color, pointSize, false, currentShape);
           option.series.push({
             name: seriesName,
             type: 'line',
-            lineStyle: { width: lineWidth },
-            symbol: 'circle',
-            symbolSize: pointSize,
-            itemStyle: { color: color },
+            lineStyle: { width: lineWidth, color: color },
+            symbol: meanSymbolConfig.symbol,
+            symbolSize: meanSymbolConfig.symbolSize,
+            itemStyle: meanSymbolConfig.itemStyle,
             data: lineData
           });
 
@@ -1898,11 +2296,13 @@ function drawChart() {
             scatterData.push([pt[0], pt[1]]);
           });
 
+          const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
           option.series.push({
             name: `${seriesName} (Scatter)`,
             type: 'scatter',
-            symbolSize: Math.max(4, pointSize - 2),
-            itemStyle: { color: color, opacity: 0.7 },
+            symbol: scatterSymbolConfig.symbol,
+            symbolSize: scatterSymbolConfig.symbolSize,
+            itemStyle: scatterSymbolConfig.itemStyle,
             data: scatterData,
             z: 6,
             tooltip: { show: false }
@@ -1920,7 +2320,10 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+        const color = styleOverride.color;
+        const currentShape = styleOverride.shape;
         
         legendData.push(seriesName);
         const showPoints = document.getElementById('show-points-checkbox').checked;
@@ -1976,11 +2379,18 @@ function drawChart() {
         }
 
         if (showPoints && scatterData.length > 0) {
+          const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
+          const finalItemStyle = { ...scatterSymbolConfig.itemStyle };
+          if (!currentShape.endsWith('-hollow')) {
+            finalItemStyle.borderColor = '#ffffff';
+            finalItemStyle.borderWidth = 0.5;
+          }
           option.series.push({
             name: `${seriesName} (Scatter)`,
             type: 'scatter',
-            symbolSize: Math.max(4, pointSize - 2),
-            itemStyle: { color: color, opacity: 0.65, borderColor: '#ffffff', borderWidth: 0.5 },
+            symbol: scatterSymbolConfig.symbol,
+            symbolSize: scatterSymbolConfig.symbolSize,
+            itemStyle: finalItemStyle,
             data: scatterData,
             z: 6,
             tooltip: { show: false }
@@ -1998,7 +2408,9 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+        const color = styleOverride.color;
         
         // Calculate box stats per category
         const boxData = xCategories.map(cat => {
@@ -2029,7 +2441,10 @@ function drawChart() {
         groups.forEach((g, gIdx) => {
           const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = gCol ? String(g) : yCol;
-          const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+          const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
           
           const jitterData = [];
           const meanData = [];
@@ -2064,11 +2479,13 @@ function drawChart() {
           });
           
           if (showPoints && jitterData.length > 0) {
+            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
             option.series.push({
               name: `${seriesName} (Scatter)`,
               type: 'scatter',
-              symbolSize: Math.max(4, pointSize - 2),
-              itemStyle: { color: color, opacity: 0.5 },
+              symbol: scatterSymbolConfig.symbol,
+              symbolSize: scatterSymbolConfig.symbolSize,
+              itemStyle: scatterSymbolConfig.itemStyle,
               data: jitterData,
               tooltip: { show: false }
             });
@@ -2105,7 +2522,9 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+        const color = styleOverride.color;
         
         legendData.push(seriesName);
         xCategories.forEach((cat, catIdx) => {
@@ -2186,7 +2605,10 @@ function drawChart() {
         groups.forEach((g, gIdx) => {
           const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = gCol ? String(g) : yCol;
-          const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+          const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
           
           const jitterData = [];
           const meanData = [];
@@ -2220,11 +2642,13 @@ function drawChart() {
           });
           
           if (showPoints && jitterData.length > 0) {
+            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
             option.series.push({
               name: `${seriesName} (Scatter)`,
               type: 'scatter',
-              symbolSize: Math.max(4, pointSize - 2),
-              itemStyle: { color: color, opacity: 0.5 },
+              symbol: scatterSymbolConfig.symbol,
+              symbolSize: scatterSymbolConfig.symbolSize,
+              itemStyle: scatterSymbolConfig.itemStyle,
               data: jitterData,
               tooltip: { show: false }
             });
@@ -2378,7 +2802,9 @@ function drawChart() {
       groups.forEach((g, gIdx) => {
         const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
         const seriesName = gCol ? String(g) : yCol;
-        const color = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
+        const styleOverride = getSeriesStyle(seriesName, autoColor, 'circle');
+        const color = styleOverride.color;
         
         const seriesData = plotRows
           .filter(r => !gCol || String(r[gCol]) === g)
@@ -2395,7 +2821,7 @@ function drawChart() {
         option.series.push({
           name: seriesName,
           type: 'line',
-          lineStyle: { width: lineWidth },
+          lineStyle: { width: lineWidth, color: color },
           symbol: 'circle',
           symbolSize: pointSize,
           itemStyle: { color: color },
@@ -2486,6 +2912,9 @@ function drawChart() {
             type: 'solid',
             width: 0
           },
+          itemStyle: {
+            color: ml.color
+          },
           label: {
             show: (ml.style === 'none' && ml.label) ? true : false,
             position: isY ? 'start' : 'start',
@@ -2521,6 +2950,7 @@ function drawChart() {
     const yScaleType = document.getElementById('y-axis-scale-type')?.value || 'linear';
     const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
     const ySplitMode = document.getElementById('y-axis-split-mode')?.value || '1';
+    const showPoints = document.getElementById('show-points-checkbox')?.checked || false;
 
     // Helper: scientific notation formatter
     const sciFormatter = (val) => {
@@ -2528,7 +2958,38 @@ function drawChart() {
       return Number(val).toExponential(2);
     };
 
+    // Retrieve manual range parameters from DOM
+    const xMinInput = document.getElementById('axis-xmin');
+    const xMaxInput = document.getElementById('axis-xmax');
+    const yMinInput = document.getElementById('axis-ymin');
+    const yMaxInput = document.getElementById('axis-ymax');
+
+    const xMinVal = xMinInput && xMinInput.value !== '' ? parseFloat(xMinInput.value) : null;
+    const xMaxVal = xMaxInput && xMaxInput.value !== '' ? parseFloat(xMaxInput.value) : null;
+    const yMinVal = yMinInput && yMinInput.value !== '' ? parseFloat(yMinInput.value) : null;
+    const yMaxVal = yMaxInput && yMaxInput.value !== '' ? parseFloat(yMaxInput.value) : null;
+
+    if (option.xAxis && option.xAxis.type === 'value') {
+      if (xMinVal !== null) option.xAxis.min = xMinVal;
+      if (xMaxVal !== null) option.xAxis.max = xMaxVal;
+    }
+
     if (ySplitMode === '1') {
+      // Apply manual limits / split-tab locked range
+      if (yMinVal !== null) {
+        option.yAxis.min = yMinVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds = getGlobalYBounds(filteredRows, xCol, yCols, gCol, errorBarType, showPoints, type);
+        if (globalBounds) option.yAxis.min = parseFloat(globalBounds.min.toFixed(4));
+      }
+
+      if (yMaxVal !== null) {
+        option.yAxis.max = yMaxVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds = getGlobalYBounds(filteredRows, xCol, yCols, gCol, errorBarType, showPoints, type);
+        if (globalBounds) option.yAxis.max = parseFloat(globalBounds.max.toFixed(4));
+      }
+
       // ---------- Single grid: just apply scale + format ----------
       if (yScaleType === 'log') {
         option.yAxis.type = 'log';
@@ -2547,23 +3008,36 @@ function drawChart() {
 
       // Collect global data range from series for auto-range fallback
       let globalMin = Infinity, globalMax = -Infinity;
-      option.series.forEach(s => {
-        if (!s.data) return;
-        s.data.forEach(d => {
-          let yVal = NaN;
-          if (Array.isArray(d)) {
-            yVal = Number(d[1]);
-          } else if (d && typeof d === 'object' && d.value !== undefined) {
-            yVal = Number(Array.isArray(d.value) ? d.value[1] : d.value);
-          } else {
-            yVal = Number(d);
-          }
-          if (!isNaN(yVal) && isFinite(yVal)) {
-            if (yVal < globalMin) globalMin = yVal;
-            if (yVal > globalMax) globalMax = yVal;
-          }
+      if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds = getGlobalYBounds(filteredRows, xCol, yCols, gCol, errorBarType, showPoints, type);
+        if (globalBounds) {
+          globalMin = globalBounds.min;
+          globalMax = globalBounds.max;
+        }
+      } else {
+        option.series.forEach(s => {
+          if (!s.data) return;
+          s.data.forEach(d => {
+            let yVal = NaN;
+            if (Array.isArray(d)) {
+              yVal = Number(d[1]);
+            } else if (d && typeof d === 'object' && d.value !== undefined) {
+              yVal = Number(Array.isArray(d.value) ? d.value[1] : d.value);
+            } else {
+              yVal = Number(d);
+            }
+            if (!isNaN(yVal) && isFinite(yVal)) {
+              if (yVal < globalMin) globalMin = yVal;
+              if (yVal > globalMax) globalMax = yVal;
+            }
+          });
         });
-      });
+      }
+
+      // Apply manual limit overrides if provided
+      if (yMinVal !== null) globalMin = yMinVal;
+      if (yMaxVal !== null) globalMax = yMaxVal;
+
       if (!isFinite(globalMin)) globalMin = 0;
       if (!isFinite(globalMax)) globalMax = 100;
 
@@ -2821,10 +3295,13 @@ function renderErrorBarItem(params, api) {
   if (halfWidth > 10) halfWidth = 10;
   if (halfWidth < 4) halfWidth = 4;
   
+  const slider = document.getElementById('line-width-slider');
+  const configuredLineWidth = slider ? parseInt(slider.value, 10) : 1.5;
+  
   var style = api.style({
     stroke: api.visual('color') || '#000000',
     fill: 'none',
-    lineWidth: 1.5
+    lineWidth: configuredLineWidth
   });
   
   return {
@@ -2941,19 +3418,26 @@ function createChartTab(name = null, config = null) {
     id: id,
     name: tabName,
     sheetName: appState.activeSheetName || '',
-    chartType: appState.currentChartType || 'scatter',
+    chartType: appState.currentChartType || 'line',
     xCol: DOM.xSelect.value || '',
     yCols: Array.from(DOM.ySelect.selectedOptions).map(o => o.value) || [],
     gCol: DOM.groupSelect.value || '',
-    selectedPalette: appState.selectedPalette || 'nature',
+    selectedPalette: appState.selectedPalette || 'ggplot2',
     
     // Style settings
     pointSize: parseInt(DOM.pointSize.value) || 8,
+    pointShape: document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle',
     lineWidth: parseInt(DOM.lineWidth.value) || 2,
     barPadding: parseInt(DOM.barPadding.value) || 20,
     boxWidth: parseInt(DOM.boxWidth.value) || 50,
     plotWidth: parseInt(DOM.plotWidth.value) || 15,
     plotHeight: parseInt(DOM.plotHeight.value) || 12,
+    xMin: null,
+    xMax: null,
+    yMin: null,
+    yMax: null,
+    manualStyleEnabled: document.getElementById('manual-style-checkbox') ? document.getElementById('manual-style-checkbox').checked : false,
+    manualStyles: {},
     showPoints: document.getElementById('show-points-checkbox').checked,
     showMean: document.getElementById('show-mean-checkbox').checked,
     errorBarType: document.getElementById('error-bar-select').value || 'none',
@@ -3022,11 +3506,23 @@ function saveActiveTabState() {
   
   // Style settings
   tab.pointSize = parseInt(DOM.pointSize.value);
+  const pointShapeEl = document.getElementById('point-shape-select');
+  tab.pointShape = pointShapeEl ? pointShapeEl.value : 'circle';
   tab.lineWidth = parseInt(DOM.lineWidth.value);
   tab.barPadding = parseInt(DOM.barPadding.value);
   tab.boxWidth = parseInt(DOM.boxWidth.value);
   tab.plotWidth = parseInt(DOM.plotWidth.value);
   tab.plotHeight = parseInt(DOM.plotHeight.value);
+  
+  const xMinInput = document.getElementById('axis-xmin');
+  const xMaxInput = document.getElementById('axis-xmax');
+  const yMinInput = document.getElementById('axis-ymin');
+  const yMaxInput = document.getElementById('axis-ymax');
+  tab.xMin = xMinInput && xMinInput.value !== '' ? parseFloat(xMinInput.value) : null;
+  tab.xMax = xMaxInput && xMaxInput.value !== '' ? parseFloat(xMaxInput.value) : null;
+  tab.yMin = yMinInput && yMinInput.value !== '' ? parseFloat(yMinInput.value) : null;
+  tab.yMax = yMaxInput && yMaxInput.value !== '' ? parseFloat(yMaxInput.value) : null;
+
   tab.showPoints = document.getElementById('show-points-checkbox').checked;
   tab.showMean = document.getElementById('show-mean-checkbox').checked;
   tab.errorBarType = document.getElementById('error-bar-select').value;
@@ -3050,6 +3546,21 @@ function saveActiveTabState() {
     tab.activeGroups = [];
   }
   tab.splitGroups = document.getElementById('group-tabs-checkbox').checked;
+  
+  // Save manual styling preferences
+  const manualStyleCheckbox = document.getElementById('manual-style-checkbox');
+  tab.manualStyleEnabled = manualStyleCheckbox ? manualStyleCheckbox.checked : false;
+  
+  const manualStylesMap = {};
+  const manualStyleRows = document.querySelectorAll('#manual-styles-list .manual-style-row');
+  manualStyleRows.forEach(row => {
+    const target = row.dataset.target;
+    const isEnabled = row.querySelector('.manual-target-enable').checked;
+    const color = row.querySelector('.manual-target-color').value;
+    const shape = row.querySelector('.manual-target-shape').value;
+    manualStylesMap[target] = { enabled: isEnabled, color: color, shape: shape };
+  });
+  tab.manualStyles = manualStylesMap;
   
   // Quick Title Editor
   tab.chartTitle = document.getElementById('chart-title-input').value;
@@ -3147,12 +3658,25 @@ function applyChartTabState(tab) {
     });
   }
   
-  // Restore style settings
   DOM.pointSize.value = tab.pointSize;
   DOM.pointSizeVal.textContent = tab.pointSize;
   
+  const pointShapeEl = document.getElementById('point-shape-select');
+  if (pointShapeEl) {
+    pointShapeEl.value = tab.pointShape || 'circle';
+  }
+  
   DOM.lineWidth.value = tab.lineWidth;
   DOM.lineWidthVal.textContent = tab.lineWidth;
+
+  const xMinInput = document.getElementById('axis-xmin');
+  const xMaxInput = document.getElementById('axis-xmax');
+  const yMinInput = document.getElementById('axis-ymin');
+  const yMaxInput = document.getElementById('axis-ymax');
+  if (xMinInput) xMinInput.value = tab.xMin !== undefined && tab.xMin !== null ? tab.xMin : '';
+  if (xMaxInput) xMaxInput.value = tab.xMax !== undefined && tab.xMax !== null ? tab.xMax : '';
+  if (yMinInput) yMinInput.value = tab.yMin !== undefined && tab.yMin !== null ? tab.yMin : '';
+  if (yMaxInput) yMaxInput.value = tab.yMax !== undefined && tab.yMax !== null ? tab.yMax : '';
   
   DOM.barPadding.value = tab.barPadding;
   DOM.barPaddingVal.textContent = tab.barPadding + '%';
@@ -3257,6 +3781,13 @@ function applyChartTabState(tab) {
   // Group selection checkboxes
   updateGroupCheckboxes(tab.activeGroups, tab.splitGroups);
   
+  // Restore manual styling options
+  const manualStyleCheckbox = document.getElementById('manual-style-checkbox');
+  if (manualStyleCheckbox) {
+    manualStyleCheckbox.checked = !!tab.manualStyleEnabled;
+  }
+  updateManualStylesList();
+
   // Restore annotations
   deserializeAnnotations(tab.annotations || []);
   
@@ -6040,6 +6571,314 @@ function addSignificanceBar() {
   });
   
   drawAnnotations();
+}
+
+// ==============================================================================
+// 10. Style Templates & Font Defaults Helpers
+// ==============================================================================
+const LOCAL_STORAGE_KEY_TEMPLATES = 'plotmaster_style_templates';
+
+function getStoredTemplates() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_TEMPLATES);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error('Failed to parse templates from localStorage', e);
+    return {};
+  }
+}
+
+function saveStyleTemplate(name) {
+  if (!name || name.trim() === '') {
+    alert('Please enter a valid template name.');
+    return;
+  }
+  const templates = getStoredTemplates();
+  
+  const config = {
+    pointSize: parseInt(DOM.pointSize.value) || 8,
+    pointShape: document.getElementById('point-shape-select')?.value || 'circle',
+    lineWidth: parseInt(DOM.lineWidth.value) || 2,
+    barPadding: parseInt(DOM.barPadding.value) || 20,
+    boxWidth: parseInt(DOM.boxWidth.value) || 50,
+    plotWidth: parseInt(DOM.plotWidth.value) || 15,
+    plotHeight: parseInt(DOM.plotHeight.value) || 12,
+    showPoints: document.getElementById('show-points-checkbox').checked,
+    showMean: document.getElementById('show-mean-checkbox').checked,
+    errorBarType: document.getElementById('error-bar-select').value || 'none',
+    font: DOM.fontSelect.value || 'Inter',
+    theme: DOM.themeSelect.value || 'minimal',
+    gridX: DOM.gridX.checked,
+    gridY: DOM.gridY.checked,
+    legendPosition: document.getElementById('legend-position-select').value || 'bottom',
+    legendDistance: document.getElementById('legend-distance-slider') ? parseFloat(document.getElementById('legend-distance-slider').value) : 0.8,
+    individualCurves: document.getElementById('individual-curves-checkbox').checked,
+    yScaleType: document.getElementById('y-axis-scale-type')?.value || 'linear',
+    yNumFormat: document.getElementById('y-axis-num-format')?.value || 'std',
+    ySplitMode: document.getElementById('y-axis-split-mode')?.value || '1',
+    titleFontSize: parseInt(document.getElementById('title-font-size')?.value) || 16,
+    titleFontColor: document.getElementById('title-font-color')?.value || '#334155',
+    axisTitleFontSize: parseInt(document.getElementById('axis-title-font-size')?.value) || 13,
+    axisTitleFontColor: document.getElementById('axis-title-font-color')?.value || '#334155',
+    axisValueFontSize: parseInt(document.getElementById('axis-value-font-size')?.value) || 12,
+    axisValueFontColor: document.getElementById('axis-value-font-color')?.value || '#475569',
+    legendFontSize: parseInt(document.getElementById('legend-font-size')?.value) || 12,
+    legendFontColor: document.getElementById('legend-font-color')?.value || '#475569'
+  };
+
+  templates[name] = config;
+  localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATES, JSON.stringify(templates));
+  loadStyleTemplatesDropdown();
+  document.getElementById('template-name-input').value = '';
+  alert(`Template "${name}" saved successfully.`);
+}
+
+function loadStyleTemplatesDropdown() {
+  const select = document.getElementById('template-select');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">-- Apply Template --</option>';
+  
+  const templates = getStoredTemplates();
+  Object.keys(templates).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+function applyStyleTemplate(name) {
+  if (!name) return;
+  const templates = getStoredTemplates();
+  const config = templates[name];
+  if (!config) return;
+
+  if (config.pointSize !== undefined) {
+    DOM.pointSize.value = config.pointSize;
+    DOM.pointSizeVal.textContent = config.pointSize;
+  }
+  if (config.pointShape !== undefined) {
+    const el = document.getElementById('point-shape-select');
+    if (el) el.value = config.pointShape;
+  }
+  if (config.lineWidth !== undefined) {
+    DOM.lineWidth.value = config.lineWidth;
+    DOM.lineWidthVal.textContent = config.lineWidth;
+  }
+  if (config.barPadding !== undefined) {
+    DOM.barPadding.value = config.barPadding;
+    DOM.barPaddingVal.textContent = config.barPadding + '%';
+  }
+  if (config.boxWidth !== undefined) {
+    DOM.boxWidth.value = config.boxWidth;
+    DOM.boxWidthVal.textContent = config.boxWidth + '%';
+  }
+  if (config.plotWidth !== undefined) {
+    DOM.plotWidth.value = config.plotWidth;
+    DOM.plotWidthVal.textContent = config.plotWidth + ' cm';
+  }
+  if (config.plotHeight !== undefined) {
+    DOM.plotHeight.value = config.plotHeight;
+    DOM.plotHeightVal.textContent = config.plotHeight + ' cm';
+  }
+  if (config.showPoints !== undefined) {
+    document.getElementById('show-points-checkbox').checked = config.showPoints;
+  }
+  if (config.showMean !== undefined) {
+    document.getElementById('show-mean-checkbox').checked = config.showMean;
+  }
+  if (config.errorBarType !== undefined) {
+    document.getElementById('error-bar-select').value = config.errorBarType;
+  }
+  if (config.font !== undefined) DOM.fontSelect.value = config.font;
+  if (config.theme !== undefined) DOM.themeSelect.value = config.theme;
+  if (config.gridX !== undefined) DOM.gridX.checked = config.gridX;
+  if (config.gridY !== undefined) DOM.gridY.checked = config.gridY;
+  
+  if (config.legendPosition !== undefined) {
+    document.getElementById('legend-position-select').value = config.legendPosition;
+  }
+  if (config.legendDistance !== undefined) {
+    const slider = document.getElementById('legend-distance-slider');
+    const valSpan = document.getElementById('legend-distance-val');
+    if (slider) {
+      slider.value = config.legendDistance;
+      if (valSpan) valSpan.textContent = config.legendDistance + ' cm';
+    }
+  }
+  if (config.individualCurves !== undefined) {
+    document.getElementById('individual-curves-checkbox').checked = config.individualCurves;
+  }
+  if (config.yScaleType !== undefined) {
+    const el = document.getElementById('y-axis-scale-type');
+    if (el) el.value = config.yScaleType;
+  }
+  if (config.yNumFormat !== undefined) {
+    const el = document.getElementById('y-axis-num-format');
+    if (el) el.value = config.yNumFormat;
+  }
+  if (config.ySplitMode !== undefined) {
+    const el = document.getElementById('y-axis-split-mode');
+    if (el) {
+      el.value = config.ySplitMode;
+      renderYSplitControls(config.ySplitMode);
+    }
+  }
+  
+  if (config.titleFontSize !== undefined) document.getElementById('title-font-size').value = config.titleFontSize;
+  if (config.titleFontColor !== undefined) document.getElementById('title-font-color').value = config.titleFontColor;
+  if (config.axisTitleFontSize !== undefined) document.getElementById('axis-title-font-size').value = config.axisTitleFontSize;
+  if (config.axisTitleFontColor !== undefined) document.getElementById('axis-title-font-color').value = config.axisTitleFontColor;
+  if (config.axisValueFontSize !== undefined) document.getElementById('axis-value-font-size').value = config.axisValueFontSize;
+  if (config.axisValueFontColor !== undefined) document.getElementById('axis-value-font-color').value = config.axisValueFontColor;
+  if (config.legendFontSize !== undefined) document.getElementById('legend-font-size').value = config.legendFontSize;
+  if (config.legendFontColor !== undefined) document.getElementById('legend-font-color').value = config.legendFontColor;
+
+  saveActiveTabState();
+  if (appState.activeData) drawChart();
+}
+
+function deleteStyleTemplate(name) {
+  if (!name) return;
+  const templates = getStoredTemplates();
+  if (templates[name]) {
+    delete templates[name];
+    localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATES, JSON.stringify(templates));
+    loadStyleTemplatesDropdown();
+    alert(`Template "${name}" deleted successfully.`);
+  }
+}
+
+function updateManualStylesList() {
+  const panel = document.getElementById('manual-styles-panel');
+  const checkbox = document.getElementById('manual-style-checkbox');
+  if (!panel || !checkbox) return;
+
+  panel.style.display = checkbox.checked ? 'block' : 'none';
+
+  const listContainer = document.getElementById('manual-styles-list');
+  if (!listContainer) return;
+
+  const tab = getActiveTab();
+  const manualStyles = (tab && tab.manualStyles) ? tab.manualStyles : {};
+
+  const gCol = DOM.groupSelect ? DOM.groupSelect.value : '';
+  const selectedYOptions = DOM.ySelect ? Array.from(DOM.ySelect.selectedOptions) : [];
+  const yCols = selectedYOptions.map(opt => opt.value);
+
+  let targets = [];
+  if (gCol && appState.activeData) {
+    targets = [...new Set(appState.activeData.rows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))];
+  } else if (yCols.length > 0) {
+    targets = yCols;
+  }
+
+  listContainer.innerHTML = '';
+  if (targets.length === 0) {
+    listContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 10px;">No groups or columns selected</div>';
+    return;
+  }
+
+  targets.forEach((target, index) => {
+    const saved = manualStyles[target] || { enabled: false, color: getDefaultColorForIdx(index), shape: 'circle' };
+    
+    const row = document.createElement('div');
+    row.className = 'manual-style-row';
+    row.dataset.target = target;
+    row.style.cssText = 'display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.05);';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'manual-target-enable';
+    cb.checked = saved.enabled;
+    cb.style.cursor = 'pointer';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'manual-target-name';
+    lbl.textContent = target;
+    lbl.title = target;
+    lbl.style.cssText = 'flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);';
+
+    const cp = document.createElement('input');
+    cp.type = 'color';
+    cp.className = 'manual-target-color';
+    cp.value = saved.color;
+    cp.disabled = !saved.enabled;
+    cp.style.cssText = 'border: none; padding: 0; width: 18px; height: 18px; background: none; cursor: pointer;';
+
+    const ss = document.createElement('select');
+    ss.className = 'form-select manual-target-shape';
+    ss.disabled = !saved.enabled;
+    ss.style.cssText = 'font-size: 10px; padding: 2px; height: auto; width: 90px;';
+    
+    const shapes = [
+      { value: 'circle', label: 'Circle (实心圆)' },
+      { value: 'circle-hollow', label: 'Circle Hollow (空心)' },
+      { value: 'rect', label: 'Square (实心方型)' },
+      { value: 'rect-hollow', label: 'Square Hollow (空心)' },
+      { value: 'triangle', label: 'Triangle (实心三角)' },
+      { value: 'triangle-hollow', label: 'Triangle Hollow (空心)' },
+      { value: 'diamond', label: 'Diamond (实心菱形)' },
+      { value: 'diamond-hollow', label: 'Diamond Hollow (空心)' }
+    ];
+
+    shapes.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.value;
+      opt.textContent = s.label;
+      if (s.value === saved.shape) opt.selected = true;
+      ss.appendChild(opt);
+    });
+
+    cb.addEventListener('change', () => {
+      cp.disabled = !cb.checked;
+      ss.disabled = !cb.checked;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+
+    cp.addEventListener('input', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+
+    ss.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    row.appendChild(cp);
+    row.appendChild(ss);
+    listContainer.appendChild(row);
+  });
+}
+
+function getDefaultColorForIdx(index) {
+  const currentPalette = appState.selectedPalette || 'ggplot2';
+  const pal = PALETTES[currentPalette] || PALETTES['ggplot2'];
+  const colors = (pal && pal.colors) ? pal.colors : ['#3b82f6'];
+  return colors[index % colors.length];
+}
+
+function getSeriesStyle(seriesName, autoColor, autoShape) {
+  const manualStyleCheckbox = document.getElementById('manual-style-checkbox');
+  const manualStyleEnabled = manualStyleCheckbox ? manualStyleCheckbox.checked : false;
+  const tab = getActiveTab();
+  const manualStyles = (tab && tab.manualStyles) ? tab.manualStyles : {};
+
+  if (manualStyleEnabled && manualStyles[seriesName] && manualStyles[seriesName].enabled) {
+    return {
+      color: manualStyles[seriesName].color,
+      shape: manualStyles[seriesName].shape
+    };
+  }
+  return {
+    color: autoColor,
+    shape: autoShape
+  };
 }
 
 // ==============================================================================

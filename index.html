@@ -68,13 +68,13 @@
             <span>2. Chart Type</span>
           </div>
           <div class="chart-type-grid" id="chart-type-grid">
-            <div class="chart-card active" data-chart="scatter">
-              <i data-lucide="circle-dot"></i>
-              <span>Scatter Plot</span>
-            </div>
-            <div class="chart-card" data-chart="line">
+            <div class="chart-card active" data-chart="line">
               <i data-lucide="trending-up"></i>
               <span>Line Plot</span>
+            </div>
+            <div class="chart-card" data-chart="scatter">
+              <i data-lucide="circle-dot"></i>
+              <span>Scatter Plot</span>
             </div>
             <div class="chart-card" data-chart="bar">
               <i data-lucide="bar-chart-2"></i>
@@ -153,23 +153,78 @@
           </div>
         </section>
 
-        <!-- Section 4: Color Palettes -->
-        <section class="panel-section">
-          <div class="section-title">
-            <i data-lucide="palette"></i>
-            <span>4. Color Schemes</span>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <select class="form-select" id="palette-select"></select>
-            <div id="palette-preview-bar" style="margin-top: 8px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
-          </div>
-        </section>
-
-        <!-- Section 5: Fine Styling Customizer -->
+        <!-- Section 4: Fine Styling Customizer -->
         <section class="panel-section" id="styling-section">
           <div class="section-title">
             <i data-lucide="settings-2"></i>
-            <span>5. Style Settings</span>
+            <span>4. Style Settings</span>
+          </div>
+          <!-- Style Templates (样式模板) -->
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Style Templates (样式模板)</label>
+            <div style="display: flex; gap: 4px; margin-top: 4px;">
+              <select class="form-select" id="template-select" style="font-size: 11px; padding: 4px; flex: 2; height: auto;">
+                <option value="">-- Apply Template --</option>
+              </select>
+              <button class="btn btn-secondary" id="btn-delete-template" style="font-size: 11px; padding: 4px 6px; height: auto; justify-content: center; display: flex; align-items: center;" title="Delete Selected Template">✕</button>
+            </div>
+            <div style="display: flex; gap: 4px; margin-top: 4px;">
+              <input type="text" class="form-input" id="template-name-input" placeholder="New Template Name" style="font-size: 11px; padding: 4px; flex: 2; height: auto;">
+              <button class="btn btn-primary" id="btn-save-template" style="font-size: 11px; padding: 4px 8px; height: auto; justify-content: center; display: flex; align-items: center;">Save Style</button>
+            </div>
+          </div>
+
+          <!-- Manual Style Selection Mode (手动设置颜色与形状) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label class="checkbox-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+              <input type="checkbox" id="manual-style-checkbox">
+              <span>Enable Manual Style (手动设置颜色与形状)</span>
+            </label>
+          </div>
+
+          <!-- Manual Styles Panel (Visible when checkbox is checked) -->
+          <div id="manual-styles-panel" style="display: none; background: rgba(0,0,0,0.15); padding: 8px; border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 11px;">
+            <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-secondary);">Manual Customization (手动配置)</div>
+            
+            <!-- Bulk settings bar -->
+            <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;">
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="color: var(--text-muted); min-width: 35px;">Color:</span>
+                <input type="color" id="bulk-manual-color" value="#3b82f6" style="border:none; padding:0; width:18px; height:18px; background:none; cursor:pointer;" title="Bulk Color">
+                <span style="color: var(--text-muted); margin-left: 8px;">Palette:</span>
+                <select id="bulk-manual-palette" class="form-select" style="font-size: 10px; padding: 2px; height: auto; flex: 1;">
+                  <option value="">-- Select Palette --</option>
+                  <!-- Populated via JS -->
+                </select>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="color: var(--text-muted); min-width: 35px;">Shape:</span>
+                <select id="bulk-manual-shape" class="form-select" style="font-size: 10px; padding: 2px; height: auto; flex: 1;">
+                  <option value="">-- Shape --</option>
+                  <option value="circle">Circle (实心圆)</option>
+                  <option value="circle-hollow">Circle Hollow (空心圆)</option>
+                  <option value="rect">Square (实心方型)</option>
+                  <option value="rect-hollow">Square Hollow (空心方型)</option>
+                  <option value="triangle">Triangle (实心三角)</option>
+                  <option value="triangle-hollow">Triangle Hollow (空心三角)</option>
+                  <option value="diamond">Diamond (实心菱形)</option>
+                  <option value="diamond-hollow">Diamond Hollow (空心菱形)</option>
+                </select>
+                <button class="btn btn-secondary" id="btn-apply-bulk-style" style="font-size: 10px; padding: 2px 8px; height: auto;">Apply style</button>
+              </div>
+            </div>
+            
+            <!-- Group items list -->
+            <div id="manual-styles-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 2px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+          
+          <!-- Color Schemes (配色方案) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 6px;">
+            <label for="palette-select" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Color Schemes (配色方案)</label>
+            <select class="form-select" id="palette-select" style="font-size: 11px; padding: 4px; height: auto;"></select>
+            <div id="palette-preview-bar" style="margin-top: 6px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
           </div>
           
           <div class="style-settings-grid">
@@ -179,6 +234,21 @@
                 <span id="point-size-val">8</span>
               </div>
               <input type="range" id="point-size-slider" min="2" max="25" value="8">
+            </div>
+
+            <!-- Point Shape Customization -->
+            <div class="slider-group" style="display: flex; flex-direction: column; justify-content: center;">
+              <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Point Shape</span>
+              <select class="form-select" id="point-shape-select" style="font-size: 11px; padding: 4px; height: auto;">
+                <option value="circle">Circle (实心圆)</option>
+                <option value="circle-hollow">Circle Hollow (空心圆)</option>
+                <option value="rect">Square (实心方型)</option>
+                <option value="rect-hollow">Square Hollow (空心方型)</option>
+                <option value="triangle">Triangle (实心三角)</option>
+                <option value="triangle-hollow">Triangle Hollow (空心三角)</option>
+                <option value="diamond">Diamond (实心菱形)</option>
+                <option value="diamond-hollow">Diamond Hollow (空心菱形)</option>
+              </select>
             </div>
 
             <div class="slider-group">
@@ -295,42 +365,47 @@
             <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
               <!-- Chart Title Font -->
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Title (标题):</span>
-                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap;">Title (标题):</span>
+                <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
                   <input type="number" id="title-font-size" value="16" min="8" max="48" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
-                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-right: 4px;">px</span>
                   <input type="color" id="title-font-color" value="#334155" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Title Color">
                 </div>
               </div>
               
               <!-- Axis Titles Font -->
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Axis Title (轴标题):</span>
-                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap;">Axis Title (轴标题):</span>
+                <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
                   <input type="number" id="axis-title-font-size" value="13" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
-                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-right: 4px;">px</span>
                   <input type="color" id="axis-title-font-color" value="#334155" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Axis Title Color">
                 </div>
               </div>
 
               <!-- Axis Values Font -->
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Axis Value (轴数值):</span>
-                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap;">Axis Value (轴数值):</span>
+                <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
                   <input type="number" id="axis-value-font-size" value="12" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
-                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-right: 4px;">px</span>
                   <input type="color" id="axis-value-font-color" value="#475569" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Axis Value Color">
                 </div>
               </div>
 
               <!-- Legend Font -->
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary); width: 80px;">Legend (图例):</span>
-                <div style="display: flex; gap: 4px; align-items: center; flex: 1;">
+                <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap;">Legend (图例):</span>
+                <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
                   <input type="number" id="legend-font-size" value="12" min="8" max="36" class="form-input" style="font-size: 11px; padding: 4px; width: 50px; height: auto;">
-                  <span style="font-size: 11px; color: var(--text-muted);">px</span>
+                  <span style="font-size: 11px; color: var(--text-muted); margin-right: 4px;">px</span>
                   <input type="color" id="legend-font-color" value="#475569" style="border:none; padding:0; width:22px; height:22px; background:none; cursor:pointer;" title="Legend Color">
                 </div>
+              </div>
+              
+              <!-- Restore Defaults Button -->
+              <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                <button class="btn btn-secondary" id="btn-restore-font-defaults" style="font-size: 10px; padding: 2px 6px; height: auto; justify-content: center; display: flex; align-items: center;">Restore Defaults (恢复默认)</button>
               </div>
             </div>
           </div>
@@ -395,6 +470,25 @@
             <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">（控制图表背景网格线的显示与隐藏，辅助读取坐标轴具体数值）</span>
           </div>
 
+          <!-- Axis Ranges (轴数值范围) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Axis Ranges (轴数值范围)</label>
+            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 45px;">X-Axis:</span>
+                <input type="number" step="any" id="axis-xmin" placeholder="Min (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                <input type="number" step="any" id="axis-xmax" placeholder="Max (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 45px;">Y-Axis:</span>
+                <input type="number" step="any" id="axis-ymin" placeholder="Min (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                <input type="number" step="any" id="axis-ymax" placeholder="Max (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+              </div>
+            </div>
+          </div>
+
+
+
           <!-- Axis Guide Lines (标记线) -->
           <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Axis Guide Lines (标记线)</label>
@@ -436,11 +530,11 @@
           </div>
         </section>
 
-        <!-- Section 6: Statistics Helper -->
+        <!-- Section 5: Statistics Helper -->
         <section class="panel-section" id="stats-section" style="opacity: 0.5; pointer-events: none; border-top: 1px solid var(--border-color); padding-top: 16px;">
           <div class="section-title">
             <i data-lucide="sigma"></i>
-            <span>6. Statistics Helper</span>
+            <span>5. Statistics Helper</span>
           </div>
           <div style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
             
@@ -502,7 +596,7 @@
             <button class="btn btn-secondary" id="btn-run-stats" style="justify-content: center; width: 100%; font-size: 12px; padding: 6px 12px; margin-top: 4px;">Run Statistical Test</button>
           </div>
           <div id="stats-results-panel" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--accent-color); border-radius: var(--radius-md); padding: 10px; font-size: 12px; margin-top: 8px;">
-            <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; max-height: 350px; overflow-y: auto;"></div>
+            <div id="stats-summary-text" style="color: var(--text-primary); font-family: monospace; white-space: pre-wrap; line-height: 1.4; min-height: 180px; max-height: 500px; overflow-y: auto;"></div>
             
             <!-- Significance Bar Selector (Toggled in JS) -->
             <div id="stats-comparison-select-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; flex-direction: column; gap: 4px;">
