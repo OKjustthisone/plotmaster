@@ -657,8 +657,22 @@
         <div class="quick-title-editor" id="quick-title-editor" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: var(--radius-md); display: flex; gap: 10px; align-items: center;">
           <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">Chart Titles:</label>
           <input type="text" class="form-input" id="chart-title-input" placeholder="Chart Title" style="padding: 6px 10px; font-size: 12px;">
-          <input type="text" class="form-input" id="chart-xlabel-input" placeholder="X Axis Label" style="padding: 6px 10px; font-size: 12px;">
-          <input type="text" class="form-input" id="chart-ylabel-input" placeholder="Y Axis Label" style="padding: 6px 10px; font-size: 12px;">
+          <input type="text" class="form-input" id="chart-xlabel-input" placeholder="X Axis Label" list="x-axis-presets" style="padding: 6px 10px; font-size: 12px;">
+          <datalist id="x-axis-presets">
+            <option value="Days post treatment"></option>
+            <option value="Days post inoculation"></option>
+          </datalist>
+          <input type="text" class="form-input" id="chart-ylabel-input" placeholder="Y Axis Label" list="y-axis-presets" style="padding: 6px 10px; font-size: 12px;">
+          <datalist id="y-axis-presets">
+            <option value="Tumor Volume (mm³±SEM)"></option>
+            <option value="Tumor Volume (mm3±SEM)"></option>
+            <option value="Body Weight (g±SEM)"></option>
+            <option value="Body Weight Change (%±SEM)"></option>
+            <option value="Tumor Volume (mm³±SD)"></option>
+            <option value="Tumor Volume (mm3±SD)"></option>
+            <option value="Body Weight (g±SD)"></option>
+            <option value="Body Weight Change (%±SD)"></option>
+          </datalist>
         </div>
 
         <!-- SVG Annotation Overlay Toolbar -->

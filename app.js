@@ -1552,6 +1552,7 @@ function getPlotDimensions() {
 
   let maxYCharCount = 4;
   const formatLength = (val) => {
+    if (val === null || val === undefined || isNaN(val)) return 0;
     let s = val.toString();
     const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
     if (yNumFormat === 'sci') {
@@ -1563,34 +1564,58 @@ function getPlotDimensions() {
     }
     return s.length;
   };
+
   if (yNumFormat === 'sci') {
     maxYCharCount = 8;
   } else if (appState.activeData) {
     const selectedYOptions = Array.from(document.getElementById('y-axis-select') ? document.getElementById('y-axis-select').selectedOptions : []);
     const yCols = selectedYOptions.map(opt => opt.value);
-    let maxVal = -Infinity;
-    let minVal = Infinity;
-    const rows = typeof getPlotFilteredRows === 'function' ? getPlotFilteredRows() : appState.activeData.rows;
-    rows.forEach(r => {
-      yCols.forEach(col => {
-        const val = parseFloat(r[col]);
-        if (!isNaN(val)) {
-          if (val > maxVal) maxVal = val;
-          if (val < minVal) minVal = val;
-        }
+    
+    // Check manual Y-axis limits from DOM
+    const yMinInput = document.getElementById('axis-ymin');
+    const yMaxInput = document.getElementById('axis-ymax');
+    const yMinVal = yMinInput && yMinInput.value !== '' ? parseFloat(yMinInput.value) : null;
+    const yMaxVal = yMaxInput && yMaxInput.value !== '' ? parseFloat(yMaxInput.value) : null;
+
+    let minVal = yMinVal;
+    let maxVal = yMaxVal;
+
+    if (minVal === null || maxVal === null) {
+      const rows = typeof getPlotFilteredRows === 'function' ? getPlotFilteredRows() : appState.activeData.rows;
+      let dataMin = Infinity;
+      let dataMax = -Infinity;
+      rows.forEach(r => {
+        yCols.forEach(col => {
+          const val = parseFloat(r[col]);
+          if (!isNaN(val)) {
+            if (val > dataMax) dataMax = val;
+            if (val < dataMin) dataMin = val;
+          }
+        });
       });
-    });
-    if (isFinite(maxVal) && isFinite(minVal)) {
+      if (isFinite(dataMin) && isFinite(dataMax)) {
+        if (minVal === null) minVal = dataMin;
+        if (maxVal === null) maxVal = dataMax;
+      }
+    }
+
+    if (minVal !== null && maxVal !== null) {
+      const chartType = appState.currentChartType;
+      if (chartType === 'bar') {
+        if (minVal > 0) minVal = 0;
+        if (maxVal < 0) maxVal = 0;
+      }
       maxYCharCount = Math.max(formatLength(minVal), formatLength(maxVal), 4);
       maxYCharCount += 1; // buffer for tick/minus
     }
   }
 
-  const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.5) + 18);
-  const calculatedLeft = Math.round(dynamicNameGap + axisTitleSize + 15);
+  // Tighter nameGap and left margin calculation
+  const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.55) + 8);
+  const calculatedLeft = Math.round(dynamicNameGap + axisTitleSize + 10);
 
   // Define paddings - expanded dynamically
-  let gridLeft = Math.max(75, calculatedLeft);
+  let gridLeft = Math.max(65, calculatedLeft);
   let gridTop = 60;
   let gridRight = 40;
   let gridBottom = 60;
@@ -1648,7 +1673,7 @@ function getPlotDimensions() {
   const canvasWidth = gridLeft + gridWidth + gridRight;
   const canvasHeight = gridTop + gridHeight + gridBottom;
 
-  return { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop };
+  return { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, dynamicNameGap };
 }
 
 function applyCanvasDimensions() {
@@ -1910,7 +1935,7 @@ function drawChart() {
   const chartXLabel = document.getElementById('chart-xlabel-input').value.trim();
   const chartYLabel = document.getElementById('chart-ylabel-input').value.trim();
 
-  const { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop } = getPlotDimensions();
+  const { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, dynamicNameGap } = getPlotDimensions();
 
   const legendData = [];
   let legendConfig = {
@@ -1938,43 +1963,6 @@ function drawChart() {
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   }
-
-  // Dynamic Y-axis values length calculations to prevent overlap
-  const yNumFormat = document.getElementById('y-axis-num-format') ? document.getElementById('y-axis-num-format').value : 'std';
-  let maxYCharCount = 4;
-  const formatLength = (val) => {
-    let s = val.toString();
-    const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
-    if (yNumFormat === 'sci') {
-      return 8;
-    }
-    if (s.includes('.')) {
-      const parts = s.split('.');
-      s = parts[0] + '.' + parts[1].substring(0, 2);
-    }
-    return s.length;
-  };
-  if (yNumFormat === 'sci') {
-    maxYCharCount = 8;
-  } else if (appState.activeData) {
-    let maxVal = -Infinity;
-    let minVal = Infinity;
-    const rows = getPlotFilteredRows();
-    rows.forEach(r => {
-      yCols.forEach(col => {
-        const val = parseFloat(r[col]);
-        if (!isNaN(val)) {
-          if (val > maxVal) maxVal = val;
-          if (val < minVal) minVal = val;
-        }
-      });
-    });
-    if (isFinite(maxVal) && isFinite(minVal)) {
-      maxYCharCount = Math.max(formatLength(minVal), formatLength(maxVal), 4);
-      maxYCharCount += 1; // buffer for tick/minus
-    }
-  }
-  const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.5) + 18);
 
   // Common ECharts Option templates
   let option = {
@@ -2041,7 +2029,8 @@ function drawChart() {
   if (chartTitle) {
     option.title = {
       text: chartTitle,
-      left: 'center',
+      left: gridLeft + gridWidth / 2,
+      textAlign: 'center',
       top: 15,
       textStyle: {
         fontFamily: font,
@@ -3453,7 +3442,7 @@ function createChartTab(name = null, config = null) {
     markingLines: [],
     
     // Filter settings
-    activeGroups: [], // empty means all
+    activeGroups: null, // null means initial default state
     splitGroups: false,
     
     // Text titles
@@ -3543,7 +3532,7 @@ function saveActiveTabState() {
   if (checkboxes.length > 0) {
     tab.activeGroups = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
   } else {
-    tab.activeGroups = [];
+    tab.activeGroups = null;
   }
   tab.splitGroups = document.getElementById('group-tabs-checkbox').checked;
   
@@ -3869,7 +3858,7 @@ function deleteChartTab(id) {
 
 let currentSplitGroupTab = 'ALL';
 
-function updateGroupCheckboxes(activeGroups = [], splitChecked = false) {
+function updateGroupCheckboxes(activeGroups = null, splitChecked = false) {
   const gCol = DOM.groupSelect.value;
   const container = document.getElementById('group-options-container');
   const list = document.getElementById('group-checkboxes-list');
@@ -3896,7 +3885,6 @@ function updateGroupCheckboxes(activeGroups = [], splitChecked = false) {
   allLabel.style.fontWeight = 'bold';
   const allInput = document.createElement('input');
   allInput.type = 'checkbox';
-  allInput.checked = activeGroups.length === 0 || activeGroups.length === uniqueGroups.length;
   allLabel.appendChild(allInput);
   const allSpan = document.createElement('span');
   allSpan.textContent = 'Toggle All (全选/全不选)';
@@ -3911,7 +3899,17 @@ function updateGroupCheckboxes(activeGroups = [], splitChecked = false) {
     cb.type = 'checkbox';
     cb.className = 'group-filter-checkbox';
     cb.value = g;
-    cb.checked = activeGroups.length === 0 || activeGroups.length === uniqueGroups.length || activeGroups.includes(g);
+    
+    const isBlank = (val) => {
+      const s = String(val).toLowerCase().trim();
+      return s === 'null' || s === 'undefined' || s === '' || s === 'nan';
+    };
+    
+    if (activeGroups === null) {
+      cb.checked = !isBlank(g);
+    } else {
+      cb.checked = activeGroups.includes(g);
+    }
     
     cb.addEventListener('change', () => {
       const checkedBoxes = checkboxes.filter(x => x.checked);
@@ -3927,6 +3925,9 @@ function updateGroupCheckboxes(activeGroups = [], splitChecked = false) {
     lbl.appendChild(span);
     list.appendChild(lbl);
   });
+  
+  // Set initial Toggle All state based on checkboxes
+  allInput.checked = checkboxes.length > 0 && checkboxes.every(x => x.checked);
   
   allInput.addEventListener('change', () => {
     checkboxes.forEach(cb => {
