@@ -113,12 +113,14 @@ function init() {
   DOM.uploadZone = document.getElementById('upload-zone');
   DOM.fileInput = document.getElementById('file-input');
   DOM.xSelect = document.getElementById('x-axis-select');
-  DOM.ySelect = document.getElementById('y-axis-select');
+  DOM.ySelect = document.getElementById('y1-cols-container');
+  DOM.y2Select = document.getElementById('y2-cols-container');
   DOM.groupSelect = document.getElementById('group-select');
   DOM.mappingSection = document.getElementById('mapping-section');
   DOM.plotSection = document.getElementById('plot-section');
   DOM.chartTypeGrid = document.getElementById('chart-type-grid');
   DOM.paletteSelect = document.getElementById('palette-select');
+  DOM.palette2Select = document.getElementById('palette2-select');
   DOM.fileStatusBadge = document.getElementById('file-status-badge');
   DOM.fileStatusText = document.getElementById('file-status-text');
   DOM.sheetSelectorGroup = document.getElementById('sheet-selector-group');
@@ -132,6 +134,8 @@ function init() {
   
   DOM.pointSize = document.getElementById('point-size-slider');
   DOM.pointSizeVal = document.getElementById('point-size-val');
+  DOM.pointSize2 = document.getElementById('point-size-2-slider');
+  DOM.pointSize2Val = document.getElementById('point-size-2-val');
   DOM.lineWidth = document.getElementById('line-width-slider');
   DOM.lineWidthVal = document.getElementById('line-width-val');
   DOM.barPadding = document.getElementById('bar-padding-slider');
@@ -146,6 +150,9 @@ function init() {
   DOM.themeSelect = document.getElementById('theme-select');
   DOM.gridX = document.getElementById('grid-x-checkbox');
   DOM.gridY = document.getElementById('grid-y-checkbox');
+  DOM.xAxisShowLabels = document.getElementById('x-axis-show-labels');
+  DOM.xAxisLabelRotate = document.getElementById('x-axis-label-rotate');
+  DOM.xAxisLabelRotateVal = document.getElementById('x-axis-label-rotate-val');
   
   DOM.exportPng = document.getElementById('export-png');
   DOM.exportJpg = document.getElementById('export-jpg');
@@ -165,6 +172,8 @@ function init() {
 function updateColumnMappingInputs(chartType) {
   const xGroup = document.getElementById('x-axis-group');
   const yGroup = document.getElementById('y-axis-group');
+  const y2Group = document.getElementById('y2-axis-group');
+  const addY2Container = document.getElementById('add-y2-btn-container');
   const gGroup = document.getElementById('group-axis-group');
   
   if (!xGroup || !yGroup || !gGroup) return;
@@ -173,20 +182,29 @@ function updateColumnMappingInputs(chartType) {
   const yLabel = yGroup.querySelector('label');
   const gLabel = gGroup.querySelector('label');
   
+  const tab = getActiveTab();
+  const hasY2Axis = tab && tab.hasY2Axis;
+
   if (chartType === 'pie') {
     xGroup.style.display = 'block';
     yGroup.style.display = 'block';
+    if (y2Group) y2Group.style.display = 'none';
+    if (addY2Container) addY2Container.style.display = 'none';
     gGroup.style.display = 'none';
     if (xLabel) xLabel.textContent = 'Categories / Names Column';
     if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
   } else if (chartType === 'histogram') {
     xGroup.style.display = 'none';
     yGroup.style.display = 'block';
+    if (y2Group) y2Group.style.display = 'none';
+    if (addY2Container) addY2Container.style.display = 'none';
     gGroup.style.display = 'none';
     if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
   } else if (chartType === 'heatmap') {
     xGroup.style.display = 'block';
     yGroup.style.display = 'block';
+    if (y2Group) y2Group.style.display = 'none';
+    if (addY2Container) addY2Container.style.display = 'none';
     gGroup.style.display = 'block';
     if (xLabel) xLabel.textContent = 'X-Axis Column (Categories)';
     if (yLabel) yLabel.textContent = 'Y-Axis Column (Categories)';
@@ -194,11 +212,34 @@ function updateColumnMappingInputs(chartType) {
   } else {
     xGroup.style.display = 'block';
     yGroup.style.display = 'block';
+    if (y2Group) y2Group.style.display = hasY2Axis ? 'block' : 'none';
+    if (addY2Container) addY2Container.style.display = hasY2Axis ? 'none' : 'block';
     gGroup.style.display = 'block';
     if (xLabel) xLabel.textContent = 'X-Axis Column (Categorical/Numeric)';
     if (yLabel) yLabel.textContent = 'Y-Axis Column (Numeric)';
     if (gLabel) gLabel.textContent = 'Grouping / Color Variable (Optional)';
   }
+  toggleSecondaryYAxisStyles();
+}
+
+function toggleSecondaryYAxisStyles() {
+  const tab = getActiveTab();
+  const hasY2 = tab && tab.hasY2Axis;
+
+  const y2PaletteGroup = document.getElementById('secondary-y-palette-group');
+  const y2PointSizeGroup = document.getElementById('secondary-point-size-group');
+  const y2PointShapeGroup = document.getElementById('secondary-point-shape-group');
+  const y2MinMaxGroup = document.getElementById('axis-y2minmax-group');
+  const y2LabelInput = document.getElementById('chart-y2label-input');
+
+  const displayVal = hasY2 ? 'block' : 'none';
+  const displayFlexVal = hasY2 ? 'flex' : 'none';
+
+  if (y2PaletteGroup) y2PaletteGroup.style.display = displayFlexVal;
+  if (y2PointSizeGroup) y2PointSizeGroup.style.display = displayVal;
+  if (y2PointShapeGroup) y2PointShapeGroup.style.display = displayFlexVal;
+  if (y2MinMaxGroup) y2MinMaxGroup.style.display = displayFlexVal;
+  if (y2LabelInput) y2LabelInput.style.display = displayVal;
 }
 
 // Helper to read Y-axis split values from the DOM
@@ -364,6 +405,10 @@ function renderPalettePicker() {
     bulkPaletteSelect.innerHTML = '<option value="">-- Select Palette --</option>';
   }
 
+  if (DOM.palette2Select) {
+    DOM.palette2Select.innerHTML = '';
+  }
+
   Object.keys(PALETTES).forEach(key => {
     const pal = PALETTES[key];
     const opt = document.createElement('option');
@@ -374,6 +419,18 @@ function renderPalettePicker() {
     }
     DOM.paletteSelect.appendChild(opt);
 
+    if (DOM.palette2Select) {
+      const opt2 = document.createElement('option');
+      opt2.value = key;
+      opt2.textContent = pal.name;
+      const tab = getActiveTab();
+      const currentPalette2 = (tab && tab.palette2) ? tab.palette2 : 'ggplot2';
+      if (currentPalette2 === key) {
+        opt2.selected = true;
+      }
+      DOM.palette2Select.appendChild(opt2);
+    }
+
     if (bulkPaletteSelect) {
       const optBulk = document.createElement('option');
       optBulk.value = key;
@@ -382,6 +439,7 @@ function renderPalettePicker() {
     }
   });
   updatePalettePreviewBar();
+  updatePalette2PreviewBar();
 }
 
 function updatePalettePreviewBar() {
@@ -389,6 +447,23 @@ function updatePalettePreviewBar() {
   if (!previewBar) return;
   previewBar.innerHTML = '';
   const key = appState.selectedPalette || 'ggplot2';
+  const pal = PALETTES[key];
+  if (pal && pal.colors) {
+    pal.colors.slice(0, 15).forEach(c => {
+      const block = document.createElement('div');
+      block.style.flex = '1';
+      block.style.backgroundColor = c;
+      previewBar.appendChild(block);
+    });
+  }
+}
+
+function updatePalette2PreviewBar() {
+  const previewBar = document.getElementById('palette2-preview-bar');
+  if (!previewBar) return;
+  previewBar.innerHTML = '';
+  const tab = getActiveTab();
+  const key = (tab && tab.palette2) || 'ggplot2';
   const pal = PALETTES[key];
   if (pal && pal.colors) {
     pal.colors.slice(0, 15).forEach(c => {
@@ -453,7 +528,7 @@ function setupEventListeners() {
   });
 
   // Controls triggers
-  [DOM.xSelect, DOM.ySelect, DOM.groupSelect].forEach(select => {
+  [DOM.xSelect, DOM.groupSelect].forEach(select => {
     select.addEventListener('change', () => {
       if (select === DOM.groupSelect) {
         updateGroupCheckboxes();
@@ -465,6 +540,72 @@ function setupEventListeners() {
       if (appState.activeData) drawChart();
     });
   });
+
+  // Dynamic Y selectors action buttons
+  const btnAddY1Col = document.getElementById('btn-add-y1-col');
+  if (btnAddY1Col) {
+    btnAddY1Col.addEventListener('click', () => {
+      const container = document.getElementById('y1-cols-container');
+      if (container) {
+        const headers = appState.activeData ? appState.activeData.headers : [];
+        const defaultCol = headers.length > 1 ? headers[1] : (headers[0] || '');
+        const row = createYColRow(false, defaultCol);
+        container.appendChild(row);
+        updateRemoveButtonsVisibility(false);
+        saveActiveTabState();
+        updateManualStylesList();
+        if (appState.activeData) drawChart();
+      }
+    });
+  }
+
+  const btnAddY2Col = document.getElementById('btn-add-y2-col');
+  if (btnAddY2Col) {
+    btnAddY2Col.addEventListener('click', () => {
+      const container = document.getElementById('y2-cols-container');
+      if (container) {
+        const headers = appState.activeData ? appState.activeData.headers : [];
+        const defaultCol = headers.length > 1 ? headers[1] : (headers[0] || '');
+        const row = createYColRow(true, defaultCol);
+        container.appendChild(row);
+        updateRemoveButtonsVisibility(true);
+        saveActiveTabState();
+        updateManualStylesList();
+        if (appState.activeData) drawChart();
+      }
+    });
+  }
+
+  const btnAddY2Axis = document.getElementById('btn-add-y2-axis');
+  if (btnAddY2Axis) {
+    btnAddY2Axis.addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (tab) {
+        tab.hasY2Axis = true;
+        renderYColsUI();
+        toggleSecondaryYAxisStyles();
+        saveActiveTabState();
+        updateManualStylesList();
+        if (appState.activeData) drawChart();
+      }
+    });
+  }
+
+  const btnRemoveY2Axis = document.getElementById('btn-remove-y2-axis');
+  if (btnRemoveY2Axis) {
+    btnRemoveY2Axis.addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (tab) {
+        tab.hasY2Axis = false;
+        tab.y2Cols = [];
+        renderYColsUI();
+        toggleSecondaryYAxisStyles();
+        saveActiveTabState();
+        updateManualStylesList();
+        if (appState.activeData) drawChart();
+      }
+    });
+  }
 
   // Style sliders triggers
   DOM.pointSize.addEventListener('input', (e) => {
@@ -500,6 +641,16 @@ function setupEventListeners() {
     if (appState.activeData) drawChart();
   });
 
+  DOM.xAxisShowLabels.addEventListener('change', () => {
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.xAxisLabelRotate.addEventListener('input', (e) => {
+    DOM.xAxisLabelRotateVal.textContent = e.target.value + '°';
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+
   const legDistSlider = document.getElementById('legend-distance-slider');
   const legDistVal = document.getElementById('legend-distance-val');
   if (legDistSlider && legDistVal) {
@@ -516,6 +667,32 @@ function setupEventListeners() {
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
+
+  if (DOM.palette2Select) {
+    DOM.palette2Select.addEventListener('change', (e) => {
+      const tab = getActiveTab();
+      if (tab) tab.palette2 = e.target.value;
+      updatePalette2PreviewBar();
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  if (DOM.pointSize2) {
+    DOM.pointSize2.addEventListener('input', (e) => {
+      if (DOM.pointSize2Val) DOM.pointSize2Val.textContent = e.target.value;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+
+  const pointShape2Select = document.getElementById('point-shape-2-select');
+  if (pointShape2Select) {
+    pointShape2Select.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
 
   document.getElementById('stats-method-select').addEventListener('change', () => {
     runStatisticalTest();
@@ -686,11 +863,14 @@ function setupEventListeners() {
   });
   
   // Quick Title Editor
-  ['chart-title-input', 'chart-xlabel-input', 'chart-ylabel-input'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => {
-      saveActiveTabState();
-      drawChart();
-    });
+  ['chart-title-input', 'chart-xlabel-input', 'chart-ylabel-input', 'chart-y2label-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        saveActiveTabState();
+        drawChart();
+      });
+    }
   });
   
   // Stats buttons
@@ -728,7 +908,7 @@ function setupEventListeners() {
   }
 
   // Axis Limits Inputs Changes
-  ['axis-xmin', 'axis-xmax', 'axis-ymin', 'axis-ymax'].forEach(id => {
+  ['axis-xmin', 'axis-xmax', 'axis-ymin', 'axis-ymax', 'axis-y2min', 'axis-y2max'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', () => {
@@ -1062,19 +1242,13 @@ function updateMappingDropdowns() {
   
   // Clear select elements
   DOM.xSelect.innerHTML = '';
-  DOM.ySelect.innerHTML = '';
   DOM.groupSelect.innerHTML = '<option value="">-- No Grouping --</option>';
 
-  headers.forEach((h, index) => {
+  headers.forEach((h) => {
     const optX = document.createElement('option');
     optX.value = h;
     optX.textContent = h;
     DOM.xSelect.appendChild(optX);
-
-    const optY = document.createElement('option');
-    optY.value = h;
-    optY.textContent = h;
-    DOM.ySelect.appendChild(optY);
 
     const optG = document.createElement('option');
     optG.value = h;
@@ -1113,15 +1287,171 @@ function updateMappingDropdowns() {
 
   // Sensible default selections
   if (headers.length > 0) DOM.xSelect.value = headers[0];
-  if (headers.length > 1) {
-    DOM.ySelect.value = headers[1];
-  } else if (headers.length > 0) {
-    DOM.ySelect.value = headers[0];
+  
+  const tab = getActiveTab();
+  if (tab) {
+    if (headers.length > 1) {
+      tab.yCols = [headers[1]];
+    } else if (headers.length > 0) {
+      tab.yCols = [headers[0]];
+    }
+    tab.y2Cols = [];
+    tab.hasY2Axis = false;
   }
+
+  renderYColsUI();
 
   updateStatsFilterValues();
   updateColumnMappingInputs(appState.currentChartType);
   updateManualStylesList();
+}
+
+function getYCols() {
+  const container = document.getElementById('y1-cols-container');
+  if (!container) return [];
+  const selects = container.querySelectorAll('.y1-col-select');
+  return Array.from(selects).map(sel => sel.value).filter(val => val !== '');
+}
+
+function getY2Cols() {
+  const tab = getActiveTab();
+  if (!tab || !tab.hasY2Axis) return [];
+  const container = document.getElementById('y2-cols-container');
+  if (!container) return [];
+  const selects = container.querySelectorAll('.y2-col-select');
+  return Array.from(selects).map(sel => sel.value).filter(val => val !== '');
+}
+
+function updateRemoveButtonsVisibility(isY2) {
+  const container = document.getElementById(isY2 ? 'y2-cols-container' : 'y1-cols-container');
+  if (!container) return;
+  const rows = container.querySelectorAll(isY2 ? '.y2-col-row' : '.y1-col-row');
+  rows.forEach(row => {
+    const btn = row.querySelector('button');
+    if (btn) {
+      btn.style.display = rows.length > 1 ? 'flex' : 'none';
+    }
+  });
+}
+
+function createYColRow(isY2, selectedValue) {
+  const headers = appState.activeData ? appState.activeData.headers : [];
+  const row = document.createElement('div');
+  row.className = isY2 ? 'y2-col-row' : 'y1-col-row';
+  row.style.cssText = 'display: flex; gap: 6px; align-items: center; width: 100%;';
+
+  const select = document.createElement('select');
+  select.className = isY2 ? 'form-select y2-col-select' : 'form-select y1-col-select';
+  select.style.cssText = 'flex: 1;';
+
+  headers.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h;
+    if (h === selectedValue) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  if (!selectedValue && headers.length > 0) {
+    select.value = headers[0];
+  }
+
+  select.addEventListener('change', () => {
+    saveActiveTabState();
+    updateManualStylesList();
+    if (appState.activeData) drawChart();
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn btn-icon';
+  removeBtn.style.cssText = 'padding: 4px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center;';
+  removeBtn.innerHTML = '<i data-lucide="x" style="width: 14px; height: 14px; color: var(--text-muted);"></i>';
+  
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    updateRemoveButtonsVisibility(isY2);
+    saveActiveTabState();
+    updateManualStylesList();
+    if (appState.activeData) drawChart();
+  });
+
+  row.appendChild(select);
+  row.appendChild(removeBtn);
+
+  if (window.lucide) {
+    setTimeout(() => {
+      lucide.createIcons({
+        attrs: { class: 'lucide-icon' },
+        nameAttr: 'data-lucide'
+      });
+    }, 10);
+  }
+
+  return row;
+}
+
+function renderYColsUI() {
+  const tab = getActiveTab();
+  const y1Container = document.getElementById('y1-cols-container');
+  const y2Container = document.getElementById('y2-cols-container');
+  const y2Group = document.getElementById('y2-axis-group');
+  const addY2Container = document.getElementById('add-y2-btn-container');
+
+  if (!y1Container) return;
+
+  const headers = appState.activeData ? appState.activeData.headers : [];
+
+  // Render Y1
+  y1Container.innerHTML = '';
+  const yCols = (tab && tab.yCols) ? tab.yCols : [];
+  if (yCols.length === 0) {
+    let defaultCol = headers[0] || '';
+    if (headers.length > 1) {
+      defaultCol = headers[1];
+    }
+    const row = createYColRow(false, defaultCol);
+    y1Container.appendChild(row);
+  } else {
+    yCols.forEach(col => {
+      const row = createYColRow(false, col);
+      y1Container.appendChild(row);
+    });
+  }
+  updateRemoveButtonsVisibility(false);
+
+  // Render Y2
+  if (y2Container && y2Group) {
+    const hasY2Axis = (tab && tab.hasY2Axis) || false;
+    const chartType = tab ? tab.chartType : appState.currentChartType;
+    const isY2Supported = chartType !== 'pie' && chartType !== 'histogram' && chartType !== 'heatmap';
+
+    if (hasY2Axis && isY2Supported) {
+      y2Group.style.display = 'block';
+      if (addY2Container) addY2Container.style.display = 'none';
+
+      y2Container.innerHTML = '';
+      const y2Cols = (tab && tab.y2Cols) ? tab.y2Cols : [];
+      if (y2Cols.length === 0) {
+        let defaultCol = headers[0] || '';
+        if (headers.length > 1) {
+          defaultCol = headers[1];
+        }
+        const row = createYColRow(true, defaultCol);
+        y2Container.appendChild(row);
+      } else {
+        y2Cols.forEach(col => {
+          const row = createYColRow(true, col);
+          y2Container.appendChild(row);
+        });
+      }
+      updateRemoveButtonsVisibility(true);
+    } else {
+      y2Group.style.display = 'none';
+      if (addY2Container) addY2Container.style.display = isY2Supported ? 'block' : 'none';
+      y2Container.innerHTML = '';
+    }
+  }
 }
 
 // Add filter row dynamically inside Column Mapping Data Filters
@@ -1568,8 +1898,7 @@ function getPlotDimensions() {
   if (yNumFormat === 'sci') {
     maxYCharCount = 8;
   } else if (appState.activeData) {
-    const selectedYOptions = Array.from(document.getElementById('y-axis-select') ? document.getElementById('y-axis-select').selectedOptions : []);
-    const yCols = selectedYOptions.map(opt => opt.value);
+    const yCols = getYCols();
     
     // Check manual Y-axis limits from DOM
     const yMinInput = document.getElementById('axis-ymin');
@@ -1610,15 +1939,85 @@ function getPlotDimensions() {
     }
   }
 
+  // Secondary Y-axis values length calculations
+  let maxY2CharCount = 4;
+  let dynamicNameGap2 = 30;
+  let calculatedRight = 40;
+
+  const y2Cols = getY2Cols();
+
+  if (y2Cols.length > 0 && appState.activeData) {
+    const y2MinInput = document.getElementById('axis-y2min');
+    const y2MaxInput = document.getElementById('axis-y2max');
+    const y2MinVal = y2MinInput && y2MinInput.value !== '' ? parseFloat(y2MinInput.value) : null;
+    const y2MaxVal = y2MaxInput && y2MaxInput.value !== '' ? parseFloat(y2MaxInput.value) : null;
+
+    let min2Val = y2MinVal;
+    let max2Val = y2MaxVal;
+
+    if (min2Val === null || max2Val === null) {
+      const rows = typeof getPlotFilteredRows === 'function' ? getPlotFilteredRows() : appState.activeData.rows;
+      let dataMin = Infinity;
+      let dataMax = -Infinity;
+      rows.forEach(r => {
+        y2Cols.forEach(col => {
+          const val = parseFloat(r[col]);
+          if (!isNaN(val)) {
+            if (val > dataMax) dataMax = val;
+            if (val < dataMin) dataMin = val;
+          }
+        });
+      });
+      if (isFinite(dataMin) && isFinite(dataMax)) {
+        if (min2Val === null) min2Val = dataMin;
+        if (max2Val === null) max2Val = dataMax;
+      }
+    }
+
+    if (yNumFormat === 'sci') {
+      maxY2CharCount = 8;
+    } else if (min2Val !== null && max2Val !== null) {
+      const chartType = appState.currentChartType;
+      if (chartType === 'bar') {
+        if (min2Val > 0) min2Val = 0;
+        if (max2Val < 0) max2Val = 0;
+      }
+      maxY2CharCount = Math.max(formatLength(min2Val), formatLength(max2Val), 4);
+      maxY2CharCount += 1;
+    }
+    dynamicNameGap2 = Math.round(maxY2CharCount * (axisValSize * 0.55) + 8);
+    calculatedRight = Math.round(dynamicNameGap2 + axisTitleSize + 10);
+  }
+
   // Tighter nameGap and left margin calculation
   const dynamicNameGap = Math.round(maxYCharCount * (axisValSize * 0.55) + 8);
   const calculatedLeft = Math.round(dynamicNameGap + axisTitleSize + 10);
 
+  // Calculate X-axis label height dynamically based on rotation
+  let maxXCharCount = 0;
+  if (appState.activeData) {
+    const xCol = DOM.xSelect.value;
+    const rows = appState.activeData.rows || [];
+    const xVals = [...new Set(rows.map(r => String(r[xCol] || '')))];
+    xVals.forEach(x => {
+      if (x.length > maxXCharCount) maxXCharCount = x.length;
+    });
+  }
+  const showLabels = DOM.xAxisShowLabels ? DOM.xAxisShowLabels.checked : true;
+  const rotateAngle = DOM.xAxisLabelRotate ? parseInt(DOM.xAxisLabelRotate.value, 10) : 0;
+  
+  let xLabelHeight = 0;
+  if (showLabels) {
+    const rotateRad = (rotateAngle * Math.PI) / 180;
+    const labelLengthEst = maxXCharCount * (axisValSize * 0.55);
+    xLabelHeight = Math.round(Math.abs(Math.sin(rotateRad) * labelLengthEst) + Math.abs(Math.cos(rotateRad) * axisValSize) + 8);
+  }
+  let gridBottom = Math.max(45, xLabelHeight + 25);
+
   // Define paddings - expanded dynamically
   let gridLeft = Math.max(65, calculatedLeft);
   let gridTop = 60;
-  let gridRight = 40;
-  let gridBottom = 60;
+  let gridRight = y2Cols.length > 0 ? Math.max(65, calculatedRight) : 40;
 
   // Dynamic Legend calculations for spacing/layout
   let numLegendItems = 1;
@@ -1647,10 +2046,10 @@ function getPlotDimensions() {
         });
       }
     } else {
-      const selectedYOptions = Array.from(document.getElementById('y-axis-select') ? document.getElementById('y-axis-select').selectedOptions : []);
-      numLegendItems = Math.max(1, selectedYOptions.length);
-      selectedYOptions.forEach(opt => {
-        const s = String(opt.text || opt.value || '');
+      const combinedCols = [...getYCols(), ...getY2Cols()];
+      numLegendItems = Math.max(1, combinedCols.length);
+      combinedCols.forEach(col => {
+        const s = String(col || '');
         if (s.length > maxLegendCharCount) maxLegendCharCount = s.length;
       });
     }
@@ -1663,7 +2062,7 @@ function getPlotDimensions() {
   if (legendPos === 'left') {
     gridLeft = Math.max(95, calculatedLeft) + legendDistPx + legendWidthEst; // buffer for left legend
   } else if (legendPos === 'right') {
-    gridRight = 40 + legendDistPx + legendWidthEst; // buffer for right legend
+    gridRight = (y2Cols.length > 0 ? Math.max(65, calculatedRight) : 40) + legendDistPx + legendWidthEst; // buffer for right legend
   } else if (legendPos === 'top') {
     gridTop = 60 + legendDistPx + legendHeightPx; // adjust Top margin dynamically
   } else if (legendPos === 'bottom') {
@@ -1673,7 +2072,8 @@ function getPlotDimensions() {
   const canvasWidth = gridLeft + gridWidth + gridRight;
   const canvasHeight = gridTop + gridHeight + gridBottom;
 
-  return { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, dynamicNameGap };
+  const y2AxisWidth = y2Cols.length > 0 ? Math.max(65, calculatedRight) : 0;
+  return { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, gridRight, dynamicNameGap, dynamicNameGap2, y2AxisWidth };
 }
 
 function applyCanvasDimensions() {
@@ -1791,12 +2191,14 @@ function drawChart() {
   const xCol = DOM.xSelect.value;
   
   // Get all selected Y columns
-  const selectedYOptions = Array.from(DOM.ySelect.selectedOptions);
-  const yCols = selectedYOptions.map(opt => opt.value);
+  const yCols = getYCols();
+  const y2Cols = getY2Cols();
   
-  if (yCols.length === 0) return;
+  if (yCols.length === 0 && y2Cols.length === 0) return;
 
   const gCol = DOM.groupSelect.value;
+  const type = appState.currentChartType;
+  const isXColSameAsGCol = !!(xCol && gCol && xCol === gCol);
 
   const pointShape = document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle';
   
@@ -1901,7 +2303,7 @@ function drawChart() {
   // Theme settings mapping
   let textStyle = { fontFamily: font, fontSize: 13 };
   let gridLineStyle = { lineStyle: { type: 'dashed', color: '#e2e8f0' } };
-  let axisLineStyle = { lineStyle: { color: '#64748b' } };
+  let axisLineStyle = { show: true, lineStyle: { type: 'solid', color: '#64748b' } };
   let backgroundColor = '#ffffff';
 
   // Retrieve user Font and Color preferences
@@ -1934,8 +2336,9 @@ function drawChart() {
   const chartTitle = document.getElementById('chart-title-input').value.trim();
   const chartXLabel = document.getElementById('chart-xlabel-input').value.trim();
   const chartYLabel = document.getElementById('chart-ylabel-input').value.trim();
+  const chartY2Label = document.getElementById('chart-y2label-input') ? document.getElementById('chart-y2label-input').value.trim() : '';
 
-  const { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, dynamicNameGap } = getPlotDimensions();
+  const { gridWidth, gridHeight, canvasWidth, canvasHeight, legendDistPx, legendPos, gridLeft, gridTop, gridRight, dynamicNameGap, dynamicNameGap2, y2AxisWidth } = getPlotDimensions();
 
   const legendData = [];
   let legendConfig = {
@@ -1959,48 +2362,64 @@ function drawChart() {
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   } else if (legendPos === 'right') {
-    legendConfig.left = gridLeft + gridWidth + legendDistPx + 10; // 10px to the right of the grid (using left offset for auto width)
+    legendConfig.left = gridLeft + gridWidth + y2AxisWidth + legendDistPx + 10; // offset by secondary y-axis if active
     legendConfig.top = 'center';
     legendConfig.orient = 'vertical';
   }
 
-  // Common ECharts Option templates
-  let option = {
-    backgroundColor: backgroundColor,
-    color: paletteColors,
-    tooltip: { trigger: 'axis' },
-    legend: legendConfig,
-    grid: {
-      left: gridLeft,
-      top: gridTop,
-      width: gridWidth,
-      height: gridHeight,
-      containLabel: false
-    },
-    xAxis: {
-      type: 'category',
-      name: chartXLabel || xCol,
-      nameLocation: 'middle',
-      nameGap: 30,
-      axisLabel: {
-        fontFamily: font,
-        fontSize: axisValSize,
-        color: axisValColor
+  let yAxisConfig;
+  if (y2Cols.length > 0) {
+    yAxisConfig = [
+      {
+        type: 'value',
+        name: chartYLabel || yCols.join(' / '),
+        nameLocation: 'middle',
+        nameGap: dynamicNameGap,
+        position: 'left',
+        axisLabel: {
+          fontFamily: font,
+          fontSize: axisValSize,
+          color: axisValColor
+        },
+        nameTextStyle: {
+          fontFamily: font,
+          fontSize: axisTitleSize,
+          color: axisTitleColor,
+          fontWeight: 'bold'
+        },
+        axisLine: axisLineStyle,
+        axisTick: axisLineStyle,
+        splitLine: {
+          show: DOM.gridY.checked,
+          lineStyle: gridLineStyle.lineStyle
+        }
       },
-      nameTextStyle: {
-        fontFamily: font,
-        fontSize: axisTitleSize,
-        color: axisTitleColor,
-        fontWeight: 'bold'
-      },
-      axisLine: axisLineStyle,
-      axisTick: axisLineStyle,
-      splitLine: {
-        show: DOM.gridX.checked,
-        lineStyle: gridLineStyle.lineStyle
+      {
+        type: 'value',
+        name: chartY2Label || y2Cols.join(' / '),
+        nameLocation: 'middle',
+        nameGap: dynamicNameGap2,
+        position: 'right',
+        axisLabel: {
+          fontFamily: font,
+          fontSize: axisValSize,
+          color: axisValColor
+        },
+        nameTextStyle: {
+          fontFamily: font,
+          fontSize: axisTitleSize,
+          color: axisTitleColor,
+          fontWeight: 'bold'
+        },
+        axisLine: axisLineStyle,
+        axisTick: axisLineStyle,
+        splitLine: {
+          show: false
+        }
       }
-    },
-    yAxis: {
+    ];
+  } else {
+    yAxisConfig = {
       type: 'value',
       name: chartYLabel || yCols.join(' / '),
       nameLocation: 'middle',
@@ -2022,7 +2441,97 @@ function drawChart() {
         show: DOM.gridY.checked,
         lineStyle: gridLineStyle.lineStyle
       }
+    };
+  }
+
+  // Calculate X-axis label height dynamically based on rotation
+  let maxXCharCount = 0;
+  if (appState.activeData) {
+    const rows = plotRows || [];
+    const xVals = [...new Set(rows.map(r => String(r[xCol] || '')))];
+    xVals.forEach(x => {
+      if (x.length > maxXCharCount) maxXCharCount = x.length;
+    });
+  }
+  const showLabels = DOM.xAxisShowLabels ? DOM.xAxisShowLabels.checked : true;
+  const rotateAngle = DOM.xAxisLabelRotate ? parseInt(DOM.xAxisLabelRotate.value, 10) : 0;
+  let xLabelHeight = 0;
+  if (showLabels) {
+    const rotateRad = (rotateAngle * Math.PI) / 180;
+    const labelLengthEst = maxXCharCount * (axisValSize * 0.55);
+    xLabelHeight = Math.round(Math.abs(Math.sin(rotateRad) * labelLengthEst) + Math.abs(Math.cos(rotateRad) * axisValSize) + 8);
+  }
+
+  // Common ECharts Option templates
+  let option = {
+    backgroundColor: backgroundColor,
+    color: paletteColors,
+    tooltip: { 
+      trigger: 'axis',
+      formatter: isXColSameAsGCol ? function (params) {
+        if (!params || params.length === 0) return '';
+        let res = `<strong>${params[0].axisValue}</strong><br/>`;
+        let activeCount = 0;
+        params.forEach(p => {
+          if (p.seriesName.endsWith('Error') || p.seriesName.includes('(Scatter)') || p.seriesName.includes('(Mean)')) return;
+          const val = p.value;
+          if (val === null || val === undefined) return;
+          if (Array.isArray(val) && val.every(v => v === null || v === undefined)) return;
+          
+          let valStr = '';
+          if (Array.isArray(val)) {
+            if (type === 'violin') {
+              valStr = `Median: ${val[1].toFixed(2)}`;
+            } else if (val.length >= 6) {
+              valStr = `Min: ${val[1].toFixed(2)}, Median: ${val[3].toFixed(2)}, Max: ${val[5].toFixed(2)}`;
+            } else if (val.length === 5) {
+              valStr = `Min: ${val[0].toFixed(2)}, Median: ${val[2].toFixed(2)}, Max: ${val[4].toFixed(2)}`;
+            } else {
+              valStr = val.join(', ');
+            }
+          } else {
+            valStr = typeof val === 'number' ? val.toFixed(4) : val;
+          }
+          res += `${p.marker} ${p.seriesName}: <strong>${valStr}</strong><br/>`;
+          activeCount++;
+        });
+        return activeCount > 0 ? res : `<strong>${params[0].axisValue}</strong>`;
+      } : undefined
     },
+    legend: legendConfig,
+    grid: {
+      left: gridLeft,
+      top: gridTop,
+      width: gridWidth,
+      height: gridHeight,
+      containLabel: false
+    },
+    xAxis: {
+      type: 'category',
+      name: chartXLabel || xCol,
+      nameLocation: 'middle',
+      nameGap: showLabels ? Math.max(25, xLabelHeight + 10) : 15,
+      axisLabel: {
+        fontFamily: font,
+        fontSize: axisValSize,
+        color: axisValColor,
+        show: showLabels,
+        rotate: rotateAngle
+      },
+      nameTextStyle: {
+        fontFamily: font,
+        fontSize: axisTitleSize,
+        color: axisTitleColor,
+        fontWeight: 'bold'
+      },
+      axisLine: axisLineStyle,
+      axisTick: axisLineStyle,
+      splitLine: {
+        show: DOM.gridX.checked,
+        lineStyle: gridLineStyle.lineStyle
+      }
+    },
+    yAxis: yAxisConfig,
     series: []
   };
 
@@ -2090,7 +2599,6 @@ function drawChart() {
   // Get full list of unique groups in filteredRows to ensure stable colors across split tabs
   const allGroupsList = gCol ? (activeGroups.length > 0 ? activeGroups : [...new Set(filteredRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))]) : [];
 
-  const type = appState.currentChartType;
   const errorBarType = document.getElementById('error-bar-select').value;
 
   // Box / Violin options panel visibility
@@ -2101,202 +2609,254 @@ function drawChart() {
     boxViolinOptions.style.display = 'none';
   }
 
+  const axesToPlot = [];
+  if (yCols.length > 0) {
+    axesToPlot.push({
+      axisIndex: 0,
+      cols: yCols,
+      palette: appState.selectedPalette || 'ggplot2',
+      pointSize: pointSize,
+      pointShape: pointShape
+    });
+  }
+  if (y2Cols.length > 0) {
+    const tab = getActiveTab();
+    const palette2 = (tab && tab.palette2) || 'ggplot2';
+    const pointSize2 = (tab && tab.pointSize2 !== undefined) ? tab.pointSize2 : 8;
+    const pointShape2El = document.getElementById('point-shape-2-select');
+    const pointShape2 = pointShape2El ? pointShape2El.value : 'circle';
+    
+    axesToPlot.push({
+      axisIndex: 1,
+      cols: y2Cols,
+      palette: palette2,
+      pointSize: pointSize2,
+      pointShape: pointShape2
+    });
+  }
+
+  const totalColsCount = yCols.length + y2Cols.length;
+
+  const getSeriesName = (group, col, gCol, totalColsCount) => {
+    if (!gCol) return col;
+    if (totalColsCount > 1) {
+      return `${group} (${col})`;
+    }
+    return String(group);
+  };
+
   if (type === 'scatter') {
     // Scatter Plot mapping
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-        const color = styleOverride.color;
-        const currentShape = styleOverride.shape;
-        
-        const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
-        const seriesData = matchRows
-          .map(r => [r[xCol], r[yCol]])
-          .filter(pt => pt[0] !== null && pt[1] !== null);
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
 
-        option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
-
-        if (option.xAxis.type === 'value') {
-          seriesData.sort((a, b) => a[0] - b[0]);
-        }
-
-        // Draw raw points
-        legendData.push(seriesName);
-        const symbolConfig = getSymbolConfig(color, pointSize, false, currentShape);
-        option.series.push({
-          name: seriesName,
-          type: 'scatter',
-          symbol: symbolConfig.symbol,
-          symbolSize: symbolConfig.symbolSize,
-          itemStyle: symbolConfig.itemStyle,
-          data: seriesData
-        });
-
-        // Add error bars on mean if requested
-        if (errorBarType !== 'none' && seriesData.length > 0) {
-          const xMap = new Map();
-          seriesData.forEach(pt => {
-            const xVal = pt[0];
-            const yVal = Number(pt[1]);
-            if (!xMap.has(xVal)) xMap.set(xVal, []);
-            xMap.get(xVal).push(yVal);
-          });
-
-          const errorData = [];
-          xMap.forEach((vals, xVal) => {
-            const stats = getErrorBarStats(vals, errorBarType);
-            errorData.push([xVal, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
-          });
-
-          option.series.push({
-            name: `${seriesName} Error`,
-            type: 'custom',
-            renderItem: renderErrorBarItem,
-            data: errorData,
-            itemStyle: { color: color },
-            z: 5,
-            tooltip: { show: false }
-          });
-        }
-      });
-    });
-
-  } else if (type === 'line') {
-    // Line Plot mapping (shows means connected by lines + error bars)
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-        const color = styleOverride.color;
-        const currentShape = styleOverride.shape;
-        
-        const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
-        const rawPoints = matchRows
-          .map(r => [r[xCol], r[yCol]])
-          .filter(pt => pt[0] !== null && pt[1] !== null);
-
-        if (rawPoints.length === 0) return;
-
-        option.xAxis.type = isNumeric(rawPoints.map(d => d[0])) ? 'value' : 'category';
-
-        // Group by X values to calculate mean & error bars
-        const xMap = new Map();
-        rawPoints.forEach(pt => {
-          const xVal = pt[0];
-          const yVal = Number(pt[1]);
-          if (!xMap.has(xVal)) xMap.set(xVal, []);
-          xMap.get(xVal).push(yVal);
-        });
-
-        const sortedX = Array.from(xMap.keys());
-        if (option.xAxis.type === 'value') {
-          sortedX.sort((a, b) => a - b);
-        } else {
-          sortedX.sort();
-        }
-
-        const lineData = [];
-        const errorData = [];
-        sortedX.forEach(x => {
-          const vals = xMap.get(x);
-          const stats = getErrorBarStats(vals, errorBarType);
-          lineData.push([x, parseFloat(stats.mean.toFixed(4))]);
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
           
-          if (errorBarType !== 'none') {
-            errorData.push([x, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
+          const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
+          const seriesData = matchRows
+            .map(r => [r[xCol], r[yCol]])
+            .filter(pt => pt[0] !== null && pt[1] !== null);
+
+          option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
+
+          if (option.xAxis.type === 'value') {
+            seriesData.sort((a, b) => a[0] - b[0]);
           }
-        });
 
-        legendData.push(seriesName);
-        const individualCurvesChecked = document.getElementById('individual-curves-checkbox').checked;
-        const showPoints = document.getElementById('show-points-checkbox').checked;
-
-        if (individualCurvesChecked) {
-          // Group rows by replicate index
-          const xRepMap = new Map();
-          matchRows.forEach(r => {
-            const xVal = r[xCol];
-            if (xVal === null || xVal === undefined || r[yCol] === null || r[yCol] === undefined) return;
-            if (!xRepMap.has(xVal)) xRepMap.set(xVal, []);
-            xRepMap.get(xVal).push(r);
-          });
-          
-          let maxReps = 0;
-          xRepMap.forEach(rowsAtX => {
-            if (rowsAtX.length > maxReps) maxReps = rowsAtX.length;
-          });
-          
-          for (let repIdx = 0; repIdx < maxReps; repIdx++) {
-            const curveData = [];
-            sortedX.forEach(x => {
-              const rowsAtX = xRepMap.get(x) || [];
-              if (rowsAtX[repIdx]) {
-                curveData.push([x, Number(rowsAtX[repIdx][yCol])]);
-              }
-            });
-            
-            if (curveData.length > 0) {
-              const curveSymbolConfig = getSymbolConfig(color, Math.max(3, pointSize - 2), true, currentShape);
-              option.series.push({
-                name: seriesName, // same name for unified legend toggle
-                type: 'line',
-                lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6 },
-                symbol: curveSymbolConfig.symbol,
-                symbolSize: curveSymbolConfig.symbolSize,
-                itemStyle: curveSymbolConfig.itemStyle,
-                data: curveData
-              });
-            }
-          }
-        } else {
-          const meanSymbolConfig = getSymbolConfig(color, pointSize, false, currentShape);
+          // Draw raw points
+          legendData.push(seriesName);
+          const symbolConfig = getSymbolConfig(color, activePointSize, false, currentShape);
           option.series.push({
             name: seriesName,
-            type: 'line',
-            lineStyle: { width: lineWidth, color: color },
-            symbol: meanSymbolConfig.symbol,
-            symbolSize: meanSymbolConfig.symbolSize,
-            itemStyle: meanSymbolConfig.itemStyle,
-            data: lineData
+            type: 'scatter',
+            yAxisIndex: axisIndex,
+            symbol: symbolConfig.symbol,
+            symbolSize: symbolConfig.symbolSize,
+            itemStyle: symbolConfig.itemStyle,
+            data: seriesData
           });
 
-          if (errorBarType !== 'none' && errorData.length > 0) {
+          // Add error bars on mean if requested
+          if (errorBarType !== 'none' && seriesData.length > 0) {
+            const xMap = new Map();
+            seriesData.forEach(pt => {
+              const xVal = pt[0];
+              const yVal = Number(pt[1]);
+              if (!xMap.has(xVal)) xMap.set(xVal, []);
+              xMap.get(xVal).push(yVal);
+            });
+
+            const errorData = [];
+            xMap.forEach((vals, xVal) => {
+              const stats = getErrorBarStats(vals, errorBarType);
+              errorData.push([xVal, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
+            });
+
             option.series.push({
               name: `${seriesName} Error`,
               type: 'custom',
               renderItem: renderErrorBarItem,
+              yAxisIndex: axisIndex,
               data: errorData,
               itemStyle: { color: color },
               z: 5,
               tooltip: { show: false }
             });
           }
-        }
+        });
+      });
+    });
 
-        // Overlay scatters if checked
-        if (showPoints) {
-          const scatterData = [];
+  } else if (type === 'line') {
+    // Line Plot mapping (shows means connected by lines + error bars)
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
+
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
+          
+          const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
+          const rawPoints = matchRows
+            .map(r => [r[xCol], r[yCol]])
+            .filter(pt => pt[0] !== null && pt[1] !== null);
+
+          if (rawPoints.length === 0) return;
+
+          option.xAxis.type = isNumeric(rawPoints.map(d => d[0])) ? 'value' : 'category';
+
+          // Group by X values to calculate mean & error bars
+          const xMap = new Map();
           rawPoints.forEach(pt => {
-            scatterData.push([pt[0], pt[1]]);
+            const xVal = pt[0];
+            const yVal = Number(pt[1]);
+            if (!xMap.has(xVal)) xMap.set(xVal, []);
+            xMap.get(xVal).push(yVal);
           });
 
-          const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
-          option.series.push({
-            name: `${seriesName} (Scatter)`,
-            type: 'scatter',
-            symbol: scatterSymbolConfig.symbol,
-            symbolSize: scatterSymbolConfig.symbolSize,
-            itemStyle: scatterSymbolConfig.itemStyle,
-            data: scatterData,
-            z: 6,
-            tooltip: { show: false }
+          const sortedX = Array.from(xMap.keys());
+          if (option.xAxis.type === 'value') {
+            sortedX.sort((a, b) => a - b);
+          } else {
+            sortedX.sort();
+          }
+
+          const lineData = [];
+          const errorData = [];
+          sortedX.forEach(x => {
+            const vals = xMap.get(x);
+            const stats = getErrorBarStats(vals, errorBarType);
+            lineData.push([x, parseFloat(stats.mean.toFixed(4))]);
+            
+            if (errorBarType !== 'none') {
+              errorData.push([x, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
+            }
           });
-        }
+
+          legendData.push(seriesName);
+          const individualCurvesChecked = document.getElementById('individual-curves-checkbox').checked;
+          const showPoints = document.getElementById('show-points-checkbox').checked;
+
+          if (individualCurvesChecked) {
+            // Group rows by replicate index
+            const xRepMap = new Map();
+            matchRows.forEach(r => {
+              const xVal = r[xCol];
+              if (xVal === null || xVal === undefined || r[yCol] === null || r[yCol] === undefined) return;
+              if (!xRepMap.has(xVal)) xRepMap.set(xVal, []);
+              xRepMap.get(xVal).push(r);
+            });
+            
+            let maxReps = 0;
+            xRepMap.forEach(rowsAtX => {
+              if (rowsAtX.length > maxReps) maxReps = rowsAtX.length;
+            });
+            
+            for (let repIdx = 0; repIdx < maxReps; repIdx++) {
+              const curveData = [];
+              sortedX.forEach(x => {
+                const rowsAtX = xRepMap.get(x) || [];
+                if (rowsAtX[repIdx]) {
+                  curveData.push([x, Number(rowsAtX[repIdx][yCol])]);
+                }
+              });
+              
+              if (curveData.length > 0) {
+                const curveSymbolConfig = getSymbolConfig(color, Math.max(3, activePointSize - 2), true, currentShape);
+                option.series.push({
+                  name: seriesName, // same name for unified legend toggle
+                  type: 'line',
+                  yAxisIndex: axisIndex,
+                  lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6 },
+                  symbol: curveSymbolConfig.symbol,
+                  symbolSize: curveSymbolConfig.symbolSize,
+                  itemStyle: curveSymbolConfig.itemStyle,
+                  data: curveData
+                });
+              }
+            }
+          } else {
+            const meanSymbolConfig = getSymbolConfig(color, activePointSize, false, currentShape);
+            option.series.push({
+              name: seriesName,
+              type: 'line',
+              yAxisIndex: axisIndex,
+              lineStyle: { width: lineWidth, color: color },
+              symbol: meanSymbolConfig.symbol,
+              symbolSize: meanSymbolConfig.symbolSize,
+              itemStyle: meanSymbolConfig.itemStyle,
+              data: lineData
+            });
+
+            if (errorBarType !== 'none' && errorData.length > 0) {
+              option.series.push({
+                name: `${seriesName} Error`,
+                type: 'custom',
+                renderItem: renderErrorBarItem,
+                yAxisIndex: axisIndex,
+                data: errorData,
+                itemStyle: { color: color },
+                z: 5,
+                tooltip: { show: false }
+              });
+            }
+          }
+
+          // Overlay scatters if checked
+          if (showPoints) {
+            const scatterData = [];
+            rawPoints.forEach(pt => {
+              scatterData.push([pt[0], pt[1]]);
+            });
+
+            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
+            option.series.push({
+              name: `${seriesName} (Scatter)`,
+              type: 'scatter',
+              yAxisIndex: axisIndex,
+              symbol: scatterSymbolConfig.symbol,
+              symbolSize: scatterSymbolConfig.symbolSize,
+              itemStyle: scatterSymbolConfig.itemStyle,
+              data: scatterData,
+              z: 6,
+              tooltip: { show: false }
+            });
+          }
+        });
       });
     });
 
@@ -2305,86 +2865,100 @@ function drawChart() {
     const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
     option.xAxis.data = xCategories;
 
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-        const color = styleOverride.color;
-        const currentShape = styleOverride.shape;
-        
-        legendData.push(seriesName);
-        const showPoints = document.getElementById('show-points-checkbox').checked;
-        const barData = [];
-        const errorData = [];
-        const scatterData = [];
-        
-        xCategories.forEach((cat, catIdx) => {
-          const matchRows = plotRows.filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g));
-          const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
-          const stats = getErrorBarStats(vals, errorBarType);
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
+
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
           
-          barData.push(parseFloat(stats.mean.toFixed(4)));
+          legendData.push(seriesName);
+          const showPoints = document.getElementById('show-points-checkbox').checked;
+          const barData = [];
+          const errorData = [];
+          const scatterData = [];
           
-          const totalSeriesCount = yCols.length * groups.length;
-          const currentSeriesIndex = yIdx + gIdx * yCols.length;
-          let center = catIdx;
-          if (totalSeriesCount > 1) {
-            const barWidthOffset = 0.65 / totalSeriesCount;
-            center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
+          xCategories.forEach((cat, catIdx) => {
+            const matchRows = plotRows.filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g));
+            const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
+            
+            if (vals.length === 0) {
+              barData.push(null);
+            } else {
+              const stats = getErrorBarStats(vals, errorBarType);
+              barData.push(parseFloat(stats.mean.toFixed(4)));
+              
+              const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
+              const totalSeriesCount = totalColsCount * groups.length;
+              const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
+              let center = catIdx;
+              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+                const barWidthOffset = 0.65 / totalSeriesCount;
+                center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
+              }
+
+              if (errorBarType !== 'none') {
+                errorData.push([center, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
+              }
+
+              if (showPoints) {
+                vals.forEach(v => {
+                  const jitter = (Math.random() - 0.5) * 0.08;
+                  scatterData.push([center + jitter, v]);
+                });
+              }
+            }
+          });
+
+          option.series.push({
+            name: seriesName,
+            type: 'bar',
+            yAxisIndex: axisIndex,
+            barGap: isXColSameAsGCol ? '-100%' : '15%',
+            barCategoryGap: `${barPadding}%`,
+            itemStyle: { color: color },
+            data: barData
+          });
+
+          if (errorBarType !== 'none' && errorData.length > 0) {
+            option.series.push({
+              name: `${seriesName} Error`,
+              type: 'custom',
+              renderItem: renderErrorBarItem,
+              yAxisIndex: axisIndex,
+              data: errorData,
+              itemStyle: { color: color },
+              z: 5,
+              tooltip: { show: false }
+            });
           }
 
-          if (errorBarType !== 'none' && vals.length > 0) {
-            errorData.push([center, parseFloat(stats.high.toFixed(4)), parseFloat(stats.low.toFixed(4))]);
-          }
-
-          if (showPoints) {
-            vals.forEach(v => {
-              const jitter = (Math.random() - 0.5) * 0.08;
-              scatterData.push([center + jitter, v]);
+          if (showPoints && scatterData.length > 0) {
+            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
+            const finalItemStyle = { ...scatterSymbolConfig.itemStyle };
+            if (!currentShape.endsWith('-hollow')) {
+              finalItemStyle.borderColor = '#ffffff';
+              finalItemStyle.borderWidth = 0.5;
+            }
+            option.series.push({
+              name: `${seriesName} (Scatter)`,
+              type: 'scatter',
+              yAxisIndex: axisIndex,
+              symbol: scatterSymbolConfig.symbol,
+              symbolSize: scatterSymbolConfig.symbolSize,
+              itemStyle: finalItemStyle,
+              data: scatterData,
+              z: 6,
+              tooltip: { show: false }
             });
           }
         });
-
-        option.series.push({
-          name: seriesName,
-          type: 'bar',
-          barGap: `${barPadding}%`,
-          itemStyle: { color: color },
-          data: barData
-        });
-
-        if (errorBarType !== 'none' && errorData.length > 0) {
-          option.series.push({
-            name: `${seriesName} Error`,
-            type: 'custom',
-            renderItem: renderErrorBarItem,
-            data: errorData,
-            itemStyle: { color: color },
-            z: 5,
-            tooltip: { show: false }
-          });
-        }
-
-        if (showPoints && scatterData.length > 0) {
-          const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
-          const finalItemStyle = { ...scatterSymbolConfig.itemStyle };
-          if (!currentShape.endsWith('-hollow')) {
-            finalItemStyle.borderColor = '#ffffff';
-            finalItemStyle.borderWidth = 0.5;
-          }
-          option.series.push({
-            name: `${seriesName} (Scatter)`,
-            type: 'scatter',
-            symbol: scatterSymbolConfig.symbol,
-            symbolSize: scatterSymbolConfig.symbolSize,
-            itemStyle: finalItemStyle,
-            data: scatterData,
-            z: 6,
-            tooltip: { show: false }
-          });
-        }
       });
     });
 
@@ -2393,30 +2967,38 @@ function drawChart() {
     const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
     option.xAxis.data = xCategories;
     
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-        const color = styleOverride.color;
-        
-        // Calculate box stats per category
-        const boxData = xCategories.map(cat => {
-          const vals = plotRows
-            .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
-            .map(r => Number(r[yCol]))
-            .filter(v => !isNaN(v));
-          return calculateBoxplotStats(vals);
-        });
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
 
-        legendData.push(seriesName);
-        option.series.push({
-          name: seriesName,
-          type: 'boxplot',
-          boxWidth: `${boxWidthPercent}%`,
-          itemStyle: { borderColor: color, color: hexToRgba(color, 0.4) },
-          data: boxData
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
+          
+          // Calculate box stats per category
+          const boxData = xCategories.map(cat => {
+            const vals = plotRows
+              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+              .map(r => Number(r[yCol]))
+              .filter(v => !isNaN(v));
+            if (vals.length === 0) return [null, null, null, null, null];
+            return calculateBoxplotStats(vals);
+          });
+
+          legendData.push(seriesName);
+          option.series.push({
+            name: seriesName,
+            type: 'boxplot',
+            yAxisIndex: axisIndex,
+            boxWidth: `${boxWidthPercent}%`,
+            barGap: isXColSameAsGCol ? '-100%' : undefined,
+            itemStyle: { borderColor: color, color: hexToRgba(color, 0.4) },
+            data: boxData
+          });
         });
       });
     });
@@ -2426,79 +3008,87 @@ function drawChart() {
     const showMean = document.getElementById('show-mean-checkbox').checked;
     
     if (showPoints || showMean) {
-      yCols.forEach((yCol, yIdx) => {
-        groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-          const seriesName = gCol ? String(g) : yCol;
-          const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-          const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-          const color = styleOverride.color;
-          const currentShape = styleOverride.shape;
-          
-          const jitterData = [];
-          const meanData = [];
-          
-          xCategories.forEach((cat, catIdx) => {
-            const vals = plotRows
-              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
-              .map(r => Number(r[yCol]))
-              .filter(v => !isNaN(v) && v !== null);
+      axesToPlot.forEach(axisInfo => {
+        const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+        const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
+
+        cols.forEach((yCol, yIdx) => {
+          groups.forEach((g, gIdx) => {
+            const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+            const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+            const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+            const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+            const color = styleOverride.color;
+            const currentShape = styleOverride.shape;
+            
+            const jitterData = [];
+            const meanData = [];
+            
+            xCategories.forEach((cat, catIdx) => {
+              const vals = plotRows
+                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .map(r => Number(r[yCol]))
+                .filter(v => !isNaN(v) && v !== null);
+                
+              if (vals.length === 0) return;
               
-            if (vals.length === 0) return;
+              const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
+              const totalSeriesCount = totalColsCount * groups.length;
+              const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
+              let center = catIdx;
+              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+                const barWidthOffset = 0.22; // spacing between box centroids
+                center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
+              }
+              
+              if (showPoints) {
+                vals.forEach(v => {
+                  const jitter = (Math.random() - 0.5) * 0.12;
+                  jitterData.push([center + jitter, v]);
+                });
+              }
+              
+              if (showMean) {
+                const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+                meanData.push([center, parseFloat(mean.toFixed(4))]);
+              }
+            });
             
-            const totalSeriesCount = yCols.length * groups.length;
-            const currentSeriesIndex = yIdx + gIdx * yCols.length;
-            let center = catIdx;
-            if (totalSeriesCount > 1) {
-              const barWidthOffset = 0.22; // spacing between box centroids
-              center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
-            }
-            
-            if (showPoints) {
-              vals.forEach(v => {
-                const jitter = (Math.random() - 0.5) * 0.12;
-                jitterData.push([center + jitter, v]);
+            if (showPoints && jitterData.length > 0) {
+              const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
+              option.series.push({
+                name: `${seriesName} (Scatter)`,
+                type: 'scatter',
+                yAxisIndex: axisIndex,
+                symbol: scatterSymbolConfig.symbol,
+                symbolSize: scatterSymbolConfig.symbolSize,
+                itemStyle: scatterSymbolConfig.itemStyle,
+                data: jitterData,
+                tooltip: { show: false }
               });
             }
             
-            if (showMean) {
-              const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-              meanData.push([center, parseFloat(mean.toFixed(4))]);
+            if (showMean && meanData.length > 0) {
+              option.series.push({
+                name: `${seriesName} (Mean)`,
+                type: 'scatter',
+                yAxisIndex: axisIndex,
+                symbol: 'diamond',
+                symbolSize: activePointSize + 3,
+                itemStyle: {
+                  color: '#ff3b30',
+                  borderColor: '#ffffff',
+                  borderWidth: 1.5,
+                  opacity: 0.9
+                },
+                data: meanData,
+                z: 10,
+                tooltip: {
+                  formatter: (params) => `Mean of ${seriesName}: ${params.value[1]}`
+                }
+              });
             }
           });
-          
-          if (showPoints && jitterData.length > 0) {
-            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
-            option.series.push({
-              name: `${seriesName} (Scatter)`,
-              type: 'scatter',
-              symbol: scatterSymbolConfig.symbol,
-              symbolSize: scatterSymbolConfig.symbolSize,
-              itemStyle: scatterSymbolConfig.itemStyle,
-              data: jitterData,
-              tooltip: { show: false }
-            });
-          }
-          
-          if (showMean && meanData.length > 0) {
-            option.series.push({
-              name: `${seriesName} (Mean)`,
-              type: 'scatter',
-              symbol: 'diamond',
-              symbolSize: pointSize + 3,
-              itemStyle: {
-                color: '#ff3b30',
-                borderColor: '#ffffff',
-                borderWidth: 1.5,
-                opacity: 0.9
-              },
-              data: meanData,
-              z: 10,
-              tooltip: {
-                formatter: (params) => `Mean of ${seriesName}: ${params.value[1]}`
-              }
-            });
-          }
         });
       });
     }
@@ -2507,79 +3097,86 @@ function drawChart() {
     const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
     option.xAxis.data = xCategories;
     
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-        const color = styleOverride.color;
-        
-        legendData.push(seriesName);
-        xCategories.forEach((cat, catIdx) => {
-          const vals = plotRows
-            .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
-            .map(r => Number(r[yCol]))
-            .filter(v => !isNaN(v));
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
 
-          if (vals.length < 2) return; // Need at least 2 points for density (lowered from 3)
-
-          const stats = calculateBoxplotStats(vals);
-          let min = stats[0];
-          let max = stats[4];
-          if (max === min) {
-            min = min - 0.5;
-            max = max + 0.5;
-          }
-          let step = (max - min) / 20;
-          if (step <= 0) step = 1;
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
           
-          const densityPoints = [];
-          for (let val = min; val <= max; val += step) {
-            let dens = calculateKdeDensity(vals, val);
-            densityPoints.push({ val, dens });
-          }
+          legendData.push(seriesName);
+          xCategories.forEach((cat, catIdx) => {
+            const vals = plotRows
+              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+              .map(r => Number(r[yCol]))
+              .filter(v => !isNaN(v));
 
-          const maxDens = Math.max(...densityPoints.map(d => d.dens)) || 1;
-          const scale = 0.4 / Math.max(1, yCols.length * groups.length); // auto scale spacing
+            if (vals.length < 2) return; // Need at least 2 points for density
 
-          const totalSeriesCount = yCols.length * groups.length;
-          const currentSeriesIndex = yIdx + gIdx * yCols.length;
-          let center = catIdx;
-          if (totalSeriesCount > 1) {
-            center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
-          }
-
-          const polyCoords = [];
-          densityPoints.forEach(pt => {
-            polyCoords.push([center + (pt.dens / maxDens) * scale, pt.val]);
-          });
-          [...densityPoints].reverse().forEach(pt => {
-            polyCoords.push([center - (pt.dens / maxDens) * scale, pt.val]);
-          });
-
-          option.series.push({
-            name: seriesName,
-            type: 'custom',
-            coordinateSystem: 'cartesian2d',
-            encode: { x: 0, y: 1 },
-            clip: false,
-            renderItem: function (params, api) {
-              const points = polyCoords.map(c => api.coord(c));
-              return {
-                type: 'polygon',
-                shape: { points: points },
-                style: {
-                  fill: color,
-                  stroke: '#475569',
-                  opacity: 0.65
-                }
-              };
-            },
-            data: [[center, stats[2]]], // Median point
-            tooltip: {
-              formatter: () => `${seriesName} at ${cat}<br/>Min: ${stats[0].toFixed(2)}<br/>Median: ${stats[2].toFixed(2)}<br/>Max: ${stats[4].toFixed(2)}`
+            const stats = calculateBoxplotStats(vals);
+            let min = stats[0];
+            let max = stats[4];
+            if (max === min) {
+              min = min - 0.5;
+              max = max + 0.5;
             }
+            let step = (max - min) / 20;
+            if (step <= 0) step = 1;
+            
+            const densityPoints = [];
+            for (let val = min; val <= max; val += step) {
+              let dens = calculateKdeDensity(vals, val);
+              densityPoints.push({ val, dens });
+            }
+
+            const maxDens = Math.max(...densityPoints.map(d => d.dens)) || 1;
+            const scale = isXColSameAsGCol ? 0.4 : (0.4 / Math.max(1, totalColsCount * groups.length)); // auto scale spacing
+
+            const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
+            const totalSeriesCount = totalColsCount * groups.length;
+            const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
+            let center = catIdx;
+            if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+              center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
+            }
+
+            const polyCoords = [];
+            densityPoints.forEach(pt => {
+              polyCoords.push([center + (pt.dens / maxDens) * scale, pt.val]);
+            });
+            [...densityPoints].reverse().forEach(pt => {
+              polyCoords.push([center - (pt.dens / maxDens) * scale, pt.val]);
+            });
+
+            option.series.push({
+              name: seriesName,
+              type: 'custom',
+              yAxisIndex: axisIndex,
+              coordinateSystem: 'cartesian2d',
+              encode: { x: 0, y: 1 },
+              clip: false,
+              renderItem: function (params, api) {
+                const points = polyCoords.map(c => api.coord(c));
+                return {
+                  type: 'polygon',
+                  shape: { points: points },
+                  style: {
+                    fill: color,
+                    stroke: '#475569',
+                    opacity: 0.65
+                  }
+                };
+              },
+              data: [[center, stats[2]]], // Median point
+              tooltip: {
+                formatter: () => `${seriesName} at ${cat}<br/>Min: ${stats[0].toFixed(2)}<br/>Median: ${stats[2].toFixed(2)}<br/>Max: ${stats[4].toFixed(2)}`
+              }
+            });
           });
         });
       });
@@ -2590,78 +3187,86 @@ function drawChart() {
     const showMean = document.getElementById('show-mean-checkbox').checked;
     
     if (showPoints || showMean) {
-      yCols.forEach((yCol, yIdx) => {
-        groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-          const seriesName = gCol ? String(g) : yCol;
-          const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-          const styleOverride = getSeriesStyle(seriesName, autoColor, pointShape);
-          const color = styleOverride.color;
-          const currentShape = styleOverride.shape;
-          
-          const jitterData = [];
-          const meanData = [];
-          
-          xCategories.forEach((cat, catIdx) => {
-            const vals = plotRows
-              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
-              .map(r => Number(r[yCol]))
-              .filter(v => !isNaN(v) && v !== null);
+      axesToPlot.forEach(axisInfo => {
+        const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+        const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
+
+        cols.forEach((yCol, yIdx) => {
+          groups.forEach((g, gIdx) => {
+            const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+            const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+            const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+            const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+            const color = styleOverride.color;
+            const currentShape = styleOverride.shape;
+            
+            const jitterData = [];
+            const meanData = [];
+            
+            xCategories.forEach((cat, catIdx) => {
+              const vals = plotRows
+                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .map(r => Number(r[yCol]))
+                .filter(v => !isNaN(v) && v !== null);
+                
+              if (vals.length === 0) return;
               
-            if (vals.length === 0) return;
+              const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
+              const totalSeriesCount = totalColsCount * groups.length;
+              const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
+              let center = catIdx;
+              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+                center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
+              }
+              
+              if (showPoints) {
+                vals.forEach(v => {
+                  const jitter = (Math.random() - 0.5) * 0.12;
+                  jitterData.push([center + jitter, v]);
+                });
+              }
+              
+              if (showMean) {
+                const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+                meanData.push([center, parseFloat(mean.toFixed(4))]);
+              }
+            });
             
-            const totalSeriesCount = yCols.length * groups.length;
-            const currentSeriesIndex = yIdx + gIdx * yCols.length;
-            let center = catIdx;
-            if (totalSeriesCount > 1) {
-              center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
-            }
-            
-            if (showPoints) {
-              vals.forEach(v => {
-                const jitter = (Math.random() - 0.5) * 0.12;
-                jitterData.push([center + jitter, v]);
+            if (showPoints && jitterData.length > 0) {
+              const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
+              option.series.push({
+                name: `${seriesName} (Scatter)`,
+                type: 'scatter',
+                yAxisIndex: axisIndex,
+                symbol: scatterSymbolConfig.symbol,
+                symbolSize: scatterSymbolConfig.symbolSize,
+                itemStyle: scatterSymbolConfig.itemStyle,
+                data: jitterData,
+                tooltip: { show: false }
               });
             }
             
-            if (showMean) {
-              const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-              meanData.push([center, parseFloat(mean.toFixed(4))]);
+            if (showMean && meanData.length > 0) {
+              option.series.push({
+                name: `${seriesName} (Mean)`,
+                type: 'scatter',
+                yAxisIndex: axisIndex,
+                symbol: 'diamond',
+                symbolSize: activePointSize + 3,
+                itemStyle: {
+                  color: '#ff3b30',
+                  borderColor: '#ffffff',
+                  borderWidth: 1.5,
+                  opacity: 0.9
+                },
+                data: meanData,
+                z: 10,
+                tooltip: {
+                  formatter: (params) => `Mean of ${seriesName}: ${params.value[1]}`
+                }
+              });
             }
           });
-          
-          if (showPoints && jitterData.length > 0) {
-            const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, pointSize - 2), true, currentShape);
-            option.series.push({
-              name: `${seriesName} (Scatter)`,
-              type: 'scatter',
-              symbol: scatterSymbolConfig.symbol,
-              symbolSize: scatterSymbolConfig.symbolSize,
-              itemStyle: scatterSymbolConfig.itemStyle,
-              data: jitterData,
-              tooltip: { show: false }
-            });
-          }
-          
-          if (showMean && meanData.length > 0) {
-            option.series.push({
-              name: `${seriesName} (Mean)`,
-              type: 'scatter',
-              symbol: 'diamond',
-              symbolSize: pointSize + 3,
-              itemStyle: {
-                color: '#ff3b30',
-                borderColor: '#ffffff',
-                borderWidth: 1.5,
-                opacity: 0.9
-              },
-              data: meanData,
-              z: 10,
-              tooltip: {
-                formatter: (params) => `Mean of ${seriesName}: ${params.value[1]}`
-              }
-            });
-          }
         });
       });
     }
@@ -2787,35 +3392,43 @@ function drawChart() {
     });
 
   } else if (type === 'area') {
-    yCols.forEach((yCol, yIdx) => {
-      groups.forEach((g, gIdx) => {
-        const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-        const seriesName = gCol ? String(g) : yCol;
-        const autoColor = paletteColors[(yIdx + globalGIdx * yCols.length) % paletteColors.length];
-        const styleOverride = getSeriesStyle(seriesName, autoColor, 'circle');
-        const color = styleOverride.color;
-        
-        const seriesData = plotRows
-          .filter(r => !gCol || String(r[gCol]) === g)
-          .map(r => [r[xCol], r[yCol]])
-          .filter(pt => pt[0] !== null && pt[1] !== null);
+    axesToPlot.forEach(axisInfo => {
+      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
+      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
 
-        option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
+      cols.forEach((yCol, yIdx) => {
+        groups.forEach((g, gIdx) => {
+          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
+          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
+          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
+          const color = styleOverride.color;
+          const currentShape = styleOverride.shape;
+          
+          const seriesData = plotRows
+            .filter(r => !gCol || String(r[gCol]) === g)
+            .map(r => [r[xCol], r[yCol]])
+            .filter(pt => pt[0] !== null && pt[1] !== null);
 
-        if (option.xAxis.type === 'value') {
-          seriesData.sort((a, b) => a[0] - b[0]);
-        }
+          option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
 
-        legendData.push(seriesName);
-        option.series.push({
-          name: seriesName,
-          type: 'line',
-          lineStyle: { width: lineWidth, color: color },
-          symbol: 'circle',
-          symbolSize: pointSize,
-          itemStyle: { color: color },
-          areaStyle: { opacity: 0.35, color: hexToRgba(color, 0.3) },
-          data: seriesData
+          if (option.xAxis.type === 'value') {
+            seriesData.sort((a, b) => a[0] - b[0]);
+          }
+
+          legendData.push(seriesName);
+          const symbolConfig = getSymbolConfig(color, activePointSize, false, currentShape);
+          option.series.push({
+            name: seriesName,
+            type: 'line',
+            yAxisIndex: axisIndex,
+            lineStyle: { width: lineWidth, color: color },
+            symbol: symbolConfig.symbol,
+            symbolSize: symbolConfig.symbolSize,
+            itemStyle: symbolConfig.itemStyle,
+            areaStyle: { opacity: 0.35, color: hexToRgba(color, 0.3) },
+            data: seriesData
+          });
         });
       });
     });
@@ -2935,7 +3548,7 @@ function drawChart() {
   // ========== Y-AXIS POST-PROCESSING: Log / Scientific / Multi-Grid Split ==========
   // Only apply to Cartesian chart types with a numeric Y-axis (not pie, heatmap, histogram)
   const _skipYAxisPostProcess = type === 'pie' || type === 'heatmap' || type === 'histogram';
-  if (!_skipYAxisPostProcess && option.xAxis && option.yAxis && !(option.yAxis instanceof Array)) {
+  if (!_skipYAxisPostProcess && option.xAxis && option.yAxis) {
     const yScaleType = document.getElementById('y-axis-scale-type')?.value || 'linear';
     const yNumFormat = document.getElementById('y-axis-num-format')?.value || 'std';
     const ySplitMode = document.getElementById('y-axis-split-mode')?.value || '1';
@@ -2963,7 +3576,45 @@ function drawChart() {
       if (xMaxVal !== null) option.xAxis.max = xMaxVal;
     }
 
-    if (ySplitMode === '1') {
+    if (option.yAxis instanceof Array) {
+      // ---------- Double Y-axis ----------
+      const yAxis1 = option.yAxis[0];
+      const yAxis2 = option.yAxis[1];
+
+      // Retrieve manual range parameters for Y2 from DOM
+      const y2MinInput = document.getElementById('axis-y2min');
+      const y2MaxInput = document.getElementById('axis-y2max');
+      const y2MinVal = y2MinInput && y2MinInput.value !== '' ? parseFloat(y2MinInput.value) : null;
+      const y2MaxVal = y2MaxInput && y2MaxInput.value !== '' ? parseFloat(y2MaxInput.value) : null;
+
+      // Apply Y1 limits
+      if (yMinVal !== null) yAxis1.min = yMinVal;
+      if (yMaxVal !== null) yAxis1.max = yMaxVal;
+
+      // Apply Y2 limits
+      if (y2MinVal !== null) yAxis2.min = y2MinVal;
+      if (y2MaxVal !== null) yAxis2.max = y2MaxVal;
+
+      // Apply scale to both
+      if (yScaleType === 'log') {
+        yAxis1.type = 'log';
+        yAxis1.logBase = 10;
+        yAxis2.type = 'log';
+        yAxis2.logBase = 10;
+      }
+
+      // Apply scientific format to both
+      if (yNumFormat === 'sci') {
+        yAxis1.axisLabel = {
+          ...yAxis1.axisLabel,
+          formatter: sciFormatter
+        };
+        yAxis2.axisLabel = {
+          ...yAxis2.axisLabel,
+          formatter: sciFormatter
+        };
+      }
+    } else if (ySplitMode === '1') {
       // Apply manual limits / split-tab locked range
       if (yMinVal !== null) {
         option.yAxis.min = yMinVal;
@@ -3409,13 +4060,18 @@ function createChartTab(name = null, config = null) {
     sheetName: appState.activeSheetName || '',
     chartType: appState.currentChartType || 'line',
     xCol: DOM.xSelect.value || '',
-    yCols: Array.from(DOM.ySelect.selectedOptions).map(o => o.value) || [],
+    yCols: getYCols() || [],
+    y2Cols: getY2Cols() || [],
+    hasY2Axis: false,
     gCol: DOM.groupSelect.value || '',
     selectedPalette: appState.selectedPalette || 'ggplot2',
+    palette2: DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2',
     
     // Style settings
     pointSize: parseInt(DOM.pointSize.value) || 8,
     pointShape: document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle',
+    pointSize2: DOM.pointSize2 ? parseInt(DOM.pointSize2.value) : 8,
+    pointShape2: document.getElementById('point-shape-2-select') ? document.getElementById('point-shape-2-select').value : 'circle',
     lineWidth: parseInt(DOM.lineWidth.value) || 2,
     barPadding: parseInt(DOM.barPadding.value) || 20,
     boxWidth: parseInt(DOM.boxWidth.value) || 50,
@@ -3425,6 +4081,8 @@ function createChartTab(name = null, config = null) {
     xMax: null,
     yMin: null,
     yMax: null,
+    y2Min: null,
+    y2Max: null,
     manualStyleEnabled: document.getElementById('manual-style-checkbox') ? document.getElementById('manual-style-checkbox').checked : false,
     manualStyles: {},
     showPoints: document.getElementById('show-points-checkbox').checked,
@@ -3434,6 +4092,8 @@ function createChartTab(name = null, config = null) {
     theme: DOM.themeSelect.value || 'minimal',
     gridX: DOM.gridX.checked,
     gridY: DOM.gridY.checked,
+    xAxisShowLabels: DOM.xAxisShowLabels ? DOM.xAxisShowLabels.checked : true,
+    xAxisLabelRotate: DOM.xAxisLabelRotate ? parseInt(DOM.xAxisLabelRotate.value) : 0,
     
     // Size and legend settings
     legendPosition: document.getElementById('legend-position-select').value || 'bottom',
@@ -3449,6 +4109,7 @@ function createChartTab(name = null, config = null) {
     chartTitle: '',
     chartXLabel: '',
     chartYLabel: '',
+    chartY2Label: '',
     
     // Y-axis customization
     yScaleType: 'linear',
@@ -3489,14 +4150,20 @@ function saveActiveTabState() {
   tab.sheetName = appState.activeSheetName;
   tab.chartType = appState.currentChartType;
   tab.xCol = DOM.xSelect.value;
-  tab.yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  tab.yCols = getYCols();
+  tab.y2Cols = getY2Cols();
+  tab.hasY2Axis = document.getElementById('y2-axis-group').style.display !== 'none';
   tab.gCol = DOM.groupSelect.value;
   tab.selectedPalette = appState.selectedPalette;
+  tab.palette2 = DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2';
   
   // Style settings
   tab.pointSize = parseInt(DOM.pointSize.value);
   const pointShapeEl = document.getElementById('point-shape-select');
   tab.pointShape = pointShapeEl ? pointShapeEl.value : 'circle';
+  tab.pointSize2 = DOM.pointSize2 ? parseInt(DOM.pointSize2.value) : 8;
+  const pointShape2El = document.getElementById('point-shape-2-select');
+  tab.pointShape2 = pointShape2El ? pointShape2El.value : 'circle';
   tab.lineWidth = parseInt(DOM.lineWidth.value);
   tab.barPadding = parseInt(DOM.barPadding.value);
   tab.boxWidth = parseInt(DOM.boxWidth.value);
@@ -3507,10 +4174,14 @@ function saveActiveTabState() {
   const xMaxInput = document.getElementById('axis-xmax');
   const yMinInput = document.getElementById('axis-ymin');
   const yMaxInput = document.getElementById('axis-ymax');
+  const y2MinInput = document.getElementById('axis-y2min');
+  const y2MaxInput = document.getElementById('axis-y2max');
   tab.xMin = xMinInput && xMinInput.value !== '' ? parseFloat(xMinInput.value) : null;
   tab.xMax = xMaxInput && xMaxInput.value !== '' ? parseFloat(xMaxInput.value) : null;
   tab.yMin = yMinInput && yMinInput.value !== '' ? parseFloat(yMinInput.value) : null;
   tab.yMax = yMaxInput && yMaxInput.value !== '' ? parseFloat(yMaxInput.value) : null;
+  tab.y2Min = y2MinInput && y2MinInput.value !== '' ? parseFloat(y2MinInput.value) : null;
+  tab.y2Max = y2MaxInput && y2MaxInput.value !== '' ? parseFloat(y2MaxInput.value) : null;
 
   tab.showPoints = document.getElementById('show-points-checkbox').checked;
   tab.showMean = document.getElementById('show-mean-checkbox').checked;
@@ -3519,6 +4190,8 @@ function saveActiveTabState() {
   tab.theme = DOM.themeSelect.value;
   tab.gridX = DOM.gridX.checked;
   tab.gridY = DOM.gridY.checked;
+  tab.xAxisShowLabels = DOM.xAxisShowLabels.checked;
+  tab.xAxisLabelRotate = parseInt(DOM.xAxisLabelRotate.value);
   
   // Size and legend settings
   tab.legendPosition = document.getElementById('legend-position-select').value;
@@ -3555,6 +4228,7 @@ function saveActiveTabState() {
   tab.chartTitle = document.getElementById('chart-title-input').value;
   tab.chartXLabel = document.getElementById('chart-xlabel-input').value;
   tab.chartYLabel = document.getElementById('chart-ylabel-input').value;
+  tab.chartY2Label = document.getElementById('chart-y2label-input') ? document.getElementById('chart-y2label-input').value : '';
   
   // Y-axis customization
   const yScaleEl = document.getElementById('y-axis-scale-type');
@@ -3616,11 +4290,8 @@ function applyChartTabState(tab) {
   // Restore column selects
   if (tab.xCol) DOM.xSelect.value = tab.xCol;
   
-  if (tab.yCols && tab.yCols.length > 0) {
-    Array.from(DOM.ySelect.options).forEach(opt => {
-      opt.selected = tab.yCols.includes(opt.value);
-    });
-  }
+  renderYColsUI();
+  toggleSecondaryYAxisStyles();
   
   if (tab.gCol !== undefined) {
     DOM.groupSelect.value = tab.gCol;
@@ -3633,6 +4304,11 @@ function applyChartTabState(tab) {
       DOM.paletteSelect.value = tab.selectedPalette;
     }
     updatePalettePreviewBar();
+  }
+
+  if (DOM.palette2Select) {
+    DOM.palette2Select.value = tab.palette2 || 'ggplot2';
+    updatePalette2PreviewBar();
   }
   
   // Restore chart type
@@ -3650,9 +4326,19 @@ function applyChartTabState(tab) {
   DOM.pointSize.value = tab.pointSize;
   DOM.pointSizeVal.textContent = tab.pointSize;
   
+  if (DOM.pointSize2) {
+    DOM.pointSize2.value = tab.pointSize2 !== undefined ? tab.pointSize2 : 8;
+    if (DOM.pointSize2Val) DOM.pointSize2Val.textContent = DOM.pointSize2.value;
+  }
+  
   const pointShapeEl = document.getElementById('point-shape-select');
   if (pointShapeEl) {
     pointShapeEl.value = tab.pointShape || 'circle';
+  }
+
+  const pointShape2El = document.getElementById('point-shape-2-select');
+  if (pointShape2El) {
+    pointShape2El.value = tab.pointShape2 || 'circle';
   }
   
   DOM.lineWidth.value = tab.lineWidth;
@@ -3662,10 +4348,14 @@ function applyChartTabState(tab) {
   const xMaxInput = document.getElementById('axis-xmax');
   const yMinInput = document.getElementById('axis-ymin');
   const yMaxInput = document.getElementById('axis-ymax');
+  const y2MinInput = document.getElementById('axis-y2min');
+  const y2MaxInput = document.getElementById('axis-y2max');
   if (xMinInput) xMinInput.value = tab.xMin !== undefined && tab.xMin !== null ? tab.xMin : '';
   if (xMaxInput) xMaxInput.value = tab.xMax !== undefined && tab.xMax !== null ? tab.xMax : '';
   if (yMinInput) yMinInput.value = tab.yMin !== undefined && tab.yMin !== null ? tab.yMin : '';
   if (yMaxInput) yMaxInput.value = tab.yMax !== undefined && tab.yMax !== null ? tab.yMax : '';
+  if (y2MinInput) y2MinInput.value = tab.y2Min !== undefined && tab.y2Min !== null ? tab.y2Min : '';
+  if (y2MaxInput) y2MaxInput.value = tab.y2Max !== undefined && tab.y2Max !== null ? tab.y2Max : '';
   
   DOM.barPadding.value = tab.barPadding;
   DOM.barPaddingVal.textContent = tab.barPadding + '%';
@@ -3693,6 +4383,9 @@ function applyChartTabState(tab) {
   DOM.themeSelect.value = tab.theme || 'minimal';
   DOM.gridX.checked = !!tab.gridX;
   DOM.gridY.checked = !!tab.gridY;
+  DOM.xAxisShowLabels.checked = tab.xAxisShowLabels !== undefined ? tab.xAxisShowLabels : true;
+  DOM.xAxisLabelRotate.value = tab.xAxisLabelRotate !== undefined ? tab.xAxisLabelRotate : 0;
+  DOM.xAxisLabelRotateVal.textContent = DOM.xAxisLabelRotate.value + '°';
   
   // Restore size and legend settings
   document.getElementById('legend-position-select').value = tab.legendPosition || 'bottom';
@@ -3719,6 +4412,9 @@ function applyChartTabState(tab) {
   document.getElementById('chart-title-input').value = tab.chartTitle || '';
   document.getElementById('chart-xlabel-input').value = tab.chartXLabel || '';
   document.getElementById('chart-ylabel-input').value = tab.chartYLabel || '';
+  const y2LabelInput = document.getElementById('chart-y2label-input');
+  if (y2LabelInput) y2LabelInput.value = tab.chartY2Label || '';
+  toggleSecondaryYAxisStyles();
   
   // Restore Y-axis customization
   const yScaleEl = document.getElementById('y-axis-scale-type');
@@ -4310,7 +5006,7 @@ function recommendStatisticalTest() {
 
 function runStatisticalTestOld() {
   const xCol = DOM.xSelect.value;
-  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const yCols = getYCols();
   const gCol = DOM.groupSelect.value;
   let rows = getFilteredRows();
   
@@ -4768,7 +5464,7 @@ function addSignificanceBarOld() {
   if (!tab) return;
   
   const xCol = DOM.xSelect.value;
-  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const yCols = getYCols();
   const yCol = yCols[0];
   const gCol = DOM.groupSelect.value;
   
@@ -5729,8 +6425,7 @@ function exportPZFXFile() {
 
   const data = appState.activeData;
   const xCol = DOM.xSelect.value;
-  const selectedYOptions = Array.from(DOM.ySelect.selectedOptions);
-  const yCols = selectedYOptions.map(opt => opt.value);
+  const yCols = getYCols();
 
   if (yCols.length === 0) {
     alert('Please select at least one Y column to export.');
@@ -5799,8 +6494,7 @@ function exportPRISMFile() {
 
   const data = appState.activeData;
   const xCol = DOM.xSelect.value;
-  const selectedYOptions = Array.from(DOM.ySelect.selectedOptions);
-  const yCols = selectedYOptions.map(opt => opt.value);
+  const yCols = getYCols();
 
   if (yCols.length === 0) {
     alert('Please select at least one Y column to export.');
@@ -5970,7 +6664,7 @@ function runPairwiseTest(grpA, grpB, method, groupData) {
 
 function runStatisticalTest() {
   const xCol = DOM.xSelect.value;
-  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const yCols = getYCols();
   const gCol = DOM.groupSelect.value;
   let rows = getPlotFilteredRows();
   
@@ -6460,7 +7154,7 @@ function addSignificanceBar() {
   if (!tab) return;
   
   const xCol = DOM.xSelect.value;
-  const yCols = Array.from(DOM.ySelect.selectedOptions).map(o => o.value);
+  const yCols = getYCols();
   const yCol = yCols[0];
   const gCol = DOM.groupSelect.value;
   
@@ -6765,14 +7459,27 @@ function updateManualStylesList() {
   const manualStyles = (tab && tab.manualStyles) ? tab.manualStyles : {};
 
   const gCol = DOM.groupSelect ? DOM.groupSelect.value : '';
-  const selectedYOptions = DOM.ySelect ? Array.from(DOM.ySelect.selectedOptions) : [];
-  const yCols = selectedYOptions.map(opt => opt.value);
+  const yCols = getYCols();
+  const y2Cols = getY2Cols();
+  const totalCols = [...yCols, ...y2Cols];
+  const totalColsCount = totalCols.length;
 
   let targets = [];
-  if (gCol && appState.activeData) {
-    targets = [...new Set(appState.activeData.rows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))];
-  } else if (yCols.length > 0) {
-    targets = yCols;
+  if (appState.activeData && totalColsCount > 0) {
+    if (gCol) {
+      const groups = [...new Set(appState.activeData.rows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))];
+      if (totalColsCount > 1) {
+        groups.forEach(g => {
+          totalCols.forEach(col => {
+            targets.push(`${g} (${col})`);
+          });
+        });
+      } else {
+        targets = groups;
+      }
+    } else {
+      targets = totalCols;
+    }
   }
 
   listContainer.innerHTML = '';

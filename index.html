@@ -122,8 +122,30 @@
             <select class="form-select" id="x-axis-select"></select>
           </div>
           <div class="form-group" id="y-axis-group">
-            <label for="y-axis-select">Y-Axis Column (Numeric)</label>
-            <select class="form-select" id="y-axis-select"></select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="margin-bottom: 0;">Y-Axis Columns (Y1 轴数据)</label>
+              <button type="button" class="btn btn-secondary" id="btn-add-y1-col" style="font-size: 10px; padding: 2px 6px; height: auto;">+ Add Data</button>
+            </div>
+            <div id="y1-cols-container" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+          <div class="form-group" id="add-y2-btn-container" style="margin-top: 10px;">
+            <button type="button" class="btn btn-secondary" id="btn-add-y2-axis" style="width: 100%; font-size: 11px; padding: 6px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="plus-circle" style="width:14px; height:14px;"></i> Add 2nd Y-Axis (添加第二Y轴)
+            </button>
+          </div>
+          <div class="form-group" id="y2-axis-group" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="margin-bottom: 0;">Secondary Y-Axis Columns (Y2 轴数据)</label>
+              <button type="button" class="btn btn-secondary" id="btn-add-y2-col" style="font-size: 10px; padding: 2px 6px; height: auto;">+ Add Data</button>
+            </div>
+            <div id="y2-cols-container" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+              <!-- Populated via JS -->
+            </div>
+            <button type="button" class="btn btn-danger" id="btn-remove-y2-axis" style="width: 100%; font-size: 11px; padding: 4px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 4px; background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+              <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Remove 2nd Y-Axis
+            </button>
           </div>
           <div class="form-group" id="group-axis-group">
             <label for="group-select">Grouping / Color Variable (Optional)</label>
@@ -220,36 +242,67 @@
             </div>
           </div>
           
-          <!-- Color Schemes (配色方案) -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 6px;">
-            <label for="palette-select" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Color Schemes (配色方案)</label>
-            <select class="form-select" id="palette-select" style="font-size: 11px; padding: 4px; height: auto;"></select>
-            <div id="palette-preview-bar" style="margin-top: 6px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
+          <!-- 1st Y Axis Style Group (Color, Size, Shape) -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label for="palette-select" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; display: block;">1st Y-Axis Styling (Y1 轴样式)</label>
+            <select class="form-select" id="palette-select" style="font-size: 11px; padding: 4px; height: auto; margin-bottom: 6px;"></select>
+            <div id="palette-preview-bar" style="margin-bottom: 8px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="slider-group" style="margin-bottom: 0;">
+                <div class="slider-header">
+                  <span>Point Size</span>
+                  <span id="point-size-val">8</span>
+                </div>
+                <input type="range" id="point-size-slider" min="2" max="25" value="8">
+              </div>
+              <div class="slider-group" style="display: flex; flex-direction: column; justify-content: center; margin-bottom: 0;">
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Point Shape</span>
+                <select class="form-select" id="point-shape-select" style="font-size: 11px; padding: 4px; height: auto;">
+                  <option value="circle">Circle (实心圆)</option>
+                  <option value="circle-hollow">Circle Hollow (空心圆)</option>
+                  <option value="rect">Square (实心方型)</option>
+                  <option value="rect-hollow">Square Hollow (空心方型)</option>
+                  <option value="triangle">Triangle (实心三角)</option>
+                  <option value="triangle-hollow">Triangle Hollow (空心三角)</option>
+                  <option value="diamond">Diamond (实心菱形)</option>
+                  <option value="diamond-hollow">Diamond Hollow (空心菱形)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Y Style Group (Color, Size, Shape) -->
+          <div class="form-group" id="secondary-y-palette-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px; display: none; flex-direction: column; gap: 8px;">
+            <label for="palette2-select" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; display: block;">2nd Y-Axis Styling (Y2 轴样式)</label>
+            <select class="form-select" id="palette2-select" style="font-size: 11px; padding: 4px; height: auto; margin-bottom: 6px;"></select>
+            <div id="palette2-preview-bar" style="margin-bottom: 8px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="slider-group" id="secondary-point-size-group" style="margin-bottom: 0;">
+                <div class="slider-header">
+                  <span>Y2 Point Size</span>
+                  <span id="point-size-2-val">8</span>
+                </div>
+                <input type="range" id="point-size-2-slider" min="2" max="25" value="8">
+              </div>
+              <div class="slider-group" id="secondary-point-shape-group" style="display: flex; flex-direction: column; justify-content: center; margin-bottom: 0;">
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Y2 Point Shape</span>
+                <select class="form-select" id="point-shape-2-select" style="font-size: 11px; padding: 4px; height: auto;">
+                  <option value="circle">Circle (实心圆)</option>
+                  <option value="circle-hollow">Circle Hollow (空心圆)</option>
+                  <option value="rect">Square (实心方型)</option>
+                  <option value="rect-hollow">Square Hollow (空心方型)</option>
+                  <option value="triangle">Triangle (实心三角)</option>
+                  <option value="triangle-hollow">Triangle Hollow (空心三角)</option>
+                  <option value="diamond">Diamond (实心菱形)</option>
+                  <option value="diamond-hollow">Diamond Hollow (空心菱形)</option>
+                </select>
+              </div>
+            </div>
           </div>
           
           <div class="style-settings-grid">
-            <div class="slider-group">
-              <div class="slider-header">
-                <span>Point Size</span>
-                <span id="point-size-val">8</span>
-              </div>
-              <input type="range" id="point-size-slider" min="2" max="25" value="8">
-            </div>
-
-            <!-- Point Shape Customization -->
-            <div class="slider-group" style="display: flex; flex-direction: column; justify-content: center;">
-              <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Point Shape</span>
-              <select class="form-select" id="point-shape-select" style="font-size: 11px; padding: 4px; height: auto;">
-                <option value="circle">Circle (实心圆)</option>
-                <option value="circle-hollow">Circle Hollow (空心圆)</option>
-                <option value="rect">Square (实心方型)</option>
-                <option value="rect-hollow">Square Hollow (空心方型)</option>
-                <option value="triangle">Triangle (实心三角)</option>
-                <option value="triangle-hollow">Triangle Hollow (空心三角)</option>
-                <option value="diamond">Diamond (实心菱形)</option>
-                <option value="diamond-hollow">Diamond Hollow (空心菱形)</option>
-              </select>
-            </div>
 
             <div class="slider-group">
               <div class="slider-header">
@@ -420,6 +473,22 @@
             </select>
           </div>
 
+          <!-- X-Axis Customization -->
+          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">X-Axis Customization (X轴标签设置)</label>
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between;">
+                <label style="font-size: 11px; margin-bottom: 0;">Show Labels (显示刻度标签):</label>
+                <input type="checkbox" id="x-axis-show-labels" checked style="width: 14px; height: 14px; cursor: pointer;">
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <label style="font-size: 11px; flex: 1; margin-bottom: 0;">Label Angle (旋转角度):</label>
+                <input type="range" id="x-axis-label-rotate" min="0" max="90" step="15" value="0" style="flex: 2; height: auto;">
+                <span id="x-axis-label-rotate-val" style="font-size: 11px; width: 25px; text-align: right;">0°</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Y-Axis Scale & Split Options -->
           <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Y-Axis Customization (Y轴刻度与段数)</label>
@@ -483,6 +552,11 @@
                 <span style="font-size: 11px; color: var(--text-secondary); width: 45px;">Y-Axis:</span>
                 <input type="number" step="any" id="axis-ymin" placeholder="Min (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
                 <input type="number" step="any" id="axis-ymax" placeholder="Max (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center; display: none;" id="axis-y2minmax-group">
+                <span style="font-size: 11px; color: var(--text-secondary); width: 45px;">Y2-Axis:</span>
+                <input type="number" step="any" id="axis-y2min" placeholder="Min (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
+                <input type="number" step="any" id="axis-y2max" placeholder="Max (Auto)" class="form-input" style="font-size: 11px; padding: 4px; flex: 1; height: auto;">
               </div>
             </div>
           </div>
@@ -673,6 +747,7 @@
             <option value="Body Weight (g±SD)"></option>
             <option value="Body Weight Change (%±SD)"></option>
           </datalist>
+          <input type="text" class="form-input" id="chart-y2label-input" placeholder="Y2 Axis Label" list="y-axis-presets" style="padding: 6px 10px; font-size: 12px; display: none;">
         </div>
 
         <!-- SVG Annotation Overlay Toolbar -->
