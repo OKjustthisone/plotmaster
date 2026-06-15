@@ -3179,14 +3179,6 @@ function drawChart() {
               center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
             }
 
-            const polyCoords = [];
-            densityPoints.forEach(pt => {
-              polyCoords.push([center + (pt.dens / maxDens) * scale, pt.val]);
-            });
-            [...densityPoints].reverse().forEach(pt => {
-              polyCoords.push([center - (pt.dens / maxDens) * scale, pt.val]);
-            });
-
             option.series.push({
               name: seriesName,
               type: 'custom',
@@ -3195,7 +3187,29 @@ function drawChart() {
               encode: { x: 0, y: 1 },
               clip: false,
               renderItem: function (params, api) {
-                const points = polyCoords.map(c => api.coord(c));
+                const categoryWidth = api.size ? api.size([1, 0])[0] : 100;
+                const halfWidth = categoryWidth * scale; // Max offset in pixels
+                const indexOffset = center - catIdx;
+                const centerPixelOffset = indexOffset * categoryWidth;
+
+                const points = [];
+                
+                // Left half of the violin polygon
+                densityPoints.forEach(pt => {
+                  const baseCoord = api.coord([catIdx, pt.val]);
+                  const px_center = baseCoord[0] + centerPixelOffset;
+                  const offset = (pt.dens / maxDens) * halfWidth;
+                  points.push([px_center + offset, baseCoord[1]]);
+                });
+                
+                // Right half of the violin polygon (reversed)
+                [...densityPoints].reverse().forEach(pt => {
+                  const baseCoord = api.coord([catIdx, pt.val]);
+                  const px_center = baseCoord[0] + centerPixelOffset;
+                  const offset = (pt.dens / maxDens) * halfWidth;
+                  points.push([px_center - offset, baseCoord[1]]);
+                });
+
                 return {
                   type: 'polygon',
                   shape: { points: points },
@@ -3985,9 +3999,17 @@ function getErrorBarStats(vals, type) {
 // Render custom error bar lines in ECharts
 function renderErrorBarItem(params, api) {
   var xValue = api.value(0);
-  var highPoint = api.coord([xValue, api.value(1)]);
-  var lowPoint = api.coord([xValue, api.value(2)]);
-  var halfWidth = api.size([1, 0])[0] * 0.08; // width of error bar cap
+  var catIdx = Math.round(xValue);
+  var indexOffset = xValue - catIdx;
+  var categoryWidth = api.size ? api.size([1, 0])[0] : 100;
+  var centerPixelOffset = indexOffset * categoryWidth;
+
+  var baseHigh = api.coord([catIdx, api.value(1)]);
+  var baseLow = api.coord([catIdx, api.value(2)]);
+  var highPoint = [baseHigh[0] + centerPixelOffset, baseHigh[1]];
+  var lowPoint = [baseLow[0] + centerPixelOffset, baseLow[1]];
+
+  var halfWidth = categoryWidth * 0.08; // width of error bar cap
   if (halfWidth > 10) halfWidth = 10;
   if (halfWidth < 4) halfWidth = 4;
   
