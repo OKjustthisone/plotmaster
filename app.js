@@ -2200,6 +2200,34 @@ function drawChart() {
   const type = appState.currentChartType;
   const isXColSameAsGCol = !!(xCol && gCol && xCol === gCol);
 
+  // Group selection checklist filtering
+  const rows = getPlotFilteredRows();
+  const activeGroupCheckboxes = document.querySelectorAll('.group-filter-checkbox');
+  let activeGroups = [];
+  if (activeGroupCheckboxes.length > 0) {
+    activeGroups = Array.from(activeGroupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+  }
+  
+  let filteredRows = rows;
+  if (gCol && activeGroupCheckboxes.length > 0) {
+    filteredRows = rows.filter(r => activeGroups.includes(String(r[gCol])));
+  }
+
+  // Render group split tabs if active
+  const splitCheckbox = document.getElementById('group-tabs-checkbox');
+  if (gCol && splitCheckbox && splitCheckbox.checked) {
+    const uniqueGroups = [...new Set(filteredRows.map(r => String(r[gCol])).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort();
+    renderGroupTabs(uniqueGroups);
+  } else {
+    renderGroupTabs([]);
+  }
+
+  // Sub-tab specific filtering
+  let plotRows = filteredRows;
+  if (gCol && splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
+    plotRows = filteredRows.filter(r => String(r[gCol]) === currentSplitGroupTab);
+  }
+
   const pointShape = document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle';
   
   function getSymbolConfig(color, size, isOverlay = false, shapeOverride = null) {
@@ -2555,34 +2583,6 @@ function drawChart() {
   const lineWidth = parseInt(DOM.lineWidth.value);
   const barPadding = parseInt(DOM.barPadding.value);
   const boxWidthPercent = parseInt(DOM.boxWidth.value);
-  
-  // Group selection checklist filtering
-  const rows = getPlotFilteredRows();
-  const activeGroupCheckboxes = document.querySelectorAll('.group-filter-checkbox');
-  let activeGroups = [];
-  if (activeGroupCheckboxes.length > 0) {
-    activeGroups = Array.from(activeGroupCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-  }
-  
-  let filteredRows = rows;
-  if (gCol && activeGroupCheckboxes.length > 0) {
-    filteredRows = rows.filter(r => activeGroups.includes(String(r[gCol])));
-  }
-
-  // Render group split tabs if active
-  const splitCheckbox = document.getElementById('group-tabs-checkbox');
-  if (gCol && splitCheckbox && splitCheckbox.checked) {
-    const uniqueGroups = [...new Set(filteredRows.map(r => String(r[gCol])).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort();
-    renderGroupTabs(uniqueGroups);
-  } else {
-    renderGroupTabs([]);
-  }
-
-  // Sub-tab specific filtering
-  let plotRows = filteredRows;
-  if (gCol && splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
-    plotRows = filteredRows.filter(r => String(r[gCol]) === currentSplitGroupTab);
-  }
 
   // Determine groups to render
   let groups = ['All Data'];
