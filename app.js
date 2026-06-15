@@ -154,6 +154,19 @@ function init() {
   DOM.xAxisLabelRotate = document.getElementById('x-axis-label-rotate');
   DOM.xAxisLabelRotateVal = document.getElementById('x-axis-label-rotate-val');
   
+  DOM.styleOpacity = document.getElementById('style-opacity-slider');
+  DOM.styleOpacityVal = document.getElementById('style-opacity-val');
+  DOM.styleLinetype = document.getElementById('style-linetype-select');
+  DOM.styleBarBorder = document.getElementById('style-barborder-slider');
+  DOM.styleBarBorderVal = document.getElementById('style-barborder-val');
+  DOM.styleBoxNotch = document.getElementById('style-boxnotch-select');
+  DOM.styleViolinWidth = document.getElementById('style-violinwidth-slider');
+  DOM.styleViolinWidthVal = document.getElementById('style-violinwidth-val');
+  DOM.styleViolinTrim = document.getElementById('style-violintrim-select');
+  DOM.styleViolinBw = document.getElementById('style-violinbw-slider');
+  DOM.styleViolinBwVal = document.getElementById('style-violinbw-val');
+  DOM.styleViolinScale = document.getElementById('style-violinscale-select');
+  
   DOM.exportPng = document.getElementById('export-png');
   DOM.exportJpg = document.getElementById('export-jpg');
   DOM.exportSvg = document.getElementById('export-svg');
@@ -167,6 +180,7 @@ function init() {
   setupEventListeners();
   setupAnnotationToolbar();
   loadStyleTemplatesDropdown();
+  updateStyleSettingsVisibility();
 }
 
 // Dynamic Variable Mapping Inputs matching
@@ -525,6 +539,7 @@ function setupEventListeners() {
     card.classList.add('active');
     appState.currentChartType = card.dataset.chart;
     updateColumnMappingInputs(appState.currentChartType);
+    updateStyleSettingsVisibility();
     if (appState.activeData) drawChart();
   });
 
@@ -626,6 +641,42 @@ function setupEventListeners() {
   });
   DOM.boxWidth.addEventListener('input', (e) => {
     DOM.boxWidthVal.textContent = e.target.value + '%';
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleOpacity.addEventListener('input', (e) => {
+    DOM.styleOpacityVal.textContent = e.target.value;
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleLinetype.addEventListener('change', () => {
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleBarBorder.addEventListener('input', (e) => {
+    DOM.styleBarBorderVal.textContent = e.target.value;
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleBoxNotch.addEventListener('change', () => {
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleViolinWidth.addEventListener('input', (e) => {
+    DOM.styleViolinWidthVal.textContent = e.target.value;
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleViolinTrim.addEventListener('change', () => {
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleViolinBw.addEventListener('input', (e) => {
+    DOM.styleViolinBwVal.textContent = parseFloat(e.target.value).toFixed(1);
+    saveActiveTabState();
+    if (appState.activeData) drawChart();
+  });
+  DOM.styleViolinScale.addEventListener('change', () => {
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
@@ -2216,6 +2267,9 @@ function drawChart() {
 
   const gCol = DOM.groupSelect.value;
   const type = appState.currentChartType;
+  
+  const fillOpacity = document.getElementById('style-opacity-slider') ? parseFloat(document.getElementById('style-opacity-slider').value) : 0.8;
+  const lineType = document.getElementById('style-linetype-select')?.value || 'solid';
   const isXColSameAsGCol = !!(xCol && gCol && xCol === gCol);
 
   // Group selection checklist filtering
@@ -2251,7 +2305,8 @@ function drawChart() {
   function getSymbolConfig(color, size, isOverlay = false, shapeOverride = null) {
     let symbol = 'circle';
     let itemStyle = {};
-    const opacity = isOverlay ? 0.65 : 0.8;
+    const userOpacity = document.getElementById('style-opacity-slider') ? parseFloat(document.getElementById('style-opacity-slider').value) : 0.8;
+    const opacity = isOverlay ? (userOpacity * 0.8) : userOpacity;
     const activeShape = shapeOverride || pointShape;
     
     if (activeShape.endsWith('-hollow')) {
@@ -2617,6 +2672,7 @@ function drawChart() {
   const lineWidth = parseInt(DOM.lineWidth.value);
   const barPadding = parseInt(DOM.barPadding.value);
   const boxWidthPercent = parseInt(DOM.boxWidth.value);
+  const barBorderWidth = document.getElementById('style-barborder-slider') ? parseFloat(document.getElementById('style-barborder-slider').value) : 1;
 
   // Determine groups to render
   let groups = ['All Data'];
@@ -2835,7 +2891,7 @@ function drawChart() {
                   name: seriesName, // same name for unified legend toggle
                   type: 'line',
                   yAxisIndex: axisIndex,
-                  lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6 },
+                  lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6, type: lineType },
                   symbol: curveSymbolConfig.symbol,
                   symbolSize: curveSymbolConfig.symbolSize,
                   itemStyle: curveSymbolConfig.itemStyle,
@@ -2849,7 +2905,7 @@ function drawChart() {
               name: seriesName,
               type: 'line',
               yAxisIndex: axisIndex,
-              lineStyle: { width: lineWidth, color: color },
+              lineStyle: { width: lineWidth, color: color, type: lineType },
               symbol: meanSymbolConfig.symbol,
               symbolSize: meanSymbolConfig.symbolSize,
               itemStyle: meanSymbolConfig.itemStyle,
@@ -2956,7 +3012,11 @@ function drawChart() {
             yAxisIndex: axisIndex,
             barGap: isXColSameAsGCol ? '-100%' : '15%',
             barCategoryGap: `${barPadding}%`,
-            itemStyle: { color: color },
+            itemStyle: { 
+              color: hexToRgba(color, fillOpacity), 
+              borderColor: '#475569', 
+              borderWidth: barBorderWidth 
+            },
             data: barData
           });
 
@@ -2997,6 +3057,7 @@ function drawChart() {
     });
 
   } else if (type === 'box') {
+    const boxNotch = document.getElementById('style-boxnotch-select')?.value || 'standard';
     // Boxplot calculations
     const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
     option.xAxis.data = xCategories;
@@ -3004,7 +3065,7 @@ function drawChart() {
     axesToPlot.forEach(axisInfo => {
       const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
       const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
-
+ 
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
           const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
@@ -3022,17 +3083,151 @@ function drawChart() {
             if (vals.length === 0) return [null, null, null, null, null];
             return calculateBoxplotStats(vals);
           });
+ 
+          if (boxNotch === 'notch') {
+            const boxDataCustom = [];
+            xCategories.forEach((cat, catIdx) => {
+              const vals = plotRows
+                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .map(r => Number(r[yCol]))
+                .filter(v => !isNaN(v));
+              if (vals.length === 0) return;
+              const stats = calculateBoxplotStats(vals);
+              const iqr = stats[3] - stats[1];
+              const notchHalf = 1.57 * iqr / Math.sqrt(vals.length);
+              const notchMin = stats[2] - notchHalf;
+              const notchMax = stats[2] + notchHalf;
+              boxDataCustom.push([
+                catIdx,
+                stats[0], // min
+                stats[1], // q1
+                stats[2], // median
+                stats[3], // q3
+                stats[4], // max
+                notchMin,
+                notchMax,
+                vals.length,
+                cat
+              ]);
+            });
 
-          legendData.push(seriesName);
-          option.series.push({
-            name: seriesName,
-            type: 'boxplot',
-            yAxisIndex: axisIndex,
-            boxWidth: `${boxWidthPercent}%`,
-            barGap: isXColSameAsGCol ? '-100%' : undefined,
-            itemStyle: { borderColor: color, color: hexToRgba(color, 0.4) },
-            data: boxData
-          });
+            legendData.push(seriesName);
+            const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
+            const totalSeriesCount = totalColsCount * groups.length;
+            const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
+            const offset = (totalSeriesCount > 1 && !isXColSameAsGCol) ? (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22 : 0;
+
+            option.series.push({
+              name: seriesName,
+              type: 'custom',
+              yAxisIndex: axisIndex,
+              coordinateSystem: 'cartesian2d',
+              encode: { x: 0, y: [1, 2, 3, 4, 5] },
+              clip: false,
+              renderItem: function (params, api) {
+                const catIdx = api.value(0);
+                const minVal = api.value(1);
+                const q1Val = api.value(2);
+                const medianVal = api.value(3);
+                const q3Val = api.value(4);
+                const maxVal = api.value(5);
+                const notchMinVal = api.value(6);
+                const notchMaxVal = api.value(7);
+
+                const categoryWidth = api.size ? api.size([1, 0])[0] : 100;
+                const centerPixelOffset = offset * categoryWidth;
+
+                const p_min = api.coord([catIdx, minVal]);
+                const p_q1 = api.coord([catIdx, q1Val]);
+                const p_med = api.coord([catIdx, medianVal]);
+                const p_q3 = api.coord([catIdx, q3Val]);
+                const p_max = api.coord([catIdx, maxVal]);
+                const p_nmin = api.coord([catIdx, notchMinVal]);
+                const p_nmax = api.coord([catIdx, notchMaxVal]);
+
+                const cx = p_med[0] + centerPixelOffset;
+                const halfW = categoryWidth * (boxWidthPercent / 100) * 0.4;
+                const capW = halfW * 0.4;
+
+                const upperWhisker = {
+                  type: 'line',
+                  shape: { x1: cx, y1: p_q3[1], x2: cx, y2: p_max[1] },
+                  style: { stroke: color, lineWidth: lineWidth }
+                };
+                const lowerWhisker = {
+                  type: 'line',
+                  shape: { x1: cx, y1: p_q1[1], x2: cx, y2: p_min[1] },
+                  style: { stroke: color, lineWidth: lineWidth }
+                };
+                const upperCap = {
+                  type: 'line',
+                  shape: { x1: cx - capW, y1: p_max[1], x2: cx + capW, y2: p_max[1] },
+                  style: { stroke: color, lineWidth: lineWidth }
+                };
+                const lowerCap = {
+                  type: 'line',
+                  shape: { x1: cx - capW, y1: p_min[1], x2: cx + capW, y2: p_min[1] },
+                  style: { stroke: color, lineWidth: lineWidth }
+                };
+
+                const points = [
+                  [cx - halfW, p_q3[1]],
+                  [cx + halfW, p_q3[1]],
+                  [cx + halfW, p_nmax[1]],
+                  [cx + halfW * 0.5, p_med[1]],
+                  [cx + halfW, p_nmin[1]],
+                  [cx + halfW, p_q1[1]],
+                  [cx - halfW, p_q1[1]],
+                  [cx - halfW, p_nmin[1]],
+                  [cx - halfW * 0.5, p_med[1]],
+                  [cx - halfW, p_nmax[1]]
+                ];
+
+                const boxPoly = {
+                  type: 'polygon',
+                  shape: { points: points },
+                  style: {
+                    fill: hexToRgba(color, fillOpacity),
+                    stroke: color,
+                    lineWidth: lineWidth
+                  }
+                };
+
+                const medianLine = {
+                  type: 'line',
+                  shape: { x1: cx - halfW * 0.5, y1: p_med[1], x2: cx + halfW * 0.5, y2: p_med[1] },
+                  style: { stroke: color, lineWidth: lineWidth * 1.5 }
+                };
+
+                return {
+                  type: 'group',
+                  children: [upperWhisker, lowerWhisker, upperCap, lowerCap, boxPoly, medianLine]
+                };
+              },
+              data: boxDataCustom,
+              tooltip: {
+                formatter: (p) => {
+                  const dataArr = p.data;
+                  return `${seriesName} at ${dataArr[9]}<br/>Max: ${dataArr[5].toFixed(2)}<br/>Q3: ${dataArr[4].toFixed(2)}<br/>Median: ${dataArr[3].toFixed(2)}<br/>Q1: ${dataArr[2].toFixed(2)}<br/>Min: ${dataArr[1].toFixed(2)}<br/>Sample Size N: ${dataArr[8]}`;
+                }
+              }
+            });
+          } else {
+            legendData.push(seriesName);
+            option.series.push({
+              name: seriesName,
+              type: 'boxplot',
+              yAxisIndex: axisIndex,
+              boxWidth: `${boxWidthPercent}%`,
+              barGap: isXColSameAsGCol ? '-100%' : undefined,
+              itemStyle: { 
+                borderColor: color, 
+                borderWidth: lineWidth,
+                color: hexToRgba(color, fillOpacity) 
+              },
+              data: boxData
+            });
+          }
         });
       });
     });
@@ -3131,6 +3326,22 @@ function drawChart() {
     const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
     option.xAxis.data = xCategories;
     
+    // Pre-calculate max count per category/group for Proportional N Scaling
+    let maxGroupN = 1;
+    const scaleMode = document.getElementById('style-violinscale-select')?.value || 'width';
+    if (scaleMode === 'count') {
+      xCategories.forEach(cat => {
+        groups.forEach(g => {
+          const count = plotRows.filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g)).length;
+          if (count > maxGroupN) maxGroupN = count;
+        });
+      });
+    }
+
+    const bwAdj = document.getElementById('style-violinbw-slider') ? parseFloat(document.getElementById('style-violinbw-slider').value) : 1.0;
+    const trimMode = document.getElementById('style-violintrim-select')?.value || 'trim';
+    const violinMaxWidth = document.getElementById('style-violinwidth-slider') ? parseInt(document.getElementById('style-violinwidth-slider').value) : 40;
+
     axesToPlot.forEach(axisInfo => {
       const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
       const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
@@ -3153,22 +3364,34 @@ function drawChart() {
             if (vals.length < 2) return; // Need at least 2 points for density
 
             const stats = calculateBoxplotStats(vals);
+            
+            // Calculate bandwidth
+            const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+            const variance = vals.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / vals.length;
+            const stdDev = Math.sqrt(variance) || 1;
+            const bandwidth = 0.9 * stdDev * Math.pow(vals.length, -0.2) * bwAdj;
+
             let min = stats[0];
             let max = stats[4];
+            if (trimMode === 'keep') {
+              min = stats[0] - 3 * bandwidth;
+              max = stats[4] + 3 * bandwidth;
+            }
             if (max === min) {
               min = min - 0.5;
               max = max + 0.5;
             }
-            let step = (max - min) / 20;
+            let step = (max - min) / 30; // 30 steps for smoother violin shape
             if (step <= 0) step = 1;
             
             const densityPoints = [];
             for (let val = min; val <= max; val += step) {
-              let dens = calculateKdeDensity(vals, val);
+              let dens = calculateKdeDensity(vals, val, bwAdj);
               densityPoints.push({ val, dens });
             }
 
             const maxDens = Math.max(...densityPoints.map(d => d.dens)) || 1;
+            const countScale = (scaleMode === 'count') ? (vals.length / maxGroupN) : 1.0;
             const scale = isXColSameAsGCol ? 0.4 : (0.4 / Math.max(1, totalColsCount * groups.length)); // auto scale spacing
 
             const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
@@ -3188,7 +3411,7 @@ function drawChart() {
               clip: false,
               renderItem: function (params, api) {
                 const categoryWidth = api.size ? api.size([1, 0])[0] : 100;
-                const halfWidth = categoryWidth * scale; // Max offset in pixels
+                const halfWidth = Math.min(violinMaxWidth, categoryWidth * scale * countScale);
                 const indexOffset = center - catIdx;
                 const centerPixelOffset = indexOffset * categoryWidth;
 
@@ -3216,7 +3439,8 @@ function drawChart() {
                   style: {
                     fill: color,
                     stroke: '#475569',
-                    opacity: 0.65
+                    lineWidth: lineWidth,
+                    opacity: fillOpacity
                   }
                 };
               },
@@ -3351,10 +3575,17 @@ function drawChart() {
       }
 
       legendData.push(`${activeY} Distribution`);
+      const paletteColors = PALETTES[appState.selectedPalette]?.colors || PALETTES['ggplot2'].colors;
+      const color = paletteColors[0];
       option.series.push({
         name: `${activeY} Distribution`,
         type: 'bar',
         barWidth: '98%',
+        itemStyle: {
+          color: hexToRgba(color, fillOpacity),
+          borderColor: '#475569',
+          borderWidth: barBorderWidth
+        },
         data: histData
       });
     }
@@ -3470,11 +3701,11 @@ function drawChart() {
             name: seriesName,
             type: 'line',
             yAxisIndex: axisIndex,
-            lineStyle: { width: lineWidth, color: color },
+            lineStyle: { width: lineWidth, color: color, type: lineType },
             symbol: symbolConfig.symbol,
             symbolSize: symbolConfig.symbolSize,
             itemStyle: symbolConfig.itemStyle,
-            areaStyle: { opacity: 0.35, color: hexToRgba(color, 0.3) },
+            areaStyle: { opacity: fillOpacity, color: hexToRgba(color, fillOpacity) },
             data: seriesData
           });
         });
@@ -3957,12 +4188,12 @@ function calculateBoxplotStats(arr) {
 }
 
 // Kernel Density Estimation (Gaussian Kernel simulation)
-function calculateKdeDensity(data, x) {
+function calculateKdeDensity(data, x, bwAdj = 1.0) {
   // Bandwidth calculation (Silverman's rule of thumb)
   const mean = data.reduce((a, b) => a + b, 0) / data.length;
   const variance = data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length;
   const stdDev = Math.sqrt(variance) || 1;
-  const bandwidth = 0.9 * stdDev * Math.pow(data.length, -0.2);
+  const bandwidth = 0.9 * stdDev * Math.pow(data.length, -0.2) * bwAdj;
 
   const sum = data.reduce((acc, val) => {
     const u = (x - val) / bandwidth;
@@ -4128,6 +4359,68 @@ function getActiveTab() {
   return appState.savedCharts.find(c => c.id === appState.activeChartId);
 }
 
+function updateStyleSettingsVisibility() {
+  const type = appState.currentChartType;
+  
+  const lineWidthGroup = document.getElementById('line-width-group');
+  const lineTypeGroup = document.getElementById('style-linetype-group');
+  const barPaddingGroup = document.getElementById('bar-padding-group');
+  const barBorderGroup = document.getElementById('style-barborder-group');
+  const boxWidthGroup = document.getElementById('box-width-group');
+  const boxNotchGroup = document.getElementById('style-boxnotch-group');
+  const violinWidthGroup = document.getElementById('style-violinwidth-group');
+  const violinTrimGroup = document.getElementById('style-violintrim-group');
+  const violinBwGroup = document.getElementById('style-violinbw-group');
+  const violinScaleGroup = document.getElementById('style-violinscale-group');
+  const opacityGroup = document.getElementById('style-opacity-group');
+
+  const allGroups = [
+    lineWidthGroup, lineTypeGroup, barPaddingGroup, barBorderGroup,
+    boxWidthGroup, boxNotchGroup, violinWidthGroup, violinTrimGroup,
+    violinBwGroup, violinScaleGroup, opacityGroup
+  ];
+  allGroups.forEach(g => {
+    if (g) g.style.display = 'none';
+  });
+
+  if (type === 'line') {
+    if (lineWidthGroup) lineWidthGroup.style.display = 'block';
+    if (lineTypeGroup) lineTypeGroup.style.display = 'flex';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'scatter') {
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'bar') {
+    if (barPaddingGroup) barPaddingGroup.style.display = 'block';
+    if (barBorderGroup) barBorderGroup.style.display = 'block';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'box') {
+    if (lineWidthGroup) lineWidthGroup.style.display = 'block';
+    if (boxWidthGroup) boxWidthGroup.style.display = 'block';
+    if (boxNotchGroup) boxNotchGroup.style.display = 'flex';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'violin') {
+    if (lineWidthGroup) lineWidthGroup.style.display = 'block';
+    if (violinWidthGroup) violinWidthGroup.style.display = 'block';
+    if (violinTrimGroup) violinTrimGroup.style.display = 'flex';
+    if (violinBwGroup) violinBwGroup.style.display = 'block';
+    if (violinScaleGroup) violinScaleGroup.style.display = 'flex';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'histogram') {
+    if (barBorderGroup) barBorderGroup.style.display = 'block';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'area') {
+    if (lineWidthGroup) lineWidthGroup.style.display = 'block';
+    if (lineTypeGroup) lineTypeGroup.style.display = 'flex';
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'bubble') {
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'heatmap') {
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  } else if (type === 'pie') {
+    if (opacityGroup) opacityGroup.style.display = 'block';
+  }
+}
+
 function createChartTab(name = null, config = null) {
   const id = 'chart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   const tabName = name || `Chart ${appState.savedCharts.length + 1}`;
@@ -4155,6 +4448,14 @@ function createChartTab(name = null, config = null) {
     boxWidth: parseInt(DOM.boxWidth.value) || 50,
     plotWidth: parseInt(DOM.plotWidth.value) || 15,
     plotHeight: parseInt(DOM.plotHeight.value) || 12,
+    styleOpacity: DOM.styleOpacity ? parseFloat(DOM.styleOpacity.value) : 0.8,
+    styleLinetype: DOM.styleLinetype ? DOM.styleLinetype.value : 'solid',
+    styleBarBorder: DOM.styleBarBorder ? parseFloat(DOM.styleBarBorder.value) : 1,
+    styleBoxNotch: DOM.styleBoxNotch ? DOM.styleBoxNotch.value : 'standard',
+    styleViolinWidth: DOM.styleViolinWidth ? parseInt(DOM.styleViolinWidth.value) : 40,
+    styleViolinTrim: DOM.styleViolinTrim ? DOM.styleViolinTrim.value : 'trim',
+    styleViolinBw: DOM.styleViolinBw ? parseFloat(DOM.styleViolinBw.value) : 1.0,
+    styleViolinScale: DOM.styleViolinScale ? DOM.styleViolinScale.value : 'width',
     xMin: null,
     xMax: null,
     yMin: null,
@@ -4247,6 +4548,14 @@ function saveActiveTabState() {
   tab.boxWidth = parseInt(DOM.boxWidth.value);
   tab.plotWidth = parseInt(DOM.plotWidth.value);
   tab.plotHeight = parseInt(DOM.plotHeight.value);
+  tab.styleOpacity = DOM.styleOpacity ? parseFloat(DOM.styleOpacity.value) : 0.8;
+  tab.styleLinetype = DOM.styleLinetype ? DOM.styleLinetype.value : 'solid';
+  tab.styleBarBorder = DOM.styleBarBorder ? parseFloat(DOM.styleBarBorder.value) : 1;
+  tab.styleBoxNotch = DOM.styleBoxNotch ? DOM.styleBoxNotch.value : 'standard';
+  tab.styleViolinWidth = DOM.styleViolinWidth ? parseInt(DOM.styleViolinWidth.value) : 40;
+  tab.styleViolinTrim = DOM.styleViolinTrim ? DOM.styleViolinTrim.value : 'trim';
+  tab.styleViolinBw = DOM.styleViolinBw ? parseFloat(DOM.styleViolinBw.value) : 1.0;
+  tab.styleViolinScale = DOM.styleViolinScale ? DOM.styleViolinScale.value : 'width';
   
   const xMinInput = document.getElementById('axis-xmin');
   const xMaxInput = document.getElementById('axis-xmax');
@@ -4399,6 +4708,7 @@ function applyChartTabState(tab) {
         c.classList.remove('active');
       }
     });
+    updateStyleSettingsVisibility();
   }
   
   DOM.pointSize.value = tab.pointSize;
@@ -4440,6 +4750,35 @@ function applyChartTabState(tab) {
   
   DOM.boxWidth.value = tab.boxWidth;
   DOM.boxWidthVal.textContent = tab.boxWidth + '%';
+
+  if (DOM.styleOpacity) {
+    DOM.styleOpacity.value = tab.styleOpacity !== undefined ? tab.styleOpacity : 0.8;
+    DOM.styleOpacityVal.textContent = DOM.styleOpacity.value;
+  }
+  if (DOM.styleLinetype) {
+    DOM.styleLinetype.value = tab.styleLinetype || 'solid';
+  }
+  if (DOM.styleBarBorder) {
+    DOM.styleBarBorder.value = tab.styleBarBorder !== undefined ? tab.styleBarBorder : 1;
+    DOM.styleBarBorderVal.textContent = DOM.styleBarBorder.value;
+  }
+  if (DOM.styleBoxNotch) {
+    DOM.styleBoxNotch.value = tab.styleBoxNotch || 'standard';
+  }
+  if (DOM.styleViolinWidth) {
+    DOM.styleViolinWidth.value = tab.styleViolinWidth !== undefined ? tab.styleViolinWidth : 40;
+    DOM.styleViolinWidthVal.textContent = DOM.styleViolinWidth.value;
+  }
+  if (DOM.styleViolinTrim) {
+    DOM.styleViolinTrim.value = tab.styleViolinTrim || 'trim';
+  }
+  if (DOM.styleViolinBw) {
+    DOM.styleViolinBw.value = tab.styleViolinBw !== undefined ? tab.styleViolinBw : 1.0;
+    DOM.styleViolinBwVal.textContent = parseFloat(DOM.styleViolinBw.value).toFixed(1);
+  }
+  if (DOM.styleViolinScale) {
+    DOM.styleViolinScale.value = tab.styleViolinScale || 'width';
+  }
 
   if (tab.plotWidth) {
     DOM.plotWidth.value = tab.plotWidth;
