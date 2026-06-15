@@ -2240,7 +2240,7 @@ function updateStatsFilterValues() {
   if (!col || !appState.activeData) return;
   
   const rows = appState.activeData.rows;
-  const uniqueVals = [...new Set(rows.map(r => String(r[col])).filter(v => v !== null && v !== undefined && v !== ''))].sort();
+  const uniqueVals = [...new Set(rows.map(r => String(r[col])).filter(v => v !== null && v !== undefined && v !== ''))].sort(naturalCompare);
   
   uniqueVals.forEach(v => {
     const opt = document.createElement('option');
@@ -2288,7 +2288,7 @@ function drawChart() {
   // Render group split tabs if active
   const splitCheckbox = document.getElementById('group-tabs-checkbox');
   if (gCol && splitCheckbox && splitCheckbox.checked) {
-    const uniqueGroups = [...new Set(filteredRows.map(r => String(r[gCol])).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort();
+    const uniqueGroups = [...new Set(filteredRows.map(r => String(r[gCol])).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort(naturalCompare);
     renderGroupTabs(uniqueGroups);
   } else {
     renderGroupTabs([]);
@@ -2842,7 +2842,7 @@ function drawChart() {
           if (option.xAxis.type === 'value') {
             sortedX.sort((a, b) => a - b);
           } else {
-            sortedX.sort();
+            sortedX.sort(naturalCompare);
           }
 
           const lineData = [];
@@ -4990,7 +4990,7 @@ function updateGroupCheckboxes(activeGroups = null, splitChecked = false) {
   splitCheckbox.checked = splitChecked;
   
   const rows = appState.activeData ? appState.activeData.rows : [];
-  const uniqueGroups = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== 'undefined' && v !== ''))].sort();
+  const uniqueGroups = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== 'undefined' && v !== ''))].sort(naturalCompare);
   
   // Select All/Deselect All helper
   const allLabel = document.createElement('label');
@@ -5217,7 +5217,7 @@ function calculateMannWhitneyU(valsA, valsB) {
 }
 
 function calculateWelchANOVA(groupsData) {
-  const keys = Array.from(groupsData.keys()).sort();
+  const keys = Array.from(groupsData.keys()).sort(naturalCompare);
   const k = keys.length;
   if (k < 2) throw new Error("At least 2 groups are required for ANOVA.");
   
@@ -5268,7 +5268,7 @@ function calculateWelchANOVA(groupsData) {
 }
 
 function calculateKruskalWallis(groupsData) {
-  const keys = Array.from(groupsData.keys()).sort();
+  const keys = Array.from(groupsData.keys()).sort(naturalCompare);
   const k = keys.length;
   
   const combined = [];
@@ -5490,7 +5490,7 @@ function runStatisticalTestOld() {
       groupData.get(cat).push(val);
     });
     
-    const groups = Array.from(groupData.keys()).sort();
+    const groups = Array.from(groupData.keys()).sort(naturalCompare);
     if (groups.length !== 2) {
       alert(`This test compares exactly 2 groups. Found ${groups.length} groups ("${groups.join(', ')}") in column "${compareCol}".`);
       return;
@@ -5599,7 +5599,7 @@ function runStatisticalTestOld() {
       groupData.get(cat).push(val);
     });
     
-    const groups = Array.from(groupData.keys()).sort();
+    const groups = Array.from(groupData.keys()).sort(naturalCompare);
     if (groups.length < 2) {
       alert(`ANOVA/Kruskal-Wallis requires at least 2 groups. Found ${groups.length} groups in column "${compareCol}".`);
       return;
@@ -5806,8 +5806,8 @@ function runStatisticalTestOld() {
       };
     }
   } else if (activeMethod === 'chi_square') {
-    const uniqueX = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort();
-    const uniqueY = [...new Set(cleanRows.map(r => String(r[yCol])))].sort();
+    const uniqueX = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort(naturalCompare);
+    const uniqueY = [...new Set(cleanRows.map(r => String(r[yCol])))].sort(naturalCompare);
     
     if (uniqueX.length < 2 || uniqueY.length < 2) {
       alert('Both variables must have at least 2 unique categories to perform Chi-square test.');
@@ -5893,7 +5893,7 @@ function addSignificanceBarOld() {
     let idxA, idxB;
     
     if (gCol) {
-      const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort();
+      const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort(naturalCompare);
       const gIdxA = groupsList.indexOf(grpA);
       const gIdxB = groupsList.indexOf(grpB);
       if (gIdxA === -1 || gIdxB === -1) {
@@ -6013,7 +6013,7 @@ function addSignificanceBarOld() {
     let idxA, idxB;
     
     if (gCol) {
-      const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort();
+      const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort(naturalCompare);
       const gIdxA = groupsList.indexOf(grpA);
       const gIdxB = groupsList.indexOf(grpB);
       if (gIdxA === -1 || gIdxB === -1) {
@@ -6405,6 +6405,10 @@ function setupAnnotationToolbar() {
       selectTool('select');
     }
   });
+}
+
+function naturalCompare(a, b) {
+  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
 function hexToRgba(hex, alpha) {
@@ -7004,7 +7008,7 @@ function updateStatsGroupsList() {
   }
   
   const rows = appState.activeData.rows;
-  const uniqueVals = [...new Set(rows.map(r => String(r[compareCol])).filter(v => v !== null && v !== undefined && v !== ''))].sort();
+  const uniqueVals = [...new Set(rows.map(r => String(r[compareCol])).filter(v => v !== null && v !== undefined && v !== ''))].sort(naturalCompare);
   
   container.innerHTML = '';
   uniqueVals.forEach(v => {
@@ -7122,7 +7126,7 @@ function runStatisticalTest() {
   const checkedCbs = Array.from(document.querySelectorAll('.stats-group-checkbox')).filter(cb => cb.checked);
   let groupsToAnalyze = checkedCbs.map(cb => cb.value);
   if (groupsToAnalyze.length === 0) {
-    groupsToAnalyze = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort();
+    groupsToAnalyze = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort(naturalCompare);
   }
   
   let summary = '';
@@ -7233,8 +7237,8 @@ function runStatisticalTest() {
       };
     }
   } else if (method === 'chi_square') {
-    const uniqueX = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort();
-    const uniqueY = [...new Set(cleanRows.map(r => String(r[yCol])))].sort();
+    const uniqueX = [...new Set(cleanRows.map(r => String(r[compareCol])))].sort(naturalCompare);
+    const uniqueY = [...new Set(cleanRows.map(r => String(r[yCol])))].sort(naturalCompare);
     
     if (uniqueX.length < 2 || uniqueY.length < 2) {
       alert('Both variables must have at least 2 unique categories to perform Chi-square test.');
@@ -7579,7 +7583,7 @@ function addSignificanceBar() {
   let idxA, idxB;
   
   if (gCol) {
-    const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort();
+    const groupsList = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== ''))].sort(naturalCompare);
     const gIdxA = groupsList.indexOf(grpA);
     const gIdxB = groupsList.indexOf(grpB);
     if (gIdxA === -1 || gIdxB === -1) {
