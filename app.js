@@ -160,6 +160,7 @@ function init() {
   DOM.exportPzfx = document.getElementById('export-pzfx');
   DOM.exportPrism = document.getElementById('export-prism');
   DOM.copyClipboard = document.getElementById('copy-clipboard');
+  DOM.saveProject = document.getElementById('save-project');
 
   lucide.createIcons();
   renderPalettePicker();
@@ -840,6 +841,9 @@ function setupEventListeners() {
   DOM.exportPzfx.addEventListener('click', exportPZFXFile);
   DOM.exportPrism.addEventListener('click', exportPRISMFile);
   DOM.copyClipboard.addEventListener('click', copyChartToClipboard);
+  if (DOM.saveProject) {
+    DOM.saveProject.addEventListener('click', saveProjectFile);
+  }
 
   // Group splitting and overlay toggles
   document.getElementById('group-tabs-checkbox').addEventListener('change', () => {
@@ -1079,8 +1083,22 @@ function handleFile(file) {
       parsePRISM(e.target.result);
     };
     reader.readAsArrayBuffer(file);
+  } else if (extension === 'pm' || extension === 'json') {
+    reader.onload = function(e) {
+      try {
+        const project = JSON.parse(e.target.result);
+        if (project && project.fileType === 'plotmaster_project') {
+          loadProject(project);
+        } else {
+          alert('Invalid project file format.');
+        }
+      } catch (err) {
+        alert('Failed to parse JSON project file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
   } else {
-    alert('Unsupported file extension. Please load CSV, XLSX, MD, PZFX, or PRISM.');
+    alert('Unsupported file extension. Please load CSV, XLSX, MD, PZFX, PRISM, or PM.');
   }
 }
 
@@ -1131,8 +1149,8 @@ function onFileLoadSuccess(sheetsMap) {
   document.getElementById('stats-section').style.pointerEvents = 'auto';
 
   // Enable download buttons
-  [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.exportPzfx, DOM.exportPrism, DOM.copyClipboard].forEach(btn => {
-    btn.removeAttribute('disabled');
+  [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.exportPzfx, DOM.exportPrism, DOM.copyClipboard, DOM.saveProject].forEach(btn => {
+    if (btn) btn.removeAttribute('disabled');
   });
 }
 
@@ -2263,15 +2281,19 @@ function drawChart() {
     let minVal = Infinity;
     let maxVal = -Infinity;
     
+    const includeRawVals = (type === 'scatter' || type === 'line' || type === 'area' || type === 'boxplot' || type === 'violin' || showPoints);
+    
     yCols.forEach(yCol => {
-      // 1. Gather all raw values
-      allRows.forEach(r => {
-        const v = Number(r[yCol]);
-        if (!isNaN(v) && r[yCol] !== null && r[yCol] !== undefined && r[yCol] !== '') {
-          if (v < minVal) minVal = v;
-          if (v > maxVal) maxVal = v;
-        }
-      });
+      // 1. Gather all raw values if they are being plotted
+      if (includeRawVals) {
+        allRows.forEach(r => {
+          const v = Number(r[yCol]);
+          if (!isNaN(v) && r[yCol] !== null && r[yCol] !== undefined && r[yCol] !== '') {
+            if (v < minVal) minVal = v;
+            if (v > maxVal) maxVal = v;
+          }
+        });
+      }
       
       // 2. Gather group/X means and error bars
       const groups = gCol ? [...new Set(allRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))] : ['All'];
@@ -2283,11 +2305,16 @@ function drawChart() {
           const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
           if (vals.length > 0) {
             const stats = getErrorBarStats(vals, errorBarType);
-            if (stats.mean < minVal) minVal = stats.mean;
-            if (stats.mean > maxVal) maxVal = stats.mean;
-            if (errorBarType !== 'none') {
-              if (stats.low < minVal) minVal = stats.low;
-              if (stats.high > maxVal) maxVal = stats.high;
+            if (type === 'bar') {
+              if (stats.mean < minVal) minVal = stats.mean;
+              if (stats.mean > maxVal) maxVal = stats.mean;
+              if (errorBarType !== 'none') {
+                if (stats.low < minVal) minVal = stats.low;
+                if (stats.high > maxVal) maxVal = stats.high;
+              }
+            } else if (!includeRawVals) {
+              if (stats.mean < minVal) minVal = stats.mean;
+              if (stats.mean > maxVal) maxVal = stats.mean;
             }
           }
         });
@@ -2301,6 +2328,7 @@ function drawChart() {
     }
     
     if (minVal !== Infinity && maxVal !== -Infinity) {
+      const origMin = minVal;
       const range = maxVal - minVal;
       if (range > 0) {
         minVal = minVal - range * 0.05;
@@ -2309,6 +2337,12 @@ function drawChart() {
         minVal = minVal - 1;
         maxVal = maxVal + 1;
       }
+      
+      // Clamp to 0 if original minimum was non-negative and padded minimum became negative
+      if (origMin >= 0 && minVal < 0) {
+        minVal = 0;
+      }
+      
       return { min: minVal, max: maxVal };
     }
     return null;
@@ -3588,12 +3622,34 @@ function drawChart() {
       const y2MaxVal = y2MaxInput && y2MaxInput.value !== '' ? parseFloat(y2MaxInput.value) : null;
 
       // Apply Y1 limits
-      if (yMinVal !== null) yAxis1.min = yMinVal;
-      if (yMaxVal !== null) yAxis1.max = yMaxVal;
+      if (yMinVal !== null) {
+        yAxis1.min = yMinVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds1 = getGlobalYBounds(filteredRows, xCol, yCols, gCol, errorBarType, showPoints, type);
+        if (globalBounds1) yAxis1.min = parseFloat(globalBounds1.min.toFixed(4));
+      }
+
+      if (yMaxVal !== null) {
+        yAxis1.max = yMaxVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds1 = getGlobalYBounds(filteredRows, xCol, yCols, gCol, errorBarType, showPoints, type);
+        if (globalBounds1) yAxis1.max = parseFloat(globalBounds1.max.toFixed(4));
+      }
 
       // Apply Y2 limits
-      if (y2MinVal !== null) yAxis2.min = y2MinVal;
-      if (y2MaxVal !== null) yAxis2.max = y2MaxVal;
+      if (y2MinVal !== null) {
+        yAxis2.min = y2MinVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds2 = getGlobalYBounds(filteredRows, xCol, y2Cols, gCol, errorBarType, showPoints, type);
+        if (globalBounds2) yAxis2.min = parseFloat(globalBounds2.min.toFixed(4));
+      }
+
+      if (y2MaxVal !== null) {
+        yAxis2.max = y2MaxVal;
+      } else if (gCol && splitCheckbox && splitCheckbox.checked) {
+        const globalBounds2 = getGlobalYBounds(filteredRows, xCol, y2Cols, gCol, errorBarType, showPoints, type);
+        if (globalBounds2) yAxis2.max = parseFloat(globalBounds2.max.toFixed(4));
+      }
 
       // Apply scale to both
       if (yScaleType === 'log') {
@@ -7587,6 +7643,117 @@ function getSeriesStyle(seriesName, autoColor, autoShape) {
     color: autoColor,
     shape: autoShape
   };
+
+// ==============================================================================
+// Project Save & Load (.pm file)
+// ==============================================================================
+
+function saveProjectFile() {
+  if (!appState.activeSheetName) return;
+  
+  // Save active tab state first so the JSON contains the latest inputs
+  saveActiveTabState();
+
+  const project = {
+    fileType: 'plotmaster_project',
+    version: '1.0',
+    activeFileName: appState.activeFileName,
+    sheets: appState.sheets,
+    activeSheetName: appState.activeSheetName,
+    currentChartType: appState.currentChartType,
+    selectedPalette: appState.selectedPalette,
+    savedCharts: appState.savedCharts,
+    activeChartId: appState.activeChartId
+  };
+
+  const jsonStr = JSON.stringify(project, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  const nameBase = appState.activeFileName.substring(0, appState.activeFileName.lastIndexOf('.')) || appState.activeFileName;
+  a.download = nameBase + '.pm';
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function loadProject(project) {
+  appState.activeFile = null;
+  appState.activeFileName = project.activeFileName || 'Loaded Project';
+  appState.sheets = project.sheets || {};
+  appState.activeSheetName = project.activeSheetName || Object.keys(appState.sheets)[0];
+  appState.activeData = appState.sheets[appState.activeSheetName];
+  appState.currentChartType = project.currentChartType || 'line';
+  appState.selectedPalette = project.selectedPalette || 'ggplot2';
+  appState.savedCharts = project.savedCharts || [];
+  appState.activeChartId = project.activeChartId || (appState.savedCharts[0] ? appState.savedCharts[0].id : null);
+
+  // Update sheet select dropdown
+  const sheetNames = Object.keys(appState.sheets);
+  DOM.sheetSelect.innerHTML = '';
+  sheetNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    DOM.sheetSelect.appendChild(opt);
+  });
+  DOM.sheetSelect.value = appState.activeSheetName;
+
+  if (sheetNames.length > 1) {
+    DOM.sheetSelectorGroup.style.display = 'flex';
+  } else {
+    DOM.sheetSelectorGroup.style.display = 'none';
+  }
+
+  // Update UI file name text
+  DOM.fileStatusBadge.classList.add('loaded');
+  DOM.fileStatusText.textContent = appState.activeFileName;
+
+  // Unlock UI Panels
+  DOM.mappingSection.style.opacity = '1';
+  DOM.mappingSection.style.pointerEvents = 'auto';
+  DOM.plotSection.style.opacity = '1';
+  DOM.plotSection.style.pointerEvents = 'auto';
+  if (DOM.btnDraw) DOM.btnDraw.style.display = 'flex';
+  if (DOM.placeholderView) DOM.placeholderView.style.display = 'none';
+  
+  // Show toolbars and stats section
+  const quickEditor = document.getElementById('quick-title-editor');
+  if (quickEditor) quickEditor.style.display = 'flex';
+  const annotationToolbar = document.getElementById('annotation-toolbar');
+  if (annotationToolbar) annotationToolbar.style.display = 'flex';
+  const statsSection = document.getElementById('stats-section');
+  if (statsSection) {
+    statsSection.style.opacity = '1';
+    statsSection.style.pointerEvents = 'auto';
+  }
+
+  // Enable download / project buttons
+  [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.exportPzfx, DOM.exportPrism, DOM.copyClipboard, DOM.saveProject].forEach(btn => {
+    if (btn) btn.removeAttribute('disabled');
+  });
+
+  // Render chart tabs list
+  renderChartTabs();
+
+  // If there's an active chart, load it
+  if (appState.activeChartId) {
+    const tab = appState.savedCharts.find(c => c.id === appState.activeChartId);
+    if (tab) {
+      applyChartTabState(tab);
+    }
+  } else {
+    switchActiveSheet(appState.activeSheetName);
+  }
+
+  // Update Data Grid preview
+  updateDataGrid();
+
+  // Draw chart
+  drawChart();
 }
 
 // ==============================================================================

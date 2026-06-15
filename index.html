@@ -55,10 +55,10 @@
             <i class="upload-icon" data-lucide="file-spreadsheet"></i>
             <div class="upload-text">
               <p>Drag & Drop Data File</p>
-              <span>Supports CSV, XLSX, MD, PZFX, PRISM</span>
+              <span>Supports CSV, XLSX, MD, PZFX, PRISM, PM</span>
             </div>
           </div>
-          <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.md,.pzfx,.prism" style="display: none;">
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.md,.pzfx,.prism,.pm,.json" style="display: none;">
         </section>
 
         <!-- Section 2: Plot Selection -->
@@ -793,6 +793,9 @@
             </button>
             <button class="btn btn-primary" id="export-pzfx" disabled>Export .PZFX</button>
             <button class="btn btn-primary" id="export-prism" disabled>Export .PRISM</button>
+            <button class="btn btn-secondary" id="save-project" disabled style="background-color: var(--primary-color); border-color: var(--primary-color); color: white;">
+              <i data-lucide="save" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Save Project (.pm)
+            </button>
           </div>
         </div>
       </div>
