@@ -7643,6 +7643,7 @@ function getSeriesStyle(seriesName, autoColor, autoShape) {
     color: autoColor,
     shape: autoShape
   };
+}
 
 // ==============================================================================
 // Project Save & Load (.pm file)
