@@ -2332,6 +2332,97 @@ function drawChart() {
     };
   }
 
+  function getCustomScatterRender(symbol, size, finalItemStyle, defaultColor) {
+    return function (params, api) {
+      const xVal = api.value(0);
+      const yVal = api.value(1);
+      const catIdx = Math.round(xVal);
+      const indexOffset = xVal - catIdx;
+      const categoryWidth = api.size ? api.size([1, 0])[0] : 100;
+      const centerPixelOffset = indexOffset * categoryWidth;
+      
+      const coord = api.coord([catIdx, yVal]);
+      const cx = coord[0] + centerPixelOffset;
+      const cy = coord[1];
+      const r = Math.max(2, size / 2);
+      
+      let shapeType = 'circle';
+      let shapeDef = {};
+      
+      if (symbol === 'rect') {
+        shapeType = 'rect';
+        shapeDef = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
+      } else if (symbol === 'triangle') {
+        shapeType = 'polygon';
+        shapeDef = {
+          points: [
+            [cx, cy - r * 1.1],
+            [cx + r * 1.1, cy + r * 0.8],
+            [cx - r * 1.1, cy + r * 0.8]
+          ]
+        };
+      } else if (symbol === 'diamond') {
+        shapeType = 'polygon';
+        shapeDef = {
+          points: [
+            [cx, cy - r * 1.2],
+            [cx + r * 1.2, cy],
+            [cx, cy + r * 1.2],
+            [cx - r * 1.2, cy]
+          ]
+        };
+      } else {
+        shapeType = 'circle';
+        shapeDef = { cx: cx, cy: cy, r: r };
+      }
+      
+      return {
+        type: shapeType,
+        shape: shapeDef,
+        style: {
+          fill: finalItemStyle.color || defaultColor,
+          stroke: finalItemStyle.borderColor || '#ffffff',
+          lineWidth: finalItemStyle.borderWidth || 0.5,
+          opacity: finalItemStyle.opacity || 0.8
+        }
+      };
+    };
+  }
+
+  function getCustomMeanRender(size, itemStyle) {
+    return function (params, api) {
+      const xVal = api.value(0);
+      const yVal = api.value(1);
+      const catIdx = Math.round(xVal);
+      const indexOffset = xVal - catIdx;
+      const categoryWidth = api.size ? api.size([1, 0])[0] : 100;
+      const centerPixelOffset = indexOffset * categoryWidth;
+      
+      const coord = api.coord([catIdx, yVal]);
+      const cx = coord[0] + centerPixelOffset;
+      const cy = coord[1];
+      const r = size / 2;
+      
+      return {
+        type: 'polygon',
+        shape: {
+          points: [
+            [cx, cy - r * 1.2],
+            [cx + r * 1.2, cy],
+            [cx, cy + r * 1.2],
+            [cx - r * 1.2, cy]
+          ]
+        },
+        style: {
+          fill: itemStyle.color || '#ff3b30',
+          stroke: itemStyle.borderColor || '#ffffff',
+          lineWidth: itemStyle.borderWidth || 1.5,
+          opacity: itemStyle.opacity || 0.9
+        }
+      };
+    };
+  }
+
   function getGlobalYBounds(allRows, xCol, yCols, gCol, errorBarType, showPoints, type) {
     let minVal = Infinity;
     let maxVal = -Infinity;
@@ -2989,8 +3080,8 @@ function drawChart() {
               const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
               let center = catIdx;
               if (totalSeriesCount > 1 && !isXColSameAsGCol) {
-                const barWidthOffset = 0.65 / totalSeriesCount;
-                center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
+                const barWidthStep = 1.15 * (1 - barPadding / 100) / (1.15 * totalSeriesCount - 0.15);
+                center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthStep;
               }
 
               if (errorBarType !== 'none') {
@@ -3042,11 +3133,10 @@ function drawChart() {
             }
             option.series.push({
               name: `${seriesName} (Scatter)`,
-              type: 'scatter',
+              type: 'custom',
               yAxisIndex: axisIndex,
-              symbol: scatterSymbolConfig.symbol,
-              symbolSize: scatterSymbolConfig.symbolSize,
-              itemStyle: finalItemStyle,
+              coordinateSystem: 'cartesian2d',
+              renderItem: getCustomScatterRender(scatterSymbolConfig.symbol, scatterSymbolConfig.symbolSize, finalItemStyle, color),
               data: scatterData,
               z: 6,
               tooltip: { show: false }
@@ -3287,11 +3377,10 @@ function drawChart() {
               const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
               option.series.push({
                 name: `${seriesName} (Scatter)`,
-                type: 'scatter',
+                type: 'custom',
                 yAxisIndex: axisIndex,
-                symbol: scatterSymbolConfig.symbol,
-                symbolSize: scatterSymbolConfig.symbolSize,
-                itemStyle: scatterSymbolConfig.itemStyle,
+                coordinateSystem: 'cartesian2d',
+                renderItem: getCustomScatterRender(scatterSymbolConfig.symbol, scatterSymbolConfig.symbolSize, scatterSymbolConfig.itemStyle, color),
                 data: jitterData,
                 tooltip: { show: false }
               });
@@ -3300,16 +3389,15 @@ function drawChart() {
             if (showMean && meanData.length > 0) {
               option.series.push({
                 name: `${seriesName} (Mean)`,
-                type: 'scatter',
+                type: 'custom',
                 yAxisIndex: axisIndex,
-                symbol: 'diamond',
-                symbolSize: activePointSize + 3,
-                itemStyle: {
+                coordinateSystem: 'cartesian2d',
+                renderItem: getCustomMeanRender(activePointSize + 3, {
                   color: '#ff3b30',
                   borderColor: '#ffffff',
                   borderWidth: 1.5,
                   opacity: 0.9
-                },
+                }),
                 data: meanData,
                 z: 10,
                 tooltip: {
@@ -3508,11 +3596,10 @@ function drawChart() {
               const scatterSymbolConfig = getSymbolConfig(color, Math.max(4, activePointSize - 2), true, currentShape);
               option.series.push({
                 name: `${seriesName} (Scatter)`,
-                type: 'scatter',
+                type: 'custom',
                 yAxisIndex: axisIndex,
-                symbol: scatterSymbolConfig.symbol,
-                symbolSize: scatterSymbolConfig.symbolSize,
-                itemStyle: scatterSymbolConfig.itemStyle,
+                coordinateSystem: 'cartesian2d',
+                renderItem: getCustomScatterRender(scatterSymbolConfig.symbol, scatterSymbolConfig.symbolSize, scatterSymbolConfig.itemStyle, color),
                 data: jitterData,
                 tooltip: { show: false }
               });
@@ -3521,16 +3608,15 @@ function drawChart() {
             if (showMean && meanData.length > 0) {
               option.series.push({
                 name: `${seriesName} (Mean)`,
-                type: 'scatter',
+                type: 'custom',
                 yAxisIndex: axisIndex,
-                symbol: 'diamond',
-                symbolSize: activePointSize + 3,
-                itemStyle: {
+                coordinateSystem: 'cartesian2d',
+                renderItem: getCustomMeanRender(activePointSize + 3, {
                   color: '#ff3b30',
                   borderColor: '#ffffff',
                   borderWidth: 1.5,
                   opacity: 0.9
-                },
+                }),
                 data: meanData,
                 z: 10,
                 tooltip: {
