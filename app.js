@@ -2896,8 +2896,8 @@ function drawChart() {
       });
     });
 
-  } else if (type === 'line') {
-    // Line Plot mapping (shows means connected by lines + error bars)
+  } else if (type === 'line' || type === 'area') {
+    // Line / Area Plot mapping (shows means connected by lines + error bars)
     axesToPlot.forEach(axisInfo => {
       const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
       const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
@@ -2978,7 +2978,7 @@ function drawChart() {
               
               if (curveData.length > 0) {
                 const curveSymbolConfig = getSymbolConfig(color, Math.max(3, activePointSize - 2), true, currentShape);
-                option.series.push({
+                const seriesObj = {
                   name: seriesName, // same name for unified legend toggle
                   type: 'line',
                   yAxisIndex: axisIndex,
@@ -2987,12 +2987,16 @@ function drawChart() {
                   symbolSize: curveSymbolConfig.symbolSize,
                   itemStyle: curveSymbolConfig.itemStyle,
                   data: curveData
-                });
+                };
+                if (type === 'area') {
+                  seriesObj.areaStyle = { opacity: fillOpacity, color: hexToRgba(color, fillOpacity) };
+                }
+                option.series.push(seriesObj);
               }
             }
           } else {
             const meanSymbolConfig = getSymbolConfig(color, activePointSize, false, currentShape);
-            option.series.push({
+            const seriesObj = {
               name: seriesName,
               type: 'line',
               yAxisIndex: axisIndex,
@@ -3001,7 +3005,11 @@ function drawChart() {
               symbolSize: meanSymbolConfig.symbolSize,
               itemStyle: meanSymbolConfig.itemStyle,
               data: lineData
-            });
+            };
+            if (type === 'area') {
+              seriesObj.areaStyle = { opacity: fillOpacity, color: hexToRgba(color, fillOpacity) };
+            }
+            option.series.push(seriesObj);
 
             if (errorBarType !== 'none' && errorData.length > 0) {
               option.series.push({
@@ -3756,47 +3764,7 @@ function drawChart() {
       }
     });
 
-  } else if (type === 'area') {
-    axesToPlot.forEach(axisInfo => {
-      const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
-      const paletteColors = PALETTES[palette]?.colors || PALETTES['ggplot2'].colors;
 
-      cols.forEach((yCol, yIdx) => {
-        groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
-          const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
-          const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
-          const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
-          const color = styleOverride.color;
-          const currentShape = styleOverride.shape;
-          
-          const seriesData = plotRows
-            .filter(r => !gCol || String(r[gCol]) === g)
-            .map(r => [r[xCol], r[yCol]])
-            .filter(pt => pt[0] !== null && pt[1] !== null);
-
-          option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
-
-          if (option.xAxis.type === 'value') {
-            seriesData.sort((a, b) => a[0] - b[0]);
-          }
-
-          legendData.push(seriesName);
-          const symbolConfig = getSymbolConfig(color, activePointSize, false, currentShape);
-          option.series.push({
-            name: seriesName,
-            type: 'line',
-            yAxisIndex: axisIndex,
-            lineStyle: { width: lineWidth, color: color, type: lineType },
-            symbol: symbolConfig.symbol,
-            symbolSize: symbolConfig.symbolSize,
-            itemStyle: symbolConfig.itemStyle,
-            areaStyle: { opacity: fillOpacity, color: hexToRgba(color, fillOpacity) },
-            data: seriesData
-          });
-        });
-      });
-    });
 
   } else if (type === 'pie') {
     const activeY = yCols[0];
