@@ -2165,8 +2165,8 @@ function applyCanvasDimensions() {
 
   if (wrapper) {
     wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.justifyContent = 'center';
+    wrapper.style.alignItems = '';
+    wrapper.style.justifyContent = '';
     wrapper.style.overflow = 'auto';
   }
 
