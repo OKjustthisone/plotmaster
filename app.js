@@ -85,7 +85,8 @@ let appState = {
   renderer: 'canvas',     // 'canvas' or 'svg' for vector export
   savedCharts: [],        // Saved chart sheets tabs
   activeChartId: null,    // Active chart tab ID
-  columnFilters: {}       // Column filters search mapping
+  columnFilters: {},      // Column filters search mapping
+  isRefreshing: false     // Refresh state flag
 };
 
 function getFilteredRows() {
@@ -494,8 +495,22 @@ function updatePalette2PreviewBar() {
 function setupEventListeners() {
   // Trigger file input click when upload zone is clicked
   DOM.uploadZone.addEventListener('click', () => {
+    DOM.fileInput.value = ''; // Reset to allow selecting same file again
     DOM.fileInput.click();
   });
+
+  // Refresh data click handler
+  const btnRefresh = document.getElementById('btn-refresh-data');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      if (appState.activeFile) {
+        appState.isRefreshing = true;
+        handleFile(appState.activeFile);
+      } else {
+        alert('No active file to refresh. Please select or drag a file first.');
+      }
+    });
+  }
 
   // Drag & drop file upload
   DOM.uploadZone.addEventListener('dragenter', (e) => {
@@ -1109,6 +1124,13 @@ function handleFile(file) {
   const extension = file.name.split('.').pop().toLowerCase();
   const reader = new FileReader();
 
+  reader.onerror = function(e) {
+    appState.isRefreshing = false;
+    alert('Failed to read the file. The file handle may have expired or the file was deleted/replaced. Please drag & drop or select the file again.');
+    DOM.fileInput.value = '';
+    DOM.fileInput.click();
+  };
+
   if (extension === 'csv') {
     reader.onload = function(e) {
       parseCSV(e.target.result);
@@ -1173,6 +1195,31 @@ function onFileLoadSuccess(sheetsMap) {
     DOM.sheetSelectorGroup.style.display = 'none';
   }
 
+  if (appState.isRefreshing) {
+    if (!sheetNames.includes(appState.activeSheetName)) {
+      appState.activeSheetName = sheetNames[0];
+    }
+    DOM.sheetSelect.value = appState.activeSheetName;
+    appState.activeData = appState.sheets[appState.activeSheetName];
+
+    updateDataGrid();
+    updateMappingDropdowns();
+
+    const tab = getActiveTab();
+    if (tab) {
+      applyChartTabState(tab);
+    }
+
+    drawChart();
+    appState.isRefreshing = false;
+
+    const btnRefresh = document.getElementById('btn-refresh-data');
+    if (btnRefresh) btnRefresh.style.display = 'flex';
+
+    alert('Data refreshed successfully!');
+    return;
+  }
+
   // Reset tabs
   appState.savedCharts = [];
   appState.activeChartId = null;
@@ -1203,6 +1250,10 @@ function onFileLoadSuccess(sheetsMap) {
   [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.exportPzfx, DOM.exportPrism, DOM.copyClipboard, DOM.saveProject].forEach(btn => {
     if (btn) btn.removeAttribute('disabled');
   });
+
+  // Show refresh button
+  const btnRefresh = document.getElementById('btn-refresh-data');
+  if (btnRefresh) btnRefresh.style.display = 'flex';
 }
 
 function switchActiveSheet(sheetName) {
@@ -1355,10 +1406,12 @@ function updateMappingDropdowns() {
   updateStatsGroupsList();
 
   // Sensible default selections
-  if (headers.length > 0) DOM.xSelect.value = headers[0];
+  if (headers.length > 0 && (!appState.isRefreshing || !headers.includes(DOM.xSelect.value))) {
+    DOM.xSelect.value = headers[0];
+  }
   
   const tab = getActiveTab();
-  if (tab) {
+  if (tab && !appState.isRefreshing) {
     if (headers.length > 1) {
       tab.yCols = [headers[1]];
     } else if (headers.length > 0) {
@@ -8155,6 +8208,10 @@ function loadProject(project) {
   [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.exportPzfx, DOM.exportPrism, DOM.copyClipboard, DOM.saveProject].forEach(btn => {
     if (btn) btn.removeAttribute('disabled');
   });
+
+  // Hide refresh button for loaded projects
+  const btnRefresh = document.getElementById('btn-refresh-data');
+  if (btnRefresh) btnRefresh.style.display = 'none';
 
   // Render chart tabs list
   renderChartTabs();
