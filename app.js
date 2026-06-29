@@ -76,6 +76,7 @@ Object.keys(PALETTES).forEach(key => {
 let appState = {
   activeFile: null,
   activeFileName: '',
+  fileHandle: null,       // File System Access API handle
   sheets: {},            // Map of sheetName -> { headers: [], rows: [] }
   activeSheetName: '',
   activeData: null,      // Reference to the active sheet's { headers: [], rows: [] }
@@ -493,17 +494,50 @@ function updatePalette2PreviewBar() {
 
 // 5. Event Listeners Setup
 function setupEventListeners() {
-  // Trigger file input click when upload zone is clicked
-  DOM.uploadZone.addEventListener('click', () => {
-    DOM.fileInput.value = ''; // Reset to allow selecting same file again
-    DOM.fileInput.click();
+  // Trigger file input click/picker when upload zone is clicked
+  DOM.uploadZone.addEventListener('click', async () => {
+    if (window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false
+        });
+        if (handle) {
+          appState.fileHandle = handle;
+          const file = await handle.getFile();
+          handleFile(file);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('showOpenFilePicker failed, falling back to input:', err);
+          DOM.fileInput.value = '';
+          DOM.fileInput.click();
+        }
+      }
+    } else {
+      DOM.fileInput.value = '';
+      DOM.fileInput.click();
+    }
   });
 
   // Refresh data click handler
   const btnRefresh = document.getElementById('btn-refresh-data');
   if (btnRefresh) {
-    btnRefresh.addEventListener('click', () => {
-      if (appState.activeFile) {
+    btnRefresh.addEventListener('click', async () => {
+      if (appState.fileHandle) {
+        try {
+          appState.isRefreshing = true;
+          const file = await appState.fileHandle.getFile();
+          handleFile(file);
+        } catch (err) {
+          console.warn('Failed to retrieve file from handle, trying fallback:', err);
+          if (appState.activeFile) {
+            appState.isRefreshing = true;
+            handleFile(appState.activeFile);
+          } else {
+            alert('Failed to refresh data: ' + err.message);
+          }
+        }
+      } else if (appState.activeFile) {
         appState.isRefreshing = true;
         handleFile(appState.activeFile);
       } else {
@@ -531,17 +565,37 @@ function setupEventListeners() {
     DOM.uploadZone.classList.remove('dragover');
   });
 
-  DOM.uploadZone.addEventListener('drop', (e) => {
+  DOM.uploadZone.addEventListener('drop', async (e) => {
     e.preventDefault();
     e.stopPropagation();
     DOM.uploadZone.classList.remove('dragover');
+    
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      const item = e.dataTransfer.items[0];
+      if (item.kind === 'file' && typeof item.getAsFileSystemHandle === 'function') {
+        try {
+          const handle = await item.getAsFileSystemHandle();
+          if (handle && handle.kind === 'file') {
+            appState.fileHandle = handle;
+            const file = await handle.getFile();
+            handleFile(file);
+            return;
+          }
+        } catch (err) {
+          console.warn('getAsFileSystemHandle failed:', err);
+        }
+      }
+    }
+
     if (e.dataTransfer.files.length > 0) {
+      appState.fileHandle = null;
       handleFile(e.dataTransfer.files[0]);
     }
   });
 
   DOM.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
+      appState.fileHandle = null;
       handleFile(e.target.files[0]);
     }
   });
@@ -8155,6 +8209,7 @@ function saveProjectFile() {
 
 function loadProject(project) {
   appState.activeFile = null;
+  appState.fileHandle = null;
   appState.activeFileName = project.activeFileName || 'Loaded Project';
   appState.sheets = project.sheets || {};
   appState.activeSheetName = project.activeSheetName || Object.keys(appState.sheets)[0];
