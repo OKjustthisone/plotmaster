@@ -546,6 +546,23 @@ function setupEventListeners() {
     });
   }
 
+  // Add subgroup click handler
+  const btnAddSubgroup = document.getElementById('btn-add-subgroup');
+  if (btnAddSubgroup) {
+    btnAddSubgroup.addEventListener('click', () => {
+      const container = document.getElementById('subgroups-container');
+      if (container) {
+        const row = createSubgroupRow();
+        if (row) {
+          container.appendChild(row);
+          saveActiveTabState();
+          updateManualStylesList();
+          if (appState.activeData) drawChart();
+        }
+      }
+    });
+  }
+
   // Drag & drop file upload
   DOM.uploadZone.addEventListener('dragenter', (e) => {
     e.preventDefault();
@@ -1443,6 +1460,19 @@ function updateMappingDropdowns() {
     });
   });
 
+  // Also update any active subgroup selects
+  document.querySelectorAll('.subgroup-select').forEach(sgSelect => {
+    const selectedVal = sgSelect.value;
+    sgSelect.innerHTML = '';
+    headers.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      if (h === selectedVal) opt.selected = true;
+      sgSelect.appendChild(opt);
+    });
+  });
+
   // Populate Stats Filter Column Dropdown
   const statsFilterCol = document.getElementById('stats-filter-col');
   if (statsFilterCol) {
@@ -1565,6 +1595,94 @@ function createYColRow(isY2, selectedValue) {
   }
 
   return row;
+}
+
+function createSubgroupRow(selectedValue) {
+  const headers = appState.activeData ? appState.activeData.headers : [];
+  const container = document.getElementById('subgroups-container');
+  if (!container) return null;
+  const index = container.children.length + 1;
+
+  const row = document.createElement('div');
+  row.className = 'subgroup-row';
+  row.style.cssText = 'display: flex; gap: 6px; align-items: center; width: 100%; margin-top: 4px;';
+
+  const label = document.createElement('span');
+  label.textContent = `Subgroup ${index}:`;
+  label.style.cssText = 'font-size: 11px; color: var(--text-secondary); width: 70px; flex-shrink: 0;';
+
+  const select = document.createElement('select');
+  select.className = 'form-select subgroup-select';
+  select.style.cssText = 'flex: 1; font-size: 12px; padding: 6px 10px;';
+
+  headers.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h;
+    if (h === selectedValue) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  if (!selectedValue && headers.length > 0) {
+    select.value = headers[0];
+  }
+
+  select.addEventListener('change', () => {
+    saveActiveTabState();
+    updateManualStylesList();
+    if (appState.activeData) drawChart();
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn btn-icon';
+  removeBtn.style.cssText = 'padding: 4px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
+  removeBtn.innerHTML = '<i data-lucide="x" style="width: 14px; height: 14px; color: var(--text-muted);"></i>';
+
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    // Rename remaining subgroup labels
+    const rows = container.querySelectorAll('.subgroup-row');
+    rows.forEach((r, idx) => {
+      const sp = r.querySelector('span');
+      if (sp) sp.textContent = `Subgroup ${idx + 1}:`;
+    });
+    saveActiveTabState();
+    updateManualStylesList();
+    if (appState.activeData) drawChart();
+  });
+
+  row.appendChild(label);
+  row.appendChild(select);
+  row.appendChild(removeBtn);
+
+  if (window.lucide) {
+    setTimeout(() => {
+      lucide.createIcons({
+        attrs: { class: 'lucide-icon' },
+        nameAttr: 'data-lucide'
+      });
+    }, 10);
+  }
+
+  return row;
+}
+
+function getSubgroups() {
+  const container = document.getElementById('subgroups-container');
+  if (!container) return [];
+  const selects = container.querySelectorAll('.subgroup-select');
+  return Array.from(selects).map(sel => sel.value);
+}
+
+function renderSubgroupsUI(subgroups = []) {
+  const container = document.getElementById('subgroups-container');
+  if (!container) return;
+  container.innerHTML = '';
+  subgroups.forEach(subg => {
+    const row = createSubgroupRow(subg);
+    if (row) container.appendChild(row);
+  });
 }
 
 function renderYColsUI() {
@@ -2171,12 +2289,25 @@ function getPlotDimensions() {
 
   // Calculate X-axis label height dynamically based on rotation
   let maxXCharCount = 0;
+  let lineCount = 1;
   if (appState.activeData) {
     const xCol = DOM.xSelect.value;
+    const gCol = document.getElementById('group-select') ? document.getElementById('group-select').value : '';
+    const subgroups = typeof getSubgroups === 'function' ? getSubgroups() : [];
+    
+    if (gCol) lineCount++;
+    lineCount += subgroups.length;
+
+    const colsToCheck = [xCol];
+    if (gCol) colsToCheck.push(gCol);
+    subgroups.forEach(sg => colsToCheck.push(sg));
+
     const rows = appState.activeData.rows || [];
-    const xVals = [...new Set(rows.map(r => String(r[xCol] || '')))];
-    xVals.forEach(x => {
-      if (x.length > maxXCharCount) maxXCharCount = x.length;
+    rows.forEach(r => {
+      colsToCheck.forEach(col => {
+        const val = String(r[col] || '');
+        if (val.length > maxXCharCount) maxXCharCount = val.length;
+      });
     });
   }
   const showLabels = DOM.xAxisShowLabels ? DOM.xAxisShowLabels.checked : true;
@@ -2186,7 +2317,7 @@ function getPlotDimensions() {
   if (showLabels) {
     const rotateRad = (rotateAngle * Math.PI) / 180;
     const labelLengthEst = maxXCharCount * (axisValSize * 0.55);
-    xLabelHeight = Math.round(Math.abs(Math.sin(rotateRad) * labelLengthEst) + Math.abs(Math.cos(rotateRad) * axisValSize) + 8);
+    xLabelHeight = Math.round(Math.abs(Math.sin(rotateRad) * labelLengthEst) + Math.abs(Math.cos(rotateRad) * axisValSize * lineCount * 1.2) + 8);
   }
   let gridBottom = Math.max(45, xLabelHeight + 25);
 
@@ -2375,6 +2506,28 @@ function drawChart() {
   const gCol = DOM.groupSelect.value;
   const type = appState.currentChartType;
   
+  const subgroups = typeof getSubgroups === 'function' ? getSubgroups() : [];
+  const hasSubgroups = subgroups.length > 0;
+
+  function getCombinedGroupKey(row) {
+    const parts = [];
+    if (gCol) parts.push(String(row[gCol] || ''));
+    subgroups.forEach(subg => {
+      parts.push(String(row[subg] || ''));
+    });
+    return parts.join(' - ');
+  }
+
+  function getCombinedGroupKeyForX(row) {
+    const parts = [];
+    parts.push(String(row[xCol] || ''));
+    if (gCol) parts.push(String(row[gCol] || ''));
+    subgroups.forEach(subg => {
+      parts.push(String(row[subg] || ''));
+    });
+    return parts.join(' - ');
+  }
+
   const fillOpacity = document.getElementById('style-opacity-slider') ? parseFloat(document.getElementById('style-opacity-slider').value) : 0.8;
   const lineType = document.getElementById('style-linetype-select')?.value || 'solid';
   const isXColSameAsGCol = !!(xCol && gCol && xCol === gCol);
@@ -2388,14 +2541,14 @@ function drawChart() {
   }
   
   let filteredRows = rows;
-  if (gCol && activeGroupCheckboxes.length > 0) {
-    filteredRows = rows.filter(r => activeGroups.includes(String(r[gCol])));
+  if ((gCol || hasSubgroups) && activeGroupCheckboxes.length > 0) {
+    filteredRows = rows.filter(r => activeGroups.includes(getCombinedGroupKey(r)));
   }
 
   // Render group split tabs if active
   const splitCheckbox = document.getElementById('group-tabs-checkbox');
-  if (gCol && splitCheckbox && splitCheckbox.checked) {
-    const uniqueGroups = [...new Set(filteredRows.map(r => String(r[gCol])).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort(naturalCompare);
+  if ((gCol || hasSubgroups) && splitCheckbox && splitCheckbox.checked) {
+    const uniqueGroups = [...new Set(filteredRows.map(r => getCombinedGroupKey(r)).filter(v => v !== null && v !== '' && v !== 'undefined'))].sort(naturalCompare);
     renderGroupTabs(uniqueGroups);
   } else {
     renderGroupTabs([]);
@@ -2403,8 +2556,42 @@ function drawChart() {
 
   // Sub-tab specific filtering
   let plotRows = filteredRows;
-  if (gCol && splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
-    plotRows = filteredRows.filter(r => String(r[gCol]) === currentSplitGroupTab);
+  if ((gCol || hasSubgroups) && splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
+    plotRows = filteredRows.filter(r => getCombinedGroupKey(r) === currentSplitGroupTab);
+  }
+
+  let xCategories = [];
+  if (hasSubgroups) {
+    const combinedCats = [];
+    const seen = new Set();
+    plotRows.forEach(r => {
+      const key = getCombinedGroupKeyForX(r);
+      if (!seen.has(key)) {
+        seen.add(key);
+        combinedCats.push({
+          key: key,
+          xVal: String(r[xCol] || ''),
+          gVal: gCol ? String(r[gCol] || '') : '',
+          subgVals: subgroups.map(subg => String(r[subg] || ''))
+        });
+      }
+    });
+
+    combinedCats.sort((a, b) => {
+      let cmp = naturalCompare(a.xVal, b.xVal);
+      if (cmp !== 0) return cmp;
+      if (gCol) {
+        cmp = naturalCompare(a.gVal, b.gVal);
+        if (cmp !== 0) return cmp;
+      }
+      for (let i = 0; i < subgroups.length; i++) {
+        cmp = naturalCompare(a.subgVals[i], b.subgVals[i]);
+        if (cmp !== 0) return cmp;
+      }
+      return 0;
+    });
+
+    xCategories = combinedCats.map(c => c.key);
   }
 
   const pointShape = document.getElementById('point-shape-select') ? document.getElementById('point-shape-select').value : 'circle';
@@ -2549,12 +2736,17 @@ function drawChart() {
       }
       
       // 2. Gather group/X means and error bars
-      const groups = gCol ? [...new Set(allRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))] : ['All'];
-      const xVals = [...new Set(allRows.map(r => String(r[xCol])))];
+      const groupsList = (gCol || hasSubgroups) ? [...new Set(allRows.map(r => getCombinedGroupKey(r)).filter(g => g !== null && g !== ''))] : ['All'];
+      const xValsList = hasSubgroups ? xCategories : [...new Set(allRows.map(r => String(r[xCol])))];
       
-      xVals.forEach(x => {
-        groups.forEach(g => {
-          const matchRows = allRows.filter(r => String(r[xCol]) === x && (!gCol || String(r[gCol]) === g));
+      xValsList.forEach(x => {
+        groupsList.forEach(g => {
+          const matchRows = allRows.filter(r => {
+            if (hasSubgroups) {
+              return getCombinedGroupKeyForX(r) === x && getCombinedGroupKey(r) === g;
+            }
+            return String(r[xCol]) === x && (!gCol || String(r[gCol]) === g);
+          });
           const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
           if (vals.length > 0) {
             const stats = getErrorBarStats(vals, errorBarType);
@@ -2831,7 +3023,11 @@ function drawChart() {
         fontSize: axisValSize,
         color: axisValColor,
         show: showLabels,
-        rotate: rotateAngle
+        rotate: rotateAngle,
+        formatter: hasSubgroups ? function(value) {
+          const parts = value.split(' - ');
+          return parts.reverse().join('\n');
+        } : undefined
       },
       nameTextStyle: {
         fontFamily: font,
@@ -2874,18 +3070,18 @@ function drawChart() {
 
   // Determine groups to render
   let groups = ['All Data'];
-  if (gCol) {
+  if (gCol || hasSubgroups) {
     if (splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
       groups = [currentSplitGroupTab];
     } else if (activeGroups.length > 0) {
       groups = activeGroups;
     } else {
-      groups = [...new Set(plotRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))];
+      groups = [...new Set(plotRows.map(r => getCombinedGroupKey(r)).filter(g => g !== null && g !== ''))];
     }
   }
 
   // Get full list of unique groups in filteredRows to ensure stable colors across split tabs
-  const allGroupsList = gCol ? (activeGroups.length > 0 ? activeGroups : [...new Set(filteredRows.map(r => String(r[gCol])).filter(g => g !== null && g !== ''))]) : [];
+  const allGroupsList = (gCol || hasSubgroups) ? (activeGroups.length > 0 ? activeGroups : [...new Set(filteredRows.map(r => getCombinedGroupKey(r)).filter(g => g !== null && g !== ''))]) : [];
 
   const errorBarType = document.getElementById('error-bar-select').value;
 
@@ -2941,22 +3137,34 @@ function drawChart() {
 
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
           const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
           const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
           const color = styleOverride.color;
           const currentShape = styleOverride.shape;
           
-          const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
+          const matchRows = plotRows.filter(r => {
+            if (hasSubgroups) return getCombinedGroupKey(r) === g;
+            return !gCol || String(r[gCol]) === g;
+          });
           const seriesData = matchRows
-            .map(r => [r[xCol], r[yCol]])
+            .map(r => {
+              if (hasSubgroups) return [getCombinedGroupKeyForX(r), r[yCol]];
+              return [r[xCol], r[yCol]];
+            })
             .filter(pt => pt[0] !== null && pt[1] !== null);
 
-          option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
+          if (hasSubgroups) {
+            option.xAxis.type = 'category';
+          } else {
+            option.xAxis.type = isNumeric(seriesData.map(d => d[0])) ? 'value' : 'category';
+          }
 
           if (option.xAxis.type === 'value') {
             seriesData.sort((a, b) => a[0] - b[0]);
+          } else if (hasSubgroups) {
+            seriesData.sort((a, b) => xCategories.indexOf(a[0]) - xCategories.indexOf(b[0]));
           }
 
           // Draw raw points
@@ -3003,6 +3211,10 @@ function drawChart() {
       });
     });
 
+    if (hasSubgroups) {
+      option.xAxis.data = xCategories;
+    }
+
   } else if (type === 'line' || type === 'area') {
     // Line / Area Plot mapping (shows means connected by lines + error bars)
     axesToPlot.forEach(axisInfo => {
@@ -3011,21 +3223,31 @@ function drawChart() {
 
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
           const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
           const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
           const color = styleOverride.color;
           const currentShape = styleOverride.shape;
           
-          const matchRows = plotRows.filter(r => !gCol || String(r[gCol]) === g);
+          const matchRows = plotRows.filter(r => {
+            if (hasSubgroups) return getCombinedGroupKey(r) === g;
+            return !gCol || String(r[gCol]) === g;
+          });
           const rawPoints = matchRows
-            .map(r => [r[xCol], r[yCol]])
+            .map(r => {
+              if (hasSubgroups) return [getCombinedGroupKeyForX(r), r[yCol]];
+              return [r[xCol], r[yCol]];
+            })
             .filter(pt => pt[0] !== null && pt[1] !== null);
 
           if (rawPoints.length === 0) return;
 
-          option.xAxis.type = isNumeric(rawPoints.map(d => d[0])) ? 'value' : 'category';
+          if (hasSubgroups) {
+            option.xAxis.type = 'category';
+          } else {
+            option.xAxis.type = isNumeric(rawPoints.map(d => d[0])) ? 'value' : 'category';
+          }
 
           // Group by X values to calculate mean & error bars
           const xMap = new Map();
@@ -3039,6 +3261,8 @@ function drawChart() {
           const sortedX = Array.from(xMap.keys());
           if (option.xAxis.type === 'value') {
             sortedX.sort((a, b) => a - b);
+          } else if (hasSubgroups) {
+            sortedX.sort((a, b) => xCategories.indexOf(a) - xCategories.indexOf(b));
           } else {
             sortedX.sort(naturalCompare);
           }
@@ -3063,7 +3287,7 @@ function drawChart() {
             // Group rows by replicate index
             const xRepMap = new Map();
             matchRows.forEach(r => {
-              const xVal = r[xCol];
+              const xVal = hasSubgroups ? getCombinedGroupKeyForX(r) : r[xCol];
               if (xVal === null || xVal === undefined || r[yCol] === null || r[yCol] === undefined) return;
               if (!xRepMap.has(xVal)) xRepMap.set(xVal, []);
               xRepMap.get(xVal).push(r);
@@ -3088,6 +3312,7 @@ function drawChart() {
                 const seriesObj = {
                   name: seriesName, // same name for unified legend toggle
                   type: 'line',
+                  connectNulls: true,
                   yAxisIndex: axisIndex,
                   lineStyle: { width: Math.max(1, lineWidth - 1), color: color, opacity: 0.6, type: lineType },
                   symbol: curveSymbolConfig.symbol,
@@ -3106,6 +3331,7 @@ function drawChart() {
             const seriesObj = {
               name: seriesName,
               type: 'line',
+              connectNulls: true,
               yAxisIndex: axisIndex,
               lineStyle: { width: lineWidth, color: color, type: lineType },
               symbol: meanSymbolConfig.symbol,
@@ -3156,10 +3382,14 @@ function drawChart() {
       });
     });
 
+    if (hasSubgroups) {
+      option.xAxis.data = xCategories;
+    }
+
   } else if (type === 'bar') {
     // Bar Plot mapping
-    const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
-    option.xAxis.data = xCategories;
+    const barCategories = hasSubgroups ? xCategories : [...new Set(plotRows.map(r => String(r[xCol])))];
+    option.xAxis.data = barCategories;
 
     axesToPlot.forEach(axisInfo => {
       const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
@@ -3167,7 +3397,7 @@ function drawChart() {
 
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
           const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
           const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
@@ -3180,8 +3410,13 @@ function drawChart() {
           const errorData = [];
           const scatterData = [];
           
-          xCategories.forEach((cat, catIdx) => {
-            const matchRows = plotRows.filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g));
+          barCategories.forEach((cat, catIdx) => {
+            const matchRows = plotRows.filter(r => {
+              if (hasSubgroups) {
+                return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+              }
+              return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+            });
             const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
             
             if (vals.length === 0) {
@@ -3194,7 +3429,8 @@ function drawChart() {
               const totalSeriesCount = totalColsCount * groups.length;
               const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
               let center = catIdx;
-              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+              const isOffsetDisabled = isXColSameAsGCol || hasSubgroups;
+              if (totalSeriesCount > 1 && !isOffsetDisabled) {
                 const barWidthStep = 1.15 * (1 - barPadding / 100) / (1.15 * totalSeriesCount - 0.15);
                 center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthStep;
               }
@@ -3216,7 +3452,7 @@ function drawChart() {
             name: seriesName,
             type: 'bar',
             yAxisIndex: axisIndex,
-            barGap: isXColSameAsGCol ? '-100%' : '15%',
+            barGap: (isXColSameAsGCol || hasSubgroups) ? '-100%' : '15%',
             barCategoryGap: `${barPadding}%`,
             itemStyle: { 
               color: hexToRgba(color, fillOpacity), 
@@ -3255,17 +3491,11 @@ function drawChart() {
               data: scatterData,
               z: 6,
               tooltip: { show: false }
-            });
-          }
-        });
-      });
-    });
-
-  } else if (type === 'box') {
+           } else if (type === 'box') {
     const boxNotch = document.getElementById('style-boxnotch-select')?.value || 'standard';
     // Boxplot calculations
-    const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
-    option.xAxis.data = xCategories;
+    const boxCategories = hasSubgroups ? xCategories : [...new Set(plotRows.map(r => String(r[xCol])))];
+    option.xAxis.data = boxCategories;
     
     axesToPlot.forEach(axisInfo => {
       const { axisIndex, cols, palette, pointSize: activePointSize, pointShape: activePointShape } = axisInfo;
@@ -3273,16 +3503,21 @@ function drawChart() {
  
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
           const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
           const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
           const color = styleOverride.color;
           
           // Calculate box stats per category
-          const boxData = xCategories.map(cat => {
+          const boxData = boxCategories.map(cat => {
             const vals = plotRows
-              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+              .filter(r => {
+                if (hasSubgroups) {
+                  return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+                }
+                return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+              })
               .map(r => Number(r[yCol]))
               .filter(v => !isNaN(v));
             if (vals.length === 0) return [null, null, null, null, null];
@@ -3291,9 +3526,14 @@ function drawChart() {
  
           if (boxNotch === 'notch') {
             const boxDataCustom = [];
-            xCategories.forEach((cat, catIdx) => {
+            boxCategories.forEach((cat, catIdx) => {
               const vals = plotRows
-                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .filter(r => {
+                  if (hasSubgroups) {
+                    return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+                  }
+                  return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+                })
                 .map(r => Number(r[yCol]))
                 .filter(v => !isNaN(v));
               if (vals.length === 0) return;
@@ -3315,12 +3555,13 @@ function drawChart() {
                 cat
               ]);
             });
-
+ 
             legendData.push(seriesName);
             const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
             const totalSeriesCount = totalColsCount * groups.length;
             const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
-            const offset = (totalSeriesCount > 1 && !isXColSameAsGCol) ? (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22 : 0;
+            const isOffsetDisabled = isXColSameAsGCol || hasSubgroups;
+            const offset = (totalSeriesCount > 1 && !isOffsetDisabled) ? (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22 : 0;
 
             option.series.push({
               name: seriesName,
@@ -3424,7 +3665,7 @@ function drawChart() {
               type: 'boxplot',
               yAxisIndex: axisIndex,
               boxWidth: `${boxWidthPercent}%`,
-              barGap: isXColSameAsGCol ? '-100%' : undefined,
+              barGap: (isXColSameAsGCol || hasSubgroups) ? '-100%' : undefined,
               itemStyle: { 
                 borderColor: color, 
                 borderWidth: lineWidth,
@@ -3448,7 +3689,7 @@ function drawChart() {
 
         cols.forEach((yCol, yIdx) => {
           groups.forEach((g, gIdx) => {
-            const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+            const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
             const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
             const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
             const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
@@ -3458,9 +3699,14 @@ function drawChart() {
             const jitterData = [];
             const meanData = [];
             
-            xCategories.forEach((cat, catIdx) => {
+            boxCategories.forEach((cat, catIdx) => {
               const vals = plotRows
-                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .filter(r => {
+                  if (hasSubgroups) {
+                    return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+                  }
+                  return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+                })
                 .map(r => Number(r[yCol]))
                 .filter(v => !isNaN(v) && v !== null);
                 
@@ -3470,7 +3716,8 @@ function drawChart() {
               const totalSeriesCount = totalColsCount * groups.length;
               const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
               let center = catIdx;
-              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+              const isOffsetDisabled = isXColSameAsGCol || hasSubgroups;
+              if (totalSeriesCount > 1 && !isOffsetDisabled) {
                 const barWidthOffset = 0.22; // spacing between box centroids
                 center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * barWidthOffset;
               }
@@ -3526,16 +3773,21 @@ function drawChart() {
     }
 
   } else if (type === 'violin') {
-    const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
-    option.xAxis.data = xCategories;
+    const violinCategories = hasSubgroups ? xCategories : [...new Set(plotRows.map(r => String(r[xCol])))];
+    option.xAxis.data = violinCategories;
     
     // Pre-calculate max count per category/group for Proportional N Scaling
     let maxGroupN = 1;
     const scaleMode = document.getElementById('style-violinscale-select')?.value || 'width';
     if (scaleMode === 'count') {
-      xCategories.forEach(cat => {
+      violinCategories.forEach(cat => {
         groups.forEach(g => {
-          const count = plotRows.filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g)).length;
+          const count = plotRows.filter(r => {
+            if (hasSubgroups) {
+              return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+            }
+            return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+          }).length;
           if (count > maxGroupN) maxGroupN = count;
         });
       });
@@ -3551,16 +3803,21 @@ function drawChart() {
 
       cols.forEach((yCol, yIdx) => {
         groups.forEach((g, gIdx) => {
-          const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+          const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
           const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
           const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
           const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
           const color = styleOverride.color;
           
           legendData.push(seriesName);
-          xCategories.forEach((cat, catIdx) => {
+          violinCategories.forEach((cat, catIdx) => {
             const vals = plotRows
-              .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+              .filter(r => {
+                if (hasSubgroups) {
+                  return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+                }
+                return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+              })
               .map(r => Number(r[yCol]))
               .filter(v => !isNaN(v));
 
@@ -3595,13 +3852,14 @@ function drawChart() {
 
             const maxDens = Math.max(...densityPoints.map(d => d.dens)) || 1;
             const countScale = (scaleMode === 'count') ? (vals.length / maxGroupN) : 1.0;
-            const scale = isXColSameAsGCol ? 0.4 : (0.4 / Math.max(1, totalColsCount * groups.length)); // auto scale spacing
+            const scale = (isXColSameAsGCol || hasSubgroups) ? 0.4 : (0.4 / Math.max(1, totalColsCount * groups.length)); // auto scale spacing
 
             const globalColIdx = (axisIndex === 0) ? yIdx : (yCols.length + yIdx);
             const totalSeriesCount = totalColsCount * groups.length;
             const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
             let center = catIdx;
-            if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+            const isOffsetDisabled = isXColSameAsGCol || hasSubgroups;
+            if (totalSeriesCount > 1 && !isOffsetDisabled) {
               center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
             }
 
@@ -3668,7 +3926,7 @@ function drawChart() {
 
         cols.forEach((yCol, yIdx) => {
           groups.forEach((g, gIdx) => {
-            const globalGIdx = gCol ? allGroupsList.indexOf(String(g)) : gIdx;
+            const globalGIdx = (gCol || hasSubgroups) ? allGroupsList.indexOf(String(g)) : gIdx;
             const seriesName = getSeriesName(g, yCol, gCol, totalColsCount);
             const autoColor = paletteColors[(yIdx + globalGIdx * cols.length) % paletteColors.length];
             const styleOverride = getSeriesStyle(seriesName, autoColor, activePointShape);
@@ -3678,9 +3936,14 @@ function drawChart() {
             const jitterData = [];
             const meanData = [];
             
-            xCategories.forEach((cat, catIdx) => {
+            violinCategories.forEach((cat, catIdx) => {
               const vals = plotRows
-                .filter(r => String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g))
+                .filter(r => {
+                  if (hasSubgroups) {
+                    return getCombinedGroupKeyForX(r) === cat && getCombinedGroupKey(r) === g;
+                  }
+                  return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
+                })
                 .map(r => Number(r[yCol]))
                 .filter(v => !isNaN(v) && v !== null);
                 
@@ -3690,7 +3953,8 @@ function drawChart() {
               const totalSeriesCount = totalColsCount * groups.length;
               const currentSeriesIndex = globalColIdx + gIdx * totalColsCount;
               let center = catIdx;
-              if (totalSeriesCount > 1 && !isXColSameAsGCol) {
+              const isOffsetDisabled = isXColSameAsGCol || hasSubgroups;
+              if (totalSeriesCount > 1 && !isOffsetDisabled) {
                 center = catIdx + (currentSeriesIndex - (totalSeriesCount - 1) / 2) * 0.22;
               }
               
@@ -4596,6 +4860,7 @@ function createChartTab(name = null, config = null) {
     y2Cols: getY2Cols() || [],
     hasY2Axis: false,
     gCol: DOM.groupSelect.value || '',
+    subgroups: getSubgroups() || [],
     selectedPalette: appState.selectedPalette || 'ggplot2',
     palette2: DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2',
     
@@ -4694,6 +4959,7 @@ function saveActiveTabState() {
   tab.y2Cols = getY2Cols();
   tab.hasY2Axis = document.getElementById('y2-axis-group').style.display !== 'none';
   tab.gCol = DOM.groupSelect.value;
+  tab.subgroups = getSubgroups();
   tab.selectedPalette = appState.selectedPalette;
   tab.palette2 = DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2';
   
@@ -4844,6 +5110,8 @@ function applyChartTabState(tab) {
   if (tab.gCol !== undefined) {
     DOM.groupSelect.value = tab.gCol;
   }
+  
+  renderSubgroupsUI(tab.subgroups || []);
   
   // Restore palette
   if (tab.selectedPalette) {
@@ -5134,11 +5402,13 @@ let currentSplitGroupTab = 'ALL';
 
 function updateGroupCheckboxes(activeGroups = null, splitChecked = false) {
   const gCol = DOM.groupSelect.value;
+  const subgroups = typeof getSubgroups === 'function' ? getSubgroups() : [];
+  const hasSubgroups = subgroups.length > 0;
   const container = document.getElementById('group-options-container');
   const list = document.getElementById('group-checkboxes-list');
   const splitCheckbox = document.getElementById('group-tabs-checkbox');
   
-  if (!gCol) {
+  if (!gCol && !hasSubgroups) {
     container.style.display = 'none';
     list.innerHTML = '';
     splitCheckbox.checked = false;
@@ -5151,7 +5421,17 @@ function updateGroupCheckboxes(activeGroups = null, splitChecked = false) {
   splitCheckbox.checked = splitChecked;
   
   const rows = appState.activeData ? appState.activeData.rows : [];
-  const uniqueGroups = [...new Set(rows.map(r => String(r[gCol])).filter(v => v !== null && v !== 'undefined' && v !== ''))].sort(naturalCompare);
+  
+  function getCombinedGroupKey(row) {
+    const parts = [];
+    if (gCol) parts.push(String(row[gCol] || ''));
+    subgroups.forEach(subg => {
+      parts.push(String(row[subg] || ''));
+    });
+    return parts.join(' - ');
+  }
+
+  const uniqueGroups = [...new Set(rows.map(r => getCombinedGroupKey(r)).filter(v => v !== null && v !== 'undefined' && v !== ''))].sort(naturalCompare);
   
   // Select All/Deselect All helper
   const allLabel = document.createElement('label');
