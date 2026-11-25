@@ -318,6 +318,26 @@ body {
   color: var(--text-muted);
 }
 
+.watch-link-btn {
+  display: block;
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.watch-link-btn:hover {
+  color: #818cf8;
+}
+
 .upload-zone-compact {
   padding: 8px 6px;
   display: flex;

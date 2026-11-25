@@ -40,6 +40,13 @@
           newest file is selected/loaded by default. Drag & drop and manual file
           picking remain available in a compact zone to the right of the folder
           controls.
+        - Browser security constraint: Chromium's File System Access API blocks
+          the top-level Downloads, Documents, Desktop, Music, Pictures, Videos and
+          home directories ("can't open this folder because it contains system
+          files"). The UI must explain this and offer a "Use folder snapshot"
+          fallback using <input webkitdirectory>. Snapshot mode lists top-level
+          spreadsheets only, loads the newest automatically, and must be reselected
+          manually to refresh (no polling or persistence).
 
    3.2. VARIABLE MAPPING (AESTHETIC MAPPINGS / AES)
         After data selection, users must be able to map active dataset columns to:
@@ -131,6 +138,8 @@
    - Excel Parsing: JS SheetJS (XLSX.js) library handles raw parsing.
    - Local Folder Detection: File System Access API (showDirectoryPicker) with
      IndexedDB-persisted directory handles; polling refreshes the detected file list.
+     Where Chromium blocks the top-level Downloads/Documents/Desktop folder, a
+     one-time snapshot fallback uses <input webkitdirectory> with manual refresh.
    - Zip Extraction/Compression: JSZip library handles reading/writing `.prism` files.
    - Charting: Apache ECharts library powers the visualizations.
 

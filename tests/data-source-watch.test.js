@@ -53,14 +53,39 @@ assert.match(htmlSource, /Default Detection Folder/);
 assert.doesNotMatch(htmlSource, /1\. Data Import/);
 for (const id of [
   'data-source-section', 'watch-folder-row', 'watch-folder-path',
-  'watch-file-select', 'watch-folder-hint', 'btn-pick-folder',
-  'btn-scan-folder', 'btn-remove-folder', 'upload-zone'
+  'watch-file-select', 'watch-folder-hint', 'watch-folder-hint-text',
+  'btn-pick-folder', 'btn-scan-folder', 'btn-remove-folder',
+  'btn-snapshot-folder', 'folder-snapshot-input', 'upload-zone'
 ]) {
   assert.match(htmlSource, new RegExp(`id=["']${id}["']`), `Missing HTML control: ${id}`);
 }
 assert.match(htmlSource, /class="upload-zone upload-zone-compact"/);
+assert.match(htmlSource, /webkitdirectory/);
 assert.match(cssSource, /\.data-source-grid\s*\{/);
 assert.match(cssSource, /\.upload-zone-compact\s*\{/);
+
+// Snapshot mode only lists spreadsheets directly inside the selected folder.
+const snapshotNames = JSON.parse(evaluate(`JSON.stringify(getTopLevelSnapshotSpreadsheets([
+  { name: 'a.csv', webkitRelativePath: 'Downloads/a.csv' },
+  { name: 'win.xlsx', webkitRelativePath: 'Downloads\\\\win.xlsx' },
+  { name: 'notes.txt', webkitRelativePath: 'Downloads/notes.txt' },
+  { name: 'nested.xlsx', webkitRelativePath: 'Downloads/sub/nested.xlsx' },
+  { name: '~$lock.xlsx', webkitRelativePath: 'Downloads/~$lock.xlsx' }
+]).map(file => file.name))`));
+assert.deepEqual(snapshotNames, ['a.csv', 'win.xlsx']);
+
+evaluate(`handleFolderSnapshot([
+  { name: 'older.csv', webkitRelativePath: 'Downloads/older.csv', lastModified: 100, size: 3 },
+  { name: 'newer.xlsx', webkitRelativePath: 'Downloads/newer.xlsx', lastModified: 300, size: 4 },
+  { name: 'nested.xlsx', webkitRelativePath: 'Downloads/sub/nested.xlsx', lastModified: 500, size: 5 }
+])`);
+assert.equal(evaluate(`appState.watchMode`), 'snapshot');
+assert.equal(evaluate(`appState.watchFolderHandle.name`), 'Downloads');
+assert.deepEqual(
+  JSON.parse(evaluate(`JSON.stringify(appState.watchFiles.map(file => file.name))`)),
+  ['newer.xlsx', 'older.csv']
+);
+evaluate(`appState.watchMode = 'none'; appState.watchFolderHandle = null; appState.watchFiles = []; appState.watchFileHandles = new Map();`);
 
 (async () => {
   // Simulate scanning a directory handle: spreadsheets only, newest first.

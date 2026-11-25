@@ -195,7 +195,9 @@ let appState = {
   columnFilters: {},      // Column filters search mapping
   isRefreshing: false,    // Refresh state flag
   watchFolderHandle: null, // File System Access API directory handle
+  watchMode: 'none',      // 'none' | 'handle' | 'snapshot'
   watchPermission: 'unknown', // 'granted' | 'prompt' | 'denied' | 'unknown'
+  watchNotice: '',
   watchFiles: [],         // [{ name, lastModified, size, handle }] newest first
   watchFileHandles: new Map(),
   watchActiveFileName: '',
@@ -232,6 +234,9 @@ function init() {
   DOM.watchFolderPath = document.getElementById('watch-folder-path');
   DOM.watchFileSelect = document.getElementById('watch-file-select');
   DOM.watchFolderHint = document.getElementById('watch-folder-hint');
+  DOM.watchFolderHintText = document.getElementById('watch-folder-hint-text');
+  DOM.btnSnapshotFolder = document.getElementById('btn-snapshot-folder');
+  DOM.folderSnapshotInput = document.getElementById('folder-snapshot-input');
   DOM.btnPickFolder = document.getElementById('btn-pick-folder');
   DOM.btnScanFolder = document.getElementById('btn-scan-folder');
   DOM.btnRemoveFolder = document.getElementById('btn-remove-folder');
@@ -901,6 +906,21 @@ function setupEventListeners() {
     DOM.btnRemoveFolder.addEventListener('click', (e) => {
       e.stopPropagation();
       removeWatchFolder();
+    });
+  }
+
+  if (DOM.btnSnapshotFolder) {
+    DOM.btnSnapshotFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openFolderSnapshotPicker();
+    });
+  }
+
+  if (DOM.folderSnapshotInput) {
+    DOM.folderSnapshotInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      if (files.length > 0) handleFolderSnapshot(files);
     });
   }
 
@@ -1729,6 +1749,16 @@ function isSpreadsheetFileName(name) {
   return WATCH_FOLDER_EXTENSIONS.includes(getFileExtension(baseName));
 }
 
+// <input webkitdirectory> returns every nested file. Snapshot mode only shows
+// files directly inside the selected folder, matching the live folder scan.
+function getTopLevelSnapshotSpreadsheets(files) {
+  return Array.from(files || []).filter(file => {
+    const relativePath = String(file.webkitRelativePath || '').replace(/\\/g, '/');
+    const parts = relativePath.split('/');
+    return parts.length === 2 && isSpreadsheetFileName(parts[1]);
+  });
+}
+
 function sortWatchFiles(files) {
   return files.slice().sort((a, b) => {
     const diff = (b.lastModified || 0) - (a.lastModified || 0);
@@ -1881,52 +1911,75 @@ function renderWatchFileOptions({ autoLoadNewest = false, force = false } = {}) 
   }
 }
 
+function getSelectedWatchFileName() {
+  return appState.watchActiveFileName || (DOM.watchFileSelect ? DOM.watchFileSelect.value : '');
+}
+
 function renderWatchFolderUI() {
   const folder = appState.watchFolderHandle;
   const hasFolder = !!folder;
+  const isSnapshot = appState.watchMode === 'snapshot';
 
   if (DOM.watchFolderPath) {
     DOM.watchFolderPath.textContent = hasFolder ? folder.name : 'No folder added';
-    DOM.watchFolderPath.title = hasFolder
-      ? `${folder.name} (browser security hides the absolute path)`
-      : 'Add a detection folder to auto-detect spreadsheet files';
+    DOM.watchFolderPath.title = !hasFolder
+      ? 'Add a detection folder to auto-detect spreadsheet files'
+      : (isSnapshot
+        ? `${folder.name} (one-time snapshot; reselect to refresh)`
+        : `${folder.name} (browser security hides the absolute path)`);
   }
 
   if (DOM.watchFolderRow) {
     DOM.watchFolderRow.classList.toggle('has-folder', hasFolder);
     DOM.watchFolderRow.classList.toggle('watching', hasFolder && appState.watchPermission === 'granted');
-    DOM.watchFolderRow.classList.toggle('needs-permission', hasFolder && appState.watchPermission !== 'granted');
+    DOM.watchFolderRow.classList.toggle('needs-permission', hasFolder && !isSnapshot && appState.watchPermission !== 'granted');
     DOM.watchFolderRow.title = !hasFolder
       ? 'Click to add a detection folder'
-      : (appState.watchPermission === 'granted'
-        ? 'Click to rescan the detection folder'
-        : 'Click to grant read access to this folder');
+      : (isSnapshot
+        ? 'Snapshot folder. Click to reselect and refresh.'
+        : (appState.watchPermission === 'granted'
+          ? 'Click to rescan the detection folder'
+          : 'Click to grant read access to this folder'));
   }
 
-  if (DOM.watchFolderHint) {
+  const hintEl = DOM.watchFolderHintText || DOM.watchFolderHint;
+  if (hintEl) {
     if (!hasFolder) {
-      DOM.watchFolderHint.textContent = 'Add a folder to auto-detect Excel files. Newest first.';
+      hintEl.textContent = appState.watchNotice || 'Add a folder to auto-detect Excel files. Newest first.';
+    } else if (isSnapshot) {
+      const count = appState.watchFiles.length;
+      const selected = appState.watchFiles.find(file => file.name === getSelectedWatchFileName());
+      if (selected) {
+        hintEl.textContent = `${selected.name} · ${formatWatchFileTimestamp(selected.lastModified)} · ${count} in snapshot`;
+      } else {
+        hintEl.textContent = `${count} spreadsheet${count === 1 ? '' : 's'} in snapshot · newest first · click Rescan to reselect`;
+      }
     } else if (appState.watchPermission === 'prompt' || appState.watchPermission === 'unknown') {
-      DOM.watchFolderHint.textContent = 'Click the folder to grant read access.';
+      hintEl.textContent = 'Click the folder to grant read access.';
     } else if (appState.watchPermission === 'denied') {
-      DOM.watchFolderHint.textContent = 'Folder access was denied. Click the folder to retry.';
+      hintEl.textContent = 'Folder access was denied. Click the folder to retry.';
     } else if (appState.watchLastError) {
-      DOM.watchFolderHint.textContent = appState.watchLastError;
+      hintEl.textContent = appState.watchLastError;
     } else if (appState.watchFiles.length === 0) {
-      DOM.watchFolderHint.textContent = 'No spreadsheet files found in this folder.';
+      hintEl.textContent = 'No spreadsheet files found in this folder.';
     } else {
       const count = appState.watchFiles.length;
-      const selectedName = appState.watchActiveFileName || (DOM.watchFileSelect ? DOM.watchFileSelect.value : '');
-      const selected = appState.watchFiles.find(file => file.name === selectedName);
+      const selected = appState.watchFiles.find(file => file.name === getSelectedWatchFileName());
       if (selected) {
-        DOM.watchFolderHint.textContent = `${selected.name} · ${formatWatchFileTimestamp(selected.lastModified)} · ${count} detected`;
+        hintEl.textContent = `${selected.name} · ${formatWatchFileTimestamp(selected.lastModified)} · ${count} detected`;
       } else {
-        DOM.watchFolderHint.textContent = `${count} spreadsheet${count === 1 ? '' : 's'} detected · newest first · auto-refresh on`;
+        hintEl.textContent = `${count} spreadsheet${count === 1 ? '' : 's'} detected · newest first · auto-refresh on`;
       }
     }
   }
 
-  if (DOM.btnScanFolder) DOM.btnScanFolder.disabled = !hasFolder;
+  if (DOM.btnSnapshotFolder) {
+    DOM.btnSnapshotFolder.style.display = (!hasFolder || appState.watchNotice) ? 'block' : 'none';
+  }
+  if (DOM.btnScanFolder) {
+    DOM.btnScanFolder.disabled = !hasFolder;
+    DOM.btnScanFolder.title = isSnapshot ? 'Reselect folder snapshot' : 'Rescan detection folder';
+  }
   if (DOM.btnRemoveFolder) DOM.btnRemoveFolder.style.display = hasFolder ? 'inline-flex' : 'none';
 }
 
@@ -1935,6 +1988,12 @@ async function scanWatchFolder({ autoLoadNewest = false } = {}) {
   if (!folder) {
     renderWatchFolderUI();
     return [];
+  }
+
+  // Snapshot folders only have File objects, not a live directory handle.
+  if (appState.watchMode === 'snapshot') {
+    renderWatchFolderUI();
+    return appState.watchFiles;
   }
 
   const permission = await queryWatchPermission(folder, false);
@@ -1981,6 +2040,7 @@ async function scanWatchFolder({ autoLoadNewest = false } = {}) {
   appState.watchSignature = getWatchFileSignature(sorted);
   appState.watchLastError = '';
   appState.watchPermission = 'granted';
+  appState.watchNotice = '';
   if (appState.watchActiveFileName && !sorted.some(file => file.name === appState.watchActiveFileName)) {
     appState.watchActiveFileName = '';
   }
@@ -2030,20 +2090,22 @@ async function loadWatchedFile(name) {
 
 async function pickWatchFolder() {
   if (!window.showDirectoryPicker) {
-    alert('Folder detection requires a Chromium-based browser (Chrome or Edge). You can still drag & drop files.');
+    alert('Live folder detection requires Chrome or Edge. You can still use "Use folder snapshot" or drag & drop files.');
     return;
   }
 
   try {
     const pickerOptions = { id: 'plotmaster-detection-folder', mode: 'read' };
-    if (appState.watchFolderHandle && appState.watchPermission === 'granted') {
+    if (appState.watchMode === 'handle' && appState.watchFolderHandle && appState.watchPermission === 'granted') {
       pickerOptions.startIn = appState.watchFolderHandle;
     }
     const handle = await window.showDirectoryPicker(pickerOptions);
     if (!handle) return;
 
     appState.watchFolderHandle = handle;
+    appState.watchMode = 'handle';
     appState.watchPermission = 'granted';
+    appState.watchNotice = '';
     appState.watchFiles = [];
     appState.watchFileHandles = new Map();
     appState.watchActiveFileName = '';
@@ -2056,7 +2118,11 @@ async function pickWatchFolder() {
     await scanWatchFolder({ autoLoadNewest: true });
     startWatchPolling();
   } catch (err) {
-    if (err && err.name === 'AbortError') return;
+    if (err && (err.name === 'AbortError' || err.name === 'SecurityError')) {
+      appState.watchNotice = 'No folder selected. If Chrome says “contains system files”, pick a subfolder of Downloads / Documents / Desktop, or use “Use folder snapshot”.';
+      renderWatchFolderUI();
+      return;
+    }
     console.warn('Directory picker failed:', err);
     alert('Failed to add the detection folder: ' + (err && err.message ? err.message : err));
   }
@@ -2070,6 +2136,7 @@ async function restoreWatchFolder() {
   if (!handle) return;
 
   appState.watchFolderHandle = handle;
+  appState.watchMode = 'handle';
   appState.watchPermission = await queryWatchPermission(handle, false);
   renderWatchFileOptions({ force: true });
   renderWatchFolderUI();
@@ -2097,6 +2164,10 @@ async function reconnectWatchFolder() {
 }
 
 async function rescanWatchFolder() {
+  if (appState.watchMode === 'snapshot') {
+    openFolderSnapshotPicker();
+    return;
+  }
   if (!appState.watchFolderHandle) {
     await pickWatchFolder();
     return;
@@ -2111,7 +2182,9 @@ async function rescanWatchFolder() {
 async function removeWatchFolder() {
   stopWatchPolling();
   appState.watchFolderHandle = null;
+  appState.watchMode = 'none';
   appState.watchPermission = 'unknown';
+  appState.watchNotice = '';
   appState.watchFiles = [];
   appState.watchFileHandles = new Map();
   appState.watchActiveFileName = '';
@@ -2122,9 +2195,50 @@ async function removeWatchFolder() {
   renderWatchFolderUI();
 }
 
+function openFolderSnapshotPicker() {
+  if (!DOM.folderSnapshotInput) return;
+  DOM.folderSnapshotInput.value = '';
+  DOM.folderSnapshotInput.click();
+}
+
+function handleFolderSnapshot(files) {
+  const topLevelFiles = getTopLevelSnapshotSpreadsheets(files);
+  if (topLevelFiles.length === 0) {
+    alert('No spreadsheet files were found directly inside the selected folder. Move the files into the folder root or use a subfolder.');
+    return;
+  }
+
+  const folderName = String(topLevelFiles[0].webkitRelativePath || '').split('/')[0] || 'Selected folder';
+  const entries = topLevelFiles.map(file => ({
+    name: file.name,
+    lastModified: file.lastModified,
+    size: file.size,
+    handle: {
+      kind: 'file',
+      name: file.name,
+      getFile: async () => file
+    }
+  }));
+
+  const sorted = sortWatchFiles(entries);
+  stopWatchPolling();
+  appState.watchMode = 'snapshot';
+  appState.watchFolderHandle = { name: folderName, isSnapshot: true };
+  appState.watchPermission = 'granted';
+  appState.watchNotice = '';
+  appState.watchFiles = sorted;
+  appState.watchFileHandles = new Map(sorted.map(file => [file.name, file.handle]));
+  appState.watchSignature = getWatchFileSignature(sorted);
+  appState.watchActiveFileName = '';
+  appState.watchLastError = '';
+
+  renderWatchFileOptions({ autoLoadNewest: true });
+  renderWatchFolderUI();
+}
+
 function startWatchPolling() {
   stopWatchPolling();
-  if (!appState.watchFolderHandle) return;
+  if (!appState.watchFolderHandle || appState.watchMode === 'snapshot') return;
   appState.watchPollTimer = setInterval(() => {
     if (document.visibilityState === 'hidden') return;
     if (appState.watchPermission !== 'granted') return;

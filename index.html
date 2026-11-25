@@ -70,7 +70,12 @@
               <select class="form-select watch-file-select" id="watch-file-select" title="Spreadsheet files in the detection folder" disabled>
                 <option value="">Add a folder to detect spreadsheets</option>
               </select>
-              <div class="watch-folder-hint" id="watch-folder-hint" aria-live="polite">Newest files appear first.</div>
+              <div class="watch-folder-hint" id="watch-folder-hint" aria-live="polite">
+                <span id="watch-folder-hint-text">Newest files appear first.</span>
+                <button class="watch-link-btn" id="btn-snapshot-folder" type="button" title="Chrome blocks the top-level Downloads/Documents/Desktop folder. Select a one-time folder snapshot instead (manual refresh).">
+                  Use folder snapshot
+                </button>
+              </div>
             </div>
             <div class="upload-zone upload-zone-compact" id="upload-zone" title="Drag & Drop a data file, or click to browse (CSV, XLSX, XLSM, ODS, MD, PZFX, PRISM, PM)">
               <i class="upload-icon" data-lucide="file-up"></i>
@@ -84,6 +89,7 @@
             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh Data (刷新数据)
           </button>
           <input type="file" id="file-input" accept=".csv,.tsv,.xlsx,.xls,.xlsm,.xlsb,.ods,.md,.pzfx,.prism,.pm,.json" style="display: none;">
+          <input type="file" id="folder-snapshot-input" webkitdirectory directory multiple style="display: none;">
         </section>
 
         <!-- Section 2: Plot Selection -->
