@@ -150,6 +150,14 @@
               <i data-lucide="trash-2" style="width:12px; height:12px;"></i> Remove 2nd Y-Axis
             </button>
           </div>
+          <div class="form-group" id="bubble-size-axis-group" style="display: none;">
+            <label for="bubble-size-select">Bubble Size Column (Numeric / Required)</label>
+            <select class="form-select" id="bubble-size-select"></select>
+          </div>
+          <div class="form-group" id="heatmap-value-axis-group" style="display: none;">
+            <label for="heatmap-value-select">Cell Value / Fill Column (Numeric / Required)</label>
+            <select class="form-select" id="heatmap-value-select"></select>
+          </div>
            <div class="form-group" id="group-axis-group">
             <label for="group-select">Grouping / Color Variable (Optional)</label>
             <select class="form-select" id="group-select">
@@ -160,6 +168,8 @@
               <i data-lucide="plus" style="width:12px; height:12px;"></i> Add Subgroup (添加次级分组)
             </button>
           </div>
+          <div id="mapping-requirements" class="mapping-requirements" aria-live="polite"></div>
+          <div id="mapping-validation" class="mapping-validation" role="status" aria-live="polite" style="display: none;"></div>
           <!-- Group Selection Checkboxes -->
           <div class="form-group" id="group-options-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 6px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Select Groups to Plot</label>
@@ -204,7 +214,7 @@
           </div>
 
           <!-- Manual Style Selection Mode (手动设置颜色与形状) -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+          <div class="form-group" id="manual-style-toggle-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
             <label class="checkbox-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
               <input type="checkbox" id="manual-style-checkbox">
               <span>Enable Manual Style (手动设置颜色与形状)</span>
@@ -250,20 +260,20 @@
           </div>
           
           <!-- 1st Y Axis Style Group (Color, Size, Shape) -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+          <div class="form-group" id="primary-y-style-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
             <label for="palette-select" style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; display: block;">1st Y-Axis Styling (Y1 轴样式)</label>
             <select class="form-select" id="palette-select" style="font-size: 11px; padding: 4px; height: auto; margin-bottom: 6px;"></select>
             <div id="palette-preview-bar" style="margin-bottom: 8px; display: flex; height: 16px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);"></div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div class="slider-group" style="margin-bottom: 0;">
+            <div id="primary-point-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="slider-group" id="primary-point-size-group" style="margin-bottom: 0;">
                 <div class="slider-header">
                   <span>Point Size</span>
                   <span id="point-size-val">8</span>
                 </div>
                 <input type="range" id="point-size-slider" min="2" max="25" value="8">
               </div>
-              <div class="slider-group" style="display: flex; flex-direction: column; justify-content: center; margin-bottom: 0;">
+              <div class="slider-group" id="primary-point-shape-group" style="display: flex; flex-direction: column; justify-content: center; margin-bottom: 0;">
                 <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Point Shape</span>
                 <select class="form-select" id="point-shape-select" style="font-size: 11px; padding: 4px; height: auto;">
                   <option value="circle">Circle (实心圆)</option>
@@ -417,15 +427,84 @@
             </div>
           </div>
 
+          <!-- Plot-type-specific parameters -->
+          <div class="form-group" id="histogram-parameters" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Histogram Parameters</label>
+            <div class="style-settings-grid" style="margin-top: 6px;">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span>Bins</span>
+                  <span id="histogram-bins-val">30</span>
+                </div>
+                <input type="range" id="histogram-bins" min="1" max="100" step="1" value="30">
+              </div>
+              <div class="slider-group" style="display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 2px;">Y Statistic</span>
+                <select class="form-select" id="histogram-stat" style="font-size: 11px; padding: 4px; height: auto;">
+                  <option value="count">Count (频数)</option>
+                  <option value="density">Density (密度)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" id="bubble-parameters" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Bubble Parameters</label>
+            <div class="style-settings-grid" style="margin-top: 6px;">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span>Minimum Diameter</span>
+                  <span id="bubble-min-size-val">6 px</span>
+                </div>
+                <input type="range" id="bubble-min-size" min="2" max="30" step="1" value="6">
+              </div>
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span>Maximum Diameter</span>
+                  <span id="bubble-max-size-val">50 px</span>
+                </div>
+                <input type="range" id="bubble-max-size" min="10" max="100" step="1" value="50">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" id="heatmap-parameters" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Heatmap Parameters</label>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+              <select class="form-select" id="heatmap-aggregation" style="font-size: 11px; padding: 4px; height: auto;">
+                <option value="mean">Duplicate Cells: Mean (均值)</option>
+                <option value="median">Duplicate Cells: Median (中位数)</option>
+                <option value="sum">Duplicate Cells: Sum (总和)</option>
+                <option value="min">Duplicate Cells: Minimum (最小值)</option>
+                <option value="max">Duplicate Cells: Maximum (最大值)</option>
+              </select>
+              <label class="checkbox-label">
+                <input type="checkbox" id="heatmap-show-values" checked>
+                <span>Show Cell Values (显示单元格数值)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" id="pie-parameters" style="display: none; border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Pie / Donut Parameters</label>
+            <div class="slider-group" style="margin-top: 6px;">
+              <div class="slider-header">
+                <span>Inner Radius (0 = Pie)</span>
+                <span id="pie-inner-radius-val">40%</span>
+              </div>
+              <input type="range" id="pie-inner-radius" min="0" max="65" step="5" value="40">
+            </div>
+          </div>
+
           <!-- Global Plot Options -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
+          <div class="form-group" id="plot-options-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-bottom: 8px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Plot Options (绘图选项)</label>
             <div class="grid-checkbox-group" style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
-              <label class="checkbox-label">
+              <label class="checkbox-label" id="show-points-option">
                 <input type="checkbox" id="show-points-checkbox">
                 <span>Show Individual Scatters (显示散点)</span>
               </label>
-              <label class="checkbox-label">
+              <label class="checkbox-label" id="individual-curves-option">
                 <input type="checkbox" id="individual-curves-checkbox">
                 <span>Individual Curves (个体曲线 - 折线图/Line)</span>
               </label>
@@ -454,7 +533,7 @@
           </div>
 
           <!-- Legend Position select & Distance -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <div class="form-group" id="legend-options-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label for="legend-position-select">Legend Position (图例位置)</label>
             <select class="form-select" id="legend-position-select">
               <option value="bottom">Bottom (下方)</option>
@@ -484,7 +563,7 @@
           </div>
 
           <!-- Font Size and Color Customization -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <div class="form-group" id="font-settings-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Font Settings (字体与颜色)</label>
             
             <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
@@ -546,7 +625,7 @@
           </div>
 
           <!-- X-Axis Customization -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <div class="form-group" id="x-axis-customization-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">X-Axis Customization (X轴标签设置)</label>
             <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">
               <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between;">
@@ -562,7 +641,7 @@
           </div>
 
           <!-- Y-Axis Scale & Split Options -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <div class="form-group" id="y-axis-customization-group" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Y-Axis Customization (Y轴刻度与段数)</label>
             
             <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">
@@ -596,7 +675,7 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" id="gridlines-options-group">
             <label>Gridlines Toggle</label>
             <div class="grid-checkbox-group">
               <label class="checkbox-label">
@@ -612,7 +691,7 @@
           </div>
 
           <!-- Axis Ranges (轴数值范围) -->
-          <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 8px;">
+          <div class="form-group" id="axis-ranges-group" style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 8px;">
             <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Axis Ranges (轴数值范围)</label>
             <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
               <div style="display: flex; gap: 4px; align-items: center;">

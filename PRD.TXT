@@ -36,6 +36,14 @@
         - X-Axis: Categorical or numeric data.
         - Y-Axis: Numeric data (supports multi-column selection for multiple Y values).
         - Group/Color: Categorical column to segment data series and apply color palettes.
+        - Plot-specific roles must follow ggplot2/seaborn conventions instead of being
+          overloaded into generic Y or Group fields:
+          - Histogram: numeric X (no source Y column), optional color/group.
+          - Bubble: numeric X, numeric Y, required non-negative numeric Size, optional color/group.
+          - Heatmap: X category, Y category, required numeric Fill/Cell Value.
+          - Pie/Donut: category/name and positive numeric value.
+        - The UI must show required/optional roles per plot and validate numeric mappings
+          before rendering; unsupported secondary axes and subgroup controls must be hidden.
 
    3.3. PLOT TYPES (10 ggplot2-INSPIRED VISUALIZATIONS)
         1. Scatter Plot (散点图): Numeric X vs Numeric Y. Supports point size/opacity.
@@ -43,11 +51,15 @@
         3. Bar Plot (柱状图): Category X vs Numeric Y. Supports grouped or stacked layout.
         4. Box Plot (箱线图): Shows min, Q1, median, Q3, max, and outliers.
         5. Violin Plot (小提琴图): Displays density distribution of numerical data.
-        6. Histogram (直方图): Distribution of a single numerical variable.
-        7. Bubble Plot (气泡图): Scatter plot where marker size maps to a third variable.
-        8. Heatmap (热力图): Grid visualization for correlation or matrix data.
+        6. Histogram (直方图): Distribution of a single numerical X variable; configurable
+           bin count and count/density statistic.
+        7. Bubble Plot (气泡图): Scatter plot where marker area maps to a required third
+           numerical variable, with configurable minimum/maximum marker diameter.
+        8. Heatmap (热力图): X/Y category grid with a numeric fill value; configurable
+           duplicate-cell aggregation and cell-value labels.
         9. Area Chart (面积图): Shaded area under a line plot.
-        10. Pie/Donut Chart (饼图/环形图): Proportional distribution of categories.
+        10. Pie/Donut Chart (饼图/环形图): Proportional distribution of categories with
+            configurable inner radius (0 creates a pie chart).
 
    3.4. COLOR PALETTES (10 PALETTES x 15 COLORS)
         Plotmaster must support 10 distinct, publication-grade palettes. Each palette

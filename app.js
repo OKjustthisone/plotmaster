@@ -72,6 +72,112 @@ Object.keys(PALETTES).forEach(key => {
   PALETTES[key].colors.pop();
 });
 
+// Plot-specific aesthetic mappings. These roles mirror the conventional
+// ggplot2 / seaborn APIs instead of forcing every chart through X + multi-Y.
+const PLOT_SPECS = Object.freeze({
+  line: {
+    name: 'Line Plot', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'X / Time Column (Categorical or Numeric)',
+    yLabel: 'Y Value Column(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Line Group / Color Variable (Optional)',
+    numericX: false, pointStyle: true, showPoints: true,
+    individualCurves: true, errorBars: true,
+    requirements: 'Required: X + numeric Y. Optional: color/group, nested subgroups, secondary Y, SD/SEM.'
+  },
+  scatter: {
+    name: 'Scatter Plot', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'X Variable (Numeric / Required)',
+    yLabel: 'Y Variable(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Point Color / Group Variable (Optional)',
+    numericX: true, pointStyle: true, showPoints: false,
+    individualCurves: false, errorBars: true,
+    requirements: 'Required: numeric X + numeric Y. Optional: color/group, shape, secondary Y, SD/SEM.'
+  },
+  bar: {
+    name: 'Bar Plot', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'Category Column (X / Required)',
+    yLabel: 'Value Column(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Bar Fill / Group Variable (Optional)',
+    numericX: false, pointStyle: true, showPoints: true,
+    individualCurves: false, errorBars: true,
+    requirements: 'Required: category X + numeric Y. Values are summarized by mean; optional group and SD/SEM.'
+  },
+  box: {
+    name: 'Box Plot', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'Category Column (X / Required)',
+    yLabel: 'Distribution Value Column(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Box Fill / Group Variable (Optional)',
+    numericX: false, pointStyle: true, showPoints: true,
+    individualCurves: false, errorBars: false,
+    requirements: 'Required: category X + numeric observations Y. Optional: fill/group, jittered points, mean marker.'
+  },
+  violin: {
+    name: 'Violin Plot', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'Category Column (X / Required)',
+    yLabel: 'Distribution Value Column(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Violin Fill / Group Variable (Optional)',
+    numericX: false, pointStyle: true, showPoints: true,
+    individualCurves: false, errorBars: false,
+    requirements: 'Required: category X + numeric observations Y. Optional: group, bandwidth, trim, scale, points and mean.'
+  },
+  histogram: {
+    name: 'Histogram', showX: true, showY: false, maxY: 0,
+    xLabel: 'Distribution Value Column (Numeric / Required)',
+    yLabel: '', allowGroup: true, allowSubgroups: false, allowY2: false,
+    groupLabel: 'Fill / Color Group Variable (Optional)',
+    numericX: true, pointStyle: false, showPoints: false,
+    individualCurves: false, errorBars: false,
+    requirements: 'Required: one numeric X variable. Optional: color/group. Choose bins and count or density.'
+  },
+  bubble: {
+    name: 'Bubble Plot', showX: true, showY: true, maxY: 1,
+    xLabel: 'X Variable (Numeric / Required)',
+    yLabel: 'Y Variable (Numeric / Required)',
+    allowGroup: true, allowSubgroups: false, allowY2: false,
+    groupLabel: 'Bubble Color / Group Variable (Optional)',
+    numericX: true, pointStyle: false, showPoints: false,
+    individualCurves: false, errorBars: false, specialRole: 'bubbleSize',
+    requirements: 'Required: numeric X + numeric Y + non-negative numeric bubble size. Optional: color/group.'
+  },
+  heatmap: {
+    name: 'Heatmap', showX: true, showY: true, maxY: 1,
+    xLabel: 'Heatmap X Category Column (Required)',
+    yLabel: 'Heatmap Y Category Column (Required)',
+    allowGroup: false, allowSubgroups: false, allowY2: false,
+    groupLabel: '', numericX: false, numericY: false, pointStyle: false, showPoints: false,
+    individualCurves: false, errorBars: false, specialRole: 'heatmapValue',
+    requirements: 'Required: X category + Y category + numeric cell value/fill. Duplicate cells use the selected aggregation.'
+  },
+  area: {
+    name: 'Area Chart', showX: true, showY: true, maxY: Infinity,
+    xLabel: 'X / Time Column (Categorical or Numeric)',
+    yLabel: 'Area Value Column(s) (Numeric / Required)',
+    allowGroup: true, allowSubgroups: true, allowY2: true,
+    groupLabel: 'Area Fill / Group Variable (Optional)',
+    numericX: false, pointStyle: true, showPoints: true,
+    individualCurves: false, errorBars: true,
+    requirements: 'Required: X + numeric Y. Optional: fill/group, secondary Y and SD/SEM.'
+  },
+  pie: {
+    name: 'Pie / Donut', showX: true, showY: true, maxY: 1,
+    xLabel: 'Slice Category / Name Column (Required)',
+    yLabel: 'Slice Value Column (Positive Numeric / Required)',
+    allowGroup: false, allowSubgroups: false, allowY2: false,
+    groupLabel: '', numericX: false, pointStyle: false, showPoints: false,
+    individualCurves: false, errorBars: false,
+    requirements: 'Required: category/name + positive numeric value. Repeated categories are summed.'
+  }
+});
+
+function getPlotSpec(chartType = appState.currentChartType) {
+  return PLOT_SPECS[chartType] || PLOT_SPECS.line;
+}
+
 // 2. Global State Management
 let appState = {
   activeFile: null,
@@ -118,6 +224,8 @@ function init() {
   DOM.ySelect = document.getElementById('y1-cols-container');
   DOM.y2Select = document.getElementById('y2-cols-container');
   DOM.groupSelect = document.getElementById('group-select');
+  DOM.bubbleSizeSelect = document.getElementById('bubble-size-select');
+  DOM.heatmapValueSelect = document.getElementById('heatmap-value-select');
   DOM.mappingSection = document.getElementById('mapping-section');
   DOM.plotSection = document.getElementById('plot-section');
   DOM.chartTypeGrid = document.getElementById('chart-type-grid');
@@ -168,6 +276,13 @@ function init() {
   DOM.styleViolinBw = document.getElementById('style-violinbw-slider');
   DOM.styleViolinBwVal = document.getElementById('style-violinbw-val');
   DOM.styleViolinScale = document.getElementById('style-violinscale-select');
+  DOM.histogramBins = document.getElementById('histogram-bins');
+  DOM.histogramStat = document.getElementById('histogram-stat');
+  DOM.bubbleMinSize = document.getElementById('bubble-min-size');
+  DOM.bubbleMaxSize = document.getElementById('bubble-max-size');
+  DOM.heatmapAggregation = document.getElementById('heatmap-aggregation');
+  DOM.heatmapShowValues = document.getElementById('heatmap-show-values');
+  DOM.pieInnerRadius = document.getElementById('pie-inner-radius');
   
   DOM.exportPng = document.getElementById('export-png');
   DOM.exportJpg = document.getElementById('export-jpg');
@@ -187,11 +302,18 @@ function init() {
 
 // Dynamic Variable Mapping Inputs matching
 function updateColumnMappingInputs(chartType) {
+  const spec = getPlotSpec(chartType);
   const xGroup = document.getElementById('x-axis-group');
   const yGroup = document.getElementById('y-axis-group');
   const y2Group = document.getElementById('y2-axis-group');
   const addY2Container = document.getElementById('add-y2-btn-container');
   const gGroup = document.getElementById('group-axis-group');
+  const bubbleSizeGroup = document.getElementById('bubble-size-axis-group');
+  const heatmapValueGroup = document.getElementById('heatmap-value-axis-group');
+  const subgroupContainer = document.getElementById('subgroups-container');
+  const addSubgroupButton = document.getElementById('btn-add-subgroup');
+  const addY1Button = document.getElementById('btn-add-y1-col');
+  const requirements = document.getElementById('mapping-requirements');
   
   if (!xGroup || !yGroup || !gGroup) return;
   
@@ -200,48 +322,166 @@ function updateColumnMappingInputs(chartType) {
   const gLabel = gGroup.querySelector('label');
   
   const tab = getActiveTab();
-  const hasY2Axis = tab && tab.hasY2Axis;
+  const hasY2Axis = !!(tab && tab.hasY2Axis && spec.allowY2);
 
-  if (chartType === 'pie') {
-    xGroup.style.display = 'block';
-    yGroup.style.display = 'block';
-    if (y2Group) y2Group.style.display = 'none';
-    if (addY2Container) addY2Container.style.display = 'none';
-    gGroup.style.display = 'none';
-    if (xLabel) xLabel.textContent = 'Categories / Names Column';
-    if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
-  } else if (chartType === 'histogram') {
-    xGroup.style.display = 'none';
-    yGroup.style.display = 'block';
-    if (y2Group) y2Group.style.display = 'none';
-    if (addY2Container) addY2Container.style.display = 'none';
-    gGroup.style.display = 'none';
-    if (yLabel) yLabel.textContent = 'Value Column (Numeric)';
-  } else if (chartType === 'heatmap') {
-    xGroup.style.display = 'block';
-    yGroup.style.display = 'block';
-    if (y2Group) y2Group.style.display = 'none';
-    if (addY2Container) addY2Container.style.display = 'none';
-    gGroup.style.display = 'block';
-    if (xLabel) xLabel.textContent = 'X-Axis Column (Categories)';
-    if (yLabel) yLabel.textContent = 'Y-Axis Column (Categories)';
-    if (gLabel) gLabel.textContent = 'Cell Value Column (Numeric)';
-  } else {
-    xGroup.style.display = 'block';
-    yGroup.style.display = 'block';
-    if (y2Group) y2Group.style.display = hasY2Axis ? 'block' : 'none';
-    if (addY2Container) addY2Container.style.display = hasY2Axis ? 'none' : 'block';
-    gGroup.style.display = 'block';
-    if (xLabel) xLabel.textContent = 'X-Axis Column (Categorical/Numeric)';
-    if (yLabel) yLabel.textContent = 'Y-Axis Column (Numeric)';
-    if (gLabel) gLabel.textContent = 'Grouping / Color Variable (Optional)';
+  xGroup.style.display = spec.showX ? 'block' : 'none';
+  yGroup.style.display = spec.showY ? 'block' : 'none';
+  gGroup.style.display = spec.allowGroup ? 'block' : 'none';
+  if (xLabel) xLabel.textContent = spec.xLabel;
+  if (yLabel) yLabel.textContent = spec.yLabel;
+  if (gLabel) gLabel.textContent = spec.groupLabel;
+
+  if (y2Group) y2Group.style.display = hasY2Axis ? 'block' : 'none';
+  if (addY2Container) addY2Container.style.display = spec.allowY2 && !hasY2Axis ? 'block' : 'none';
+  if (bubbleSizeGroup) bubbleSizeGroup.style.display = spec.specialRole === 'bubbleSize' ? 'block' : 'none';
+  if (heatmapValueGroup) heatmapValueGroup.style.display = spec.specialRole === 'heatmapValue' ? 'block' : 'none';
+
+  if (addY1Button) {
+    addY1Button.style.display = spec.showY && spec.maxY !== 1 ? 'inline-flex' : 'none';
+  }
+  document.querySelectorAll('#y1-cols-container .y1-col-row').forEach((row, index) => {
+    row.style.display = spec.showY && (spec.maxY === Infinity || index < spec.maxY) ? 'flex' : 'none';
+  });
+
+  if (subgroupContainer) subgroupContainer.style.display = spec.allowSubgroups ? 'flex' : 'none';
+  if (addSubgroupButton) addSubgroupButton.style.display = spec.allowSubgroups ? 'flex' : 'none';
+  if (DOM.groupSelect && DOM.groupSelect.options.length > 0) {
+    DOM.groupSelect.options[0].textContent = spec.allowGroup ? '-- No Color / Group --' : '-- Not used --';
+  }
+
+  if (requirements) {
+    requirements.innerHTML = `<strong>${spec.name}</strong> · ${spec.requirements}`;
   }
   toggleSecondaryYAxisStyles();
 }
 
+function getEffectiveYCols(chartType = appState.currentChartType) {
+  const spec = getPlotSpec(chartType);
+  if (!spec.showY) return [];
+  const selected = getYCols();
+  return spec.maxY === Infinity ? selected : selected.slice(0, spec.maxY);
+}
+
+function isFiniteNumericValue(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  return Number.isFinite(Number(value));
+}
+
+function isNonEmptyValue(value) {
+  return value !== null && value !== undefined && String(value).trim() !== '';
+}
+
+function columnHasNumericData(columnName, rows = null) {
+  if (!columnName) return false;
+  const sourceRows = rows || (appState.activeData ? appState.activeData.rows : []);
+  return sourceRows.some(row => isFiniteNumericValue(row[columnName]));
+}
+
+function getFirstNumericColumn(excluded = []) {
+  const data = appState.activeData;
+  if (!data) return '';
+  const excludedSet = new Set(excluded.filter(Boolean));
+  return data.headers.find(header => !excludedSet.has(header) && columnHasNumericData(header, data.rows)) || '';
+}
+
+function renderMappingValidation(errors = []) {
+  const message = document.getElementById('mapping-validation');
+  if (!message) return;
+  if (errors.length === 0) {
+    message.style.display = 'none';
+    message.textContent = '';
+    return;
+  }
+  message.style.display = 'block';
+  message.textContent = errors.join(' ');
+}
+
+function validatePlotMappings(chartType, rows, mappings) {
+  const spec = getPlotSpec(chartType);
+  const errors = [];
+
+  if (spec.showX && !mappings.xCol) errors.push('Select the required X column.');
+  if (spec.showY && mappings.yCols.length === 0) errors.push('Select the required Y column.');
+  if (spec.numericX && mappings.xCol && !columnHasNumericData(mappings.xCol, rows)) {
+    errors.push(`“${mappings.xCol}” must contain numeric X values.`);
+  }
+  if (spec.numericY !== false) {
+    mappings.yCols.forEach(column => {
+      if (!columnHasNumericData(column, rows)) errors.push(`“${column}” must contain numeric Y values.`);
+    });
+  }
+
+  if (spec.specialRole === 'bubbleSize') {
+    if (!mappings.bubbleSizeCol) {
+      errors.push('Select the required bubble size column.');
+    } else if (!columnHasNumericData(mappings.bubbleSizeCol, rows)) {
+      errors.push(`“${mappings.bubbleSizeCol}” must contain numeric bubble sizes.`);
+    } else if (!rows.some(row =>
+      isFiniteNumericValue(row[mappings.xCol]) &&
+      isFiniteNumericValue(row[mappings.yCols[0]]) &&
+      isFiniteNumericValue(row[mappings.bubbleSizeCol]) &&
+      Number(row[mappings.bubbleSizeCol]) >= 0
+    )) {
+      errors.push('Bubble plot needs at least one row with valid X, Y and non-negative size values.');
+    }
+  }
+
+  if (spec.specialRole === 'heatmapValue') {
+    if (!mappings.heatmapValueCol) {
+      errors.push('Select the required heatmap cell-value column.');
+    } else if (!columnHasNumericData(mappings.heatmapValueCol, rows)) {
+      errors.push(`“${mappings.heatmapValueCol}” must contain numeric heatmap values.`);
+    } else if (!rows.some(row =>
+      isNonEmptyValue(row[mappings.xCol]) &&
+      isNonEmptyValue(row[mappings.yCols[0]]) &&
+      isFiniteNumericValue(row[mappings.heatmapValueCol])
+    )) {
+      errors.push('Heatmap needs at least one complete X, Y and cell-value row.');
+    }
+  }
+
+  if (chartType === 'pie' && mappings.yCols.length > 0) {
+    const valueColumn = mappings.yCols[0];
+    if (!rows.some(row => isNonEmptyValue(row[mappings.xCol]) && isFiniteNumericValue(row[valueColumn]) && Number(row[valueColumn]) > 0)) {
+      errors.push('Pie / donut values must include at least one positive number.');
+    }
+  }
+
+  return errors;
+}
+
+function showChartMappingError(errors) {
+  renderMappingValidation(errors);
+  if (appState.chartInstance) {
+    appState.chartInstance.dispose();
+    appState.chartInstance = null;
+  }
+  if (DOM.placeholderView) {
+    const message = DOM.placeholderView.querySelector('p');
+    if (message) message.textContent = errors.join(' ');
+    DOM.placeholderView.style.display = 'flex';
+  }
+  const annotationLayer = document.getElementById('annotation-layer');
+  if (annotationLayer) annotationLayer.style.display = 'none';
+  [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.copyClipboard].forEach(button => {
+    if (button) button.setAttribute('disabled', 'disabled');
+  });
+}
+
+function prepareChartForRender() {
+  renderMappingValidation([]);
+  if (DOM.placeholderView) DOM.placeholderView.style.display = 'none';
+  const annotationLayer = document.getElementById('annotation-layer');
+  if (annotationLayer) annotationLayer.style.display = 'block';
+  [DOM.exportPng, DOM.exportJpg, DOM.exportSvg, DOM.copyClipboard].forEach(button => {
+    if (button) button.removeAttribute('disabled');
+  });
+}
+
 function toggleSecondaryYAxisStyles() {
   const tab = getActiveTab();
-  const hasY2 = tab && tab.hasY2Axis;
+  const hasY2 = !!(tab && tab.hasY2Axis && getPlotSpec().allowY2);
 
   const y2PaletteGroup = document.getElementById('secondary-y-palette-group');
   const y2PointSizeGroup = document.getElementById('secondary-point-size-group');
@@ -556,6 +796,7 @@ function setupEventListeners() {
         if (row) {
           container.appendChild(row);
           saveActiveTabState();
+          updateGroupCheckboxes();
           updateManualStylesList();
           if (appState.activeData) drawChart();
         }
@@ -624,13 +865,17 @@ function setupEventListeners() {
     document.querySelectorAll('.chart-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active');
     appState.currentChartType = card.dataset.chart;
+    ensurePlotMappingDefaults(appState.currentChartType, getActiveTab());
     updateColumnMappingInputs(appState.currentChartType);
     updateStyleSettingsVisibility();
+    updateGroupCheckboxes();
+    updateManualStylesList();
+    saveActiveTabState();
     if (appState.activeData) drawChart();
   });
 
   // Controls triggers
-  [DOM.xSelect, DOM.groupSelect].forEach(select => {
+  [DOM.xSelect, DOM.groupSelect, DOM.bubbleSizeSelect, DOM.heatmapValueSelect].filter(Boolean).forEach(select => {
     select.addEventListener('change', () => {
       if (select === DOM.groupSelect) {
         updateGroupCheckboxes();
@@ -766,6 +1011,57 @@ function setupEventListeners() {
     saveActiveTabState();
     if (appState.activeData) drawChart();
   });
+
+  if (DOM.histogramBins) {
+    DOM.histogramBins.addEventListener('input', (e) => {
+      const output = document.getElementById('histogram-bins-val');
+      if (output) output.textContent = e.target.value;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.histogramStat) {
+    DOM.histogramStat.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.bubbleMinSize) {
+    DOM.bubbleMinSize.addEventListener('input', (e) => {
+      const output = document.getElementById('bubble-min-size-val');
+      if (output) output.textContent = `${e.target.value} px`;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.bubbleMaxSize) {
+    DOM.bubbleMaxSize.addEventListener('input', (e) => {
+      const output = document.getElementById('bubble-max-size-val');
+      if (output) output.textContent = `${e.target.value} px`;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.heatmapAggregation) {
+    DOM.heatmapAggregation.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.heatmapShowValues) {
+    DOM.heatmapShowValues.addEventListener('change', () => {
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
+  if (DOM.pieInnerRadius) {
+    DOM.pieInnerRadius.addEventListener('input', (e) => {
+      const output = document.getElementById('pie-inner-radius-val');
+      if (output) output.textContent = `${e.target.value}%`;
+      saveActiveTabState();
+      if (appState.activeData) drawChart();
+    });
+  }
 
   DOM.plotWidth.addEventListener('input', (e) => {
     DOM.plotWidthVal.textContent = e.target.value + ' cm';
@@ -1430,10 +1726,16 @@ function renderTableBodyOnly() {
 // Update Dropdowns
 function updateMappingDropdowns() {
   const headers = appState.activeData ? appState.activeData.headers : [];
+  const previousX = DOM.xSelect.value;
+  const previousBubbleSize = DOM.bubbleSizeSelect ? DOM.bubbleSizeSelect.value : '';
+  const previousHeatmapValue = DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '';
+  const tab = getActiveTab();
   
   // Clear select elements
   DOM.xSelect.innerHTML = '';
-  DOM.groupSelect.innerHTML = '<option value="">-- No Grouping --</option>';
+  DOM.groupSelect.innerHTML = '<option value="">-- No Color / Group --</option>';
+  if (DOM.bubbleSizeSelect) DOM.bubbleSizeSelect.innerHTML = '';
+  if (DOM.heatmapValueSelect) DOM.heatmapValueSelect.innerHTML = '';
 
   headers.forEach((h) => {
     const optX = document.createElement('option');
@@ -1445,6 +1747,20 @@ function updateMappingDropdowns() {
     optG.value = h;
     optG.textContent = h;
     DOM.groupSelect.appendChild(optG);
+
+    if (DOM.bubbleSizeSelect) {
+      const optSize = document.createElement('option');
+      optSize.value = h;
+      optSize.textContent = h;
+      DOM.bubbleSizeSelect.appendChild(optSize);
+    }
+
+    if (DOM.heatmapValueSelect) {
+      const optValue = document.createElement('option');
+      optValue.value = h;
+      optValue.textContent = h;
+      DOM.heatmapValueSelect.appendChild(optValue);
+    }
   });
 
   // Also update any active chart filter column selects
@@ -1490,19 +1806,27 @@ function updateMappingDropdowns() {
   updateStatsGroupsList();
 
   // Sensible default selections
-  if (headers.length > 0 && (!appState.isRefreshing || !headers.includes(DOM.xSelect.value))) {
-    DOM.xSelect.value = headers[0];
+  if (headers.length > 0) {
+    DOM.xSelect.value = appState.isRefreshing && headers.includes(previousX) ? previousX : headers[0];
   }
-  
-  const tab = getActiveTab();
+
+  const defaultNumeric = getFirstNumericColumn() || headers[0] || '';
+  const alternateNumeric = getFirstNumericColumn([defaultNumeric]) || defaultNumeric;
+  if (DOM.bubbleSizeSelect) {
+    const requested = appState.isRefreshing ? previousBubbleSize : (tab && tab.bubbleSizeCol);
+    DOM.bubbleSizeSelect.value = requested && headers.includes(requested) ? requested : alternateNumeric;
+  }
+  if (DOM.heatmapValueSelect) {
+    const requested = appState.isRefreshing ? previousHeatmapValue : (tab && tab.heatmapValueCol);
+    DOM.heatmapValueSelect.value = requested && headers.includes(requested) ? requested : defaultNumeric;
+  }
+
   if (tab && !appState.isRefreshing) {
-    if (headers.length > 1) {
-      tab.yCols = [headers[1]];
-    } else if (headers.length > 0) {
-      tab.yCols = [headers[0]];
-    }
+    tab.yCols = defaultNumeric ? [defaultNumeric] : [];
     tab.y2Cols = [];
     tab.hasY2Axis = false;
+    tab.bubbleSizeCol = DOM.bubbleSizeSelect ? DOM.bubbleSizeSelect.value : '';
+    tab.heatmapValueCol = DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '';
   }
 
   renderYColsUI();
@@ -1510,6 +1834,57 @@ function updateMappingDropdowns() {
   updateStatsFilterValues();
   updateColumnMappingInputs(appState.currentChartType);
   updateManualStylesList();
+}
+
+function ensurePlotMappingDefaults(chartType = appState.currentChartType, savedTab = null) {
+  if (!appState.activeData) return;
+  const spec = getPlotSpec(chartType);
+  const headers = appState.activeData.headers;
+  const currentYCols = getYCols();
+  const firstY = currentYCols[0] || '';
+  const switchedPlotType = !!(savedTab && savedTab.chartType && savedTab.chartType !== chartType);
+
+  if (spec.numericX && !columnHasNumericData(DOM.xSelect.value)) {
+    const legacyHistogramColumn = chartType === 'histogram' && columnHasNumericData(firstY) ? firstY : '';
+    const numericX = legacyHistogramColumn || getFirstNumericColumn([firstY]) || getFirstNumericColumn();
+    if (numericX) DOM.xSelect.value = numericX;
+  }
+
+  const needsNumericY = spec.numericY !== false;
+  const heatmapValue = DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '';
+  const needsDefaultY = spec.showY && (
+    !firstY ||
+    (needsNumericY && !columnHasNumericData(firstY)) ||
+    (!needsNumericY && switchedPlotType && firstY === heatmapValue)
+  );
+  if (needsDefaultY) {
+    const categoricalY = headers.find(header =>
+      header !== DOM.xSelect.value &&
+      header !== heatmapValue &&
+      !columnHasNumericData(header)
+    ) || headers.find(header => header !== DOM.xSelect.value && header !== heatmapValue) || '';
+    const defaultY = needsNumericY
+      ? (getFirstNumericColumn([DOM.xSelect.value]) || getFirstNumericColumn())
+      : categoricalY;
+    const firstYSelect = document.querySelector('#y1-cols-container .y1-col-select');
+    if (defaultY && firstYSelect) firstYSelect.value = defaultY;
+  }
+
+  const effectiveY = getEffectiveYCols(chartType);
+  if (spec.specialRole === 'bubbleSize' && DOM.bubbleSizeSelect) {
+    const legacySize = savedTab && savedTab.yCols && savedTab.yCols.length > 1 ? savedTab.yCols[1] : '';
+    const requested = (savedTab && savedTab.bubbleSizeCol) || legacySize || DOM.bubbleSizeSelect.value;
+    const fallback = getFirstNumericColumn([DOM.xSelect.value, effectiveY[0]]) || getFirstNumericColumn();
+    DOM.bubbleSizeSelect.value = requested && headers.includes(requested) && columnHasNumericData(requested) ? requested : fallback;
+  }
+
+  if (spec.specialRole === 'heatmapValue' && DOM.heatmapValueSelect) {
+    const legacyYValue = savedTab && savedTab.yCols && savedTab.yCols.length > 1 ? savedTab.yCols[1] : '';
+    const legacyGroupValue = savedTab && savedTab.gCol && columnHasNumericData(savedTab.gCol) ? savedTab.gCol : '';
+    const requested = (savedTab && savedTab.heatmapValueCol) || legacyGroupValue || legacyYValue || DOM.heatmapValueSelect.value;
+    const fallback = getFirstNumericColumn([DOM.xSelect.value, effectiveY[0]]) || getFirstNumericColumn();
+    DOM.heatmapValueSelect.value = requested && headers.includes(requested) && columnHasNumericData(requested) ? requested : fallback;
+  }
 }
 
 function getYCols() {
@@ -1629,6 +2004,7 @@ function createSubgroupRow(selectedValue) {
 
   select.addEventListener('change', () => {
     saveActiveTabState();
+    updateGroupCheckboxes();
     updateManualStylesList();
     if (appState.activeData) drawChart();
   });
@@ -1648,6 +2024,7 @@ function createSubgroupRow(selectedValue) {
       if (sp) sp.textContent = `Subgroup ${idx + 1}:`;
     });
     saveActiveTabState();
+    updateGroupCheckboxes();
     updateManualStylesList();
     if (appState.activeData) drawChart();
   });
@@ -1700,10 +2077,7 @@ function renderYColsUI() {
   y1Container.innerHTML = '';
   const yCols = (tab && tab.yCols) ? tab.yCols : [];
   if (yCols.length === 0) {
-    let defaultCol = headers[0] || '';
-    if (headers.length > 1) {
-      defaultCol = headers[1];
-    }
+    const defaultCol = getFirstNumericColumn() || headers[0] || '';
     const row = createYColRow(false, defaultCol);
     y1Container.appendChild(row);
   } else {
@@ -1718,7 +2092,7 @@ function renderYColsUI() {
   if (y2Container && y2Group) {
     const hasY2Axis = (tab && tab.hasY2Axis) || false;
     const chartType = tab ? tab.chartType : appState.currentChartType;
-    const isY2Supported = chartType !== 'pie' && chartType !== 'histogram' && chartType !== 'heatmap';
+    const isY2Supported = getPlotSpec(chartType).allowY2;
 
     if (hasY2Axis && isY2Supported) {
       y2Group.style.display = 'block';
@@ -1727,10 +2101,7 @@ function renderYColsUI() {
       y2Container.innerHTML = '';
       const y2Cols = (tab && tab.y2Cols) ? tab.y2Cols : [];
       if (y2Cols.length === 0) {
-        let defaultCol = headers[0] || '';
-        if (headers.length > 1) {
-          defaultCol = headers[1];
-        }
+        const defaultCol = getFirstNumericColumn() || headers[0] || '';
         const row = createYColRow(true, defaultCol);
         y2Container.appendChild(row);
       } else {
@@ -1746,6 +2117,7 @@ function renderYColsUI() {
       y2Container.innerHTML = '';
     }
   }
+  updateColumnMappingInputs(tab ? tab.chartType : appState.currentChartType);
 }
 
 // Add filter row dynamically inside Column Mapping Data Filters
@@ -1883,6 +2255,20 @@ function coerceNumber(val) {
   if (val === null || val === undefined || val === '') return null;
   const num = Number(val);
   return isNaN(num) ? val : num;
+}
+
+function aggregateNumericValues(values, method = 'mean') {
+  const nums = values.filter(isFiniteNumericValue).map(Number);
+  if (nums.length === 0) return null;
+  if (method === 'sum') return nums.reduce((sum, value) => sum + value, 0);
+  if (method === 'min') return Math.min(...nums);
+  if (method === 'max') return Math.max(...nums);
+  if (method === 'median') {
+    const sorted = [...nums].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+  }
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
 }
 
 // 7. Data Parsers Implementation
@@ -2495,18 +2881,30 @@ function drawChart() {
 
   applyCanvasDimensions();
 
-  const xCol = DOM.xSelect.value;
-  
-  // Get all selected Y columns
-  const yCols = getYCols();
-  const y2Cols = getY2Cols();
-  
-  if (yCols.length === 0 && y2Cols.length === 0) return;
-
-  const gCol = DOM.groupSelect.value;
   const type = appState.currentChartType;
-  
-  const subgroups = typeof getSubgroups === 'function' ? getSubgroups() : [];
+  const spec = getPlotSpec(type);
+  const xCol = spec.showX ? DOM.xSelect.value : '';
+  const yCols = getEffectiveYCols(type);
+  const y2Cols = spec.allowY2 ? getY2Cols() : [];
+  const gCol = spec.allowGroup ? DOM.groupSelect.value : '';
+  const bubbleSizeCol = spec.specialRole === 'bubbleSize' && DOM.bubbleSizeSelect ? DOM.bubbleSizeSelect.value : '';
+  const heatmapValueCol = spec.specialRole === 'heatmapValue' && DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '';
+  const rows = getPlotFilteredRows();
+  const mappingErrors = rows.length === 0
+    ? ['No rows remain after applying the current data filters.']
+    : validatePlotMappings(type, rows, {
+        xCol,
+        yCols: yCols.concat(y2Cols),
+        bubbleSizeCol,
+        heatmapValueCol
+      });
+  if (mappingErrors.length > 0) {
+    showChartMappingError(mappingErrors);
+    return;
+  }
+  prepareChartForRender();
+
+  const subgroups = spec.allowSubgroups && typeof getSubgroups === 'function' ? getSubgroups() : [];
   const hasSubgroups = subgroups.length > 0;
 
   function getCombinedGroupKey(row) {
@@ -2533,7 +2931,6 @@ function drawChart() {
   const isXColSameAsGCol = !!(xCol && gCol && xCol === gCol);
 
   // Group selection checklist filtering
-  const rows = getPlotFilteredRows();
   const activeGroupCheckboxes = document.querySelectorAll('.group-filter-checkbox');
   let activeGroups = [];
   if (activeGroupCheckboxes.length > 0) {
@@ -2558,6 +2955,10 @@ function drawChart() {
   let plotRows = filteredRows;
   if ((gCol || hasSubgroups) && splitCheckbox && splitCheckbox.checked && currentSplitGroupTab !== 'ALL') {
     plotRows = filteredRows.filter(r => getCombinedGroupKey(r) === currentSplitGroupTab);
+  }
+  if (plotRows.length === 0) {
+    showChartMappingError(['No plottable rows remain for the selected groups.']);
+    return;
   }
 
   let xCategories = [];
@@ -2721,7 +3122,7 @@ function drawChart() {
     let minVal = Infinity;
     let maxVal = -Infinity;
     
-    const includeRawVals = (type === 'scatter' || type === 'line' || type === 'area' || type === 'boxplot' || type === 'violin' || showPoints);
+    const includeRawVals = (type === 'scatter' || type === 'line' || type === 'area' || type === 'box' || type === 'violin' || showPoints);
     
     yCols.forEach(yCol => {
       // 1. Gather all raw values if they are being plotted
@@ -2747,7 +3148,7 @@ function drawChart() {
             }
             return String(r[xCol]) === x && (!gCol || String(r[gCol]) === g);
           });
-          const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
+          const vals = matchRows.filter(r => isFiniteNumericValue(r[yCol])).map(r => Number(r[yCol]));
           if (vals.length > 0) {
             const stats = getErrorBarStats(vals, errorBarType);
             if (type === 'bar') {
@@ -3122,7 +3523,7 @@ function drawChart() {
   const totalColsCount = yCols.length + y2Cols.length;
 
   const getSeriesName = (group, col, gCol, totalColsCount) => {
-    if (!gCol) return col;
+    if (!gCol && !hasSubgroups) return col;
     if (totalColsCount > 1) {
       return `${group} (${col})`;
     }
@@ -3150,10 +3551,11 @@ function drawChart() {
           });
           const seriesData = matchRows
             .map(r => {
-              if (hasSubgroups) return [getCombinedGroupKeyForX(r), r[yCol]];
-              return [r[xCol], r[yCol]];
+              const yValue = isFiniteNumericValue(r[yCol]) ? Number(r[yCol]) : null;
+              if (hasSubgroups) return [getCombinedGroupKeyForX(r), yValue];
+              return [r[xCol], yValue];
             })
-            .filter(pt => pt[0] !== null && pt[1] !== null);
+            .filter(pt => pt[0] !== null && pt[0] !== '' && Number.isFinite(pt[1]));
 
           if (hasSubgroups) {
             option.xAxis.type = 'category';
@@ -3236,10 +3638,11 @@ function drawChart() {
           });
           const rawPoints = matchRows
             .map(r => {
-              if (hasSubgroups) return [getCombinedGroupKeyForX(r), r[yCol]];
-              return [r[xCol], r[yCol]];
+              const yValue = isFiniteNumericValue(r[yCol]) ? Number(r[yCol]) : null;
+              if (hasSubgroups) return [getCombinedGroupKeyForX(r), yValue];
+              return [r[xCol], yValue];
             })
-            .filter(pt => pt[0] !== null && pt[1] !== null);
+            .filter(pt => pt[0] !== null && pt[0] !== '' && Number.isFinite(pt[1]));
 
           if (rawPoints.length === 0) return;
 
@@ -3417,7 +3820,7 @@ function drawChart() {
               }
               return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
             });
-            const vals = matchRows.map(r => Number(r[yCol])).filter(v => !isNaN(v) && v !== null);
+            const vals = matchRows.filter(r => isFiniteNumericValue(r[yCol])).map(r => Number(r[yCol]));
             
             if (vals.length === 0) {
               barData.push(null);
@@ -3491,7 +3894,13 @@ function drawChart() {
               data: scatterData,
               z: 6,
               tooltip: { show: false }
-           } else if (type === 'box') {
+            });
+          }
+        });
+      });
+    });
+
+  } else if (type === 'box') {
     const boxNotch = document.getElementById('style-boxnotch-select')?.value || 'standard';
     // Boxplot calculations
     const boxCategories = hasSubgroups ? xCategories : [...new Set(plotRows.map(r => String(r[xCol])))];
@@ -3518,8 +3927,8 @@ function drawChart() {
                 }
                 return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
               })
-              .map(r => Number(r[yCol]))
-              .filter(v => !isNaN(v));
+              .filter(r => isFiniteNumericValue(r[yCol]))
+              .map(r => Number(r[yCol]));
             if (vals.length === 0) return [null, null, null, null, null];
             return calculateBoxplotStats(vals);
           });
@@ -3534,8 +3943,8 @@ function drawChart() {
                   }
                   return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
                 })
-                .map(r => Number(r[yCol]))
-                .filter(v => !isNaN(v));
+                .filter(r => isFiniteNumericValue(r[yCol]))
+                .map(r => Number(r[yCol]));
               if (vals.length === 0) return;
               const stats = calculateBoxplotStats(vals);
               const iqr = stats[3] - stats[1];
@@ -3707,8 +4116,8 @@ function drawChart() {
                   }
                   return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
                 })
-                .map(r => Number(r[yCol]))
-                .filter(v => !isNaN(v) && v !== null);
+                .filter(r => isFiniteNumericValue(r[yCol]))
+                .map(r => Number(r[yCol]));
                 
               if (vals.length === 0) return;
               
@@ -3818,8 +4227,8 @@ function drawChart() {
                 }
                 return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
               })
-              .map(r => Number(r[yCol]))
-              .filter(v => !isNaN(v));
+              .filter(r => isFiniteNumericValue(r[yCol]))
+              .map(r => Number(r[yCol]));
 
             if (vals.length < 2) return; // Need at least 2 points for density
 
@@ -3944,8 +4353,8 @@ function drawChart() {
                   }
                   return String(r[xCol]) === cat && (!gCol || String(r[gCol]) === g);
                 })
-                .map(r => Number(r[yCol]))
-                .filter(v => !isNaN(v) && v !== null);
+                .filter(r => isFiniteNumericValue(r[yCol]))
+                .map(r => Number(r[yCol]));
                 
               if (vals.length === 0) return;
               
@@ -4009,104 +4418,148 @@ function drawChart() {
     }
 
   } else if (type === 'histogram') {
-    const activeY = yCols[0];
-    const vals = plotRows.map(r => Number(r[activeY])).filter(v => !isNaN(v));
-    
-    if (vals.length > 0) {
-      const min = Math.min(...vals);
-      const max = Math.max(...vals);
-      const binCount = Math.max(5, Math.round(Math.sqrt(vals.length)));
-      const binWidth = (max - min) / binCount;
-      
-      const binEdges = [];
-      for (let i = 0; i <= binCount; i++) {
-        binEdges.push(min + i * binWidth);
-      }
+    const values = plotRows.filter(row => isFiniteNumericValue(row[xCol])).map(row => Number(row[xCol]));
+    const requestedBins = DOM.histogramBins ? parseInt(DOM.histogramBins.value, 10) : 30;
+    const binCount = Math.max(1, Math.min(100, Number.isFinite(requestedBins) ? requestedBins : 30));
+    const statistic = DOM.histogramStat ? DOM.histogramStat.value : 'count';
+    let lower = Math.min(...values);
+    let upper = Math.max(...values);
+    if (lower === upper) {
+      const padding = Math.abs(lower) * 0.05 || 0.5;
+      lower -= padding;
+      upper += padding;
+    }
+    const binWidth = (upper - lower) / binCount;
+    const histogramGroups = gCol ? groups : ['All Data'];
+    const histogramPalette = PALETTES[appState.selectedPalette]?.colors || PALETTES.ggplot2.colors;
+
+    option.xAxis.type = 'value';
+    option.xAxis.name = chartXLabel || xCol;
+    option.yAxis.name = chartYLabel || (statistic === 'density' ? 'Density' : 'Count');
+    option.tooltip.trigger = 'axis';
+
+    histogramGroups.forEach((group, groupIndex) => {
+      const groupRows = gCol ? plotRows.filter(row => String(row[gCol]) === String(group)) : plotRows;
+      const groupValues = groupRows.filter(row => isFiniteNumericValue(row[xCol])).map(row => Number(row[xCol]));
+      if (groupValues.length === 0) return;
 
       const counts = Array(binCount).fill(0);
-      vals.forEach(v => {
-        let binIdx = Math.floor((v - min) / binWidth);
-        if (binIdx >= binCount) binIdx = binCount - 1;
-        counts[binIdx]++;
+      groupValues.forEach(value => {
+        let binIndex = Math.floor((value - lower) / binWidth);
+        binIndex = Math.max(0, Math.min(binCount - 1, binIndex));
+        counts[binIndex] += 1;
       });
 
-      option.xAxis.type = 'value';
-      option.xAxis.name = chartXLabel || activeY;
-      option.yAxis.name = chartYLabel || 'Frequency';
-      
-      const histData = [];
-      for (let i = 0; i < binCount; i++) {
-        histData.push([binEdges[i] + binWidth / 2, counts[i]]);
-      }
-
-      legendData.push(`${activeY} Distribution`);
-      const paletteColors = PALETTES[appState.selectedPalette]?.colors || PALETTES['ggplot2'].colors;
-      const color = paletteColors[0];
+      const data = counts.map((count, index) => {
+        const center = lower + (index + 0.5) * binWidth;
+        const height = statistic === 'density' ? count / (groupValues.length * binWidth) : count;
+        return [center, Number(height.toFixed(6))];
+      });
+      const seriesName = gCol ? String(group) : `${xCol} Distribution`;
+      const color = histogramPalette[groupIndex % histogramPalette.length];
+      legendData.push(seriesName);
       option.series.push({
-        name: `${activeY} Distribution`,
+        name: seriesName,
         type: 'bar',
         barWidth: '98%',
+        barGap: gCol ? '-100%' : '0%',
         itemStyle: {
-          color: hexToRgba(color, fillOpacity),
-          borderColor: '#475569',
+          color: hexToRgba(color, gCol ? Math.min(fillOpacity, 0.65) : fillOpacity),
+          borderColor: color,
           borderWidth: barBorderWidth
         },
-        data: histData
+        data
       });
-    }
+    });
 
   } else if (type === 'bubble') {
     const activeY = yCols[0];
-    const sizeCol = yCols[1] || activeY;
-    const colorCol = gCol || xCol;
+    const bubbleRows = plotRows.filter(row => {
+      return isFiniteNumericValue(row[xCol]) &&
+        isFiniteNumericValue(row[activeY]) &&
+        isFiniteNumericValue(row[bubbleSizeCol]) &&
+        Number(row[bubbleSizeCol]) >= 0;
+    });
+    const rawSizes = bubbleRows.map(row => Number(row[bubbleSizeCol]));
+    const rawMin = Math.min(...rawSizes);
+    const rawMax = Math.max(...rawSizes);
+    const requestedMinSize = DOM.bubbleMinSize ? parseFloat(DOM.bubbleMinSize.value) : 6;
+    const requestedMaxSize = DOM.bubbleMaxSize ? parseFloat(DOM.bubbleMaxSize.value) : 50;
+    const minDiameter = Math.min(requestedMinSize, requestedMaxSize);
+    const maxDiameter = Math.max(requestedMinSize, requestedMaxSize);
+    const bubbleGroups = gCol ? groups : ['All Data'];
+    const bubblePalette = PALETTES[appState.selectedPalette]?.colors || PALETTES.ggplot2.colors;
+    const bubbleShape = document.getElementById('point-shape-select')?.value || 'circle';
 
-    const seriesData = plotRows.map(r => {
-      return {
-        value: [r[xCol], r[activeY], r[sizeCol]],
-        group: r[colorCol]
-      };
-    }).filter(d => d.value[0] !== null && d.value[1] !== null);
+    const scaleBubbleDiameter = rawValue => {
+      if (rawMax === rawMin) return (minDiameter + maxDiameter) / 2;
+      const normalizedArea = Math.max(0, Math.min(1, (rawValue - rawMin) / (rawMax - rawMin)));
+      return minDiameter + Math.sqrt(normalizedArea) * (maxDiameter - minDiameter);
+    };
 
-    const bubbleGroups = [...new Set(seriesData.map(d => d.group))];
-    option.xAxis.type = isNumeric(seriesData.map(d => d.value[0])) ? 'value' : 'category';
+    option.xAxis.type = 'value';
+    option.xAxis.name = chartXLabel || xCol;
+    option.yAxis.name = chartYLabel || activeY;
+    option.tooltip = {
+      trigger: 'item',
+      formatter: params => `${params.seriesName}<br/>${xCol}: ${params.value[0]}<br/>${activeY}: ${params.value[1]}<br/>${bubbleSizeCol}: ${params.value[2]}`
+    };
 
-    bubbleGroups.forEach((g, gIdx) => {
-      const gData = seriesData.filter(d => d.group === g).map(d => d.value);
-      legendData.push(String(g));
+    bubbleGroups.forEach((group, groupIndex) => {
+      const groupRows = gCol ? bubbleRows.filter(row => String(row[gCol]) === String(group)) : bubbleRows;
+      const data = groupRows.map(row => [Number(row[xCol]), Number(row[activeY]), Number(row[bubbleSizeCol])]);
+      if (data.length === 0) return;
+      const seriesName = gCol ? String(group) : activeY;
+      const autoColor = bubblePalette[groupIndex % bubblePalette.length];
+      const styleOverride = getSeriesStyle(seriesName, autoColor, bubbleShape);
+      const symbolConfig = getSymbolConfig(styleOverride.color, pointSize, false, styleOverride.shape);
+      legendData.push(seriesName);
       option.series.push({
-        name: String(g),
+        name: seriesName,
         type: 'scatter',
-        data: gData,
+        data,
+        symbol: symbolConfig.symbol,
         symbolSize: function (data) {
-          const rawSize = Number(data[2]);
-          return isNaN(rawSize) ? pointSize : Math.max(5, Math.min(60, rawSize * 2));
+          return scaleBubbleDiameter(Number(data[2]));
         },
-        itemStyle: { color: paletteColors[gIdx % paletteColors.length] },
-        opacity: 0.75
+        itemStyle: symbolConfig.itemStyle
       });
     });
 
   } else if (type === 'heatmap') {
-    const xCategories = [...new Set(plotRows.map(r => String(r[xCol])))];
-    const yCategories = [...new Set(plotRows.map(r => String(r[yCols[0]])))];
+    const heatmapRows = plotRows.filter(row =>
+      isNonEmptyValue(row[xCol]) &&
+      isNonEmptyValue(row[yCols[0]]) &&
+      isFiniteNumericValue(row[heatmapValueCol])
+    );
+    const xCategories = [...new Set(heatmapRows.map(r => String(r[xCol])))];
+    const yCategories = [...new Set(heatmapRows.map(r => String(r[yCols[0]])))];
+    const aggregation = DOM.heatmapAggregation ? DOM.heatmapAggregation.value : 'mean';
+    const showCellValues = DOM.heatmapShowValues ? DOM.heatmapShowValues.checked : true;
     
     option.xAxis.data = xCategories;
+    option.xAxis.name = chartXLabel || xCol;
     option.yAxis.type = 'category';
     option.yAxis.data = yCategories;
+    option.yAxis.name = chartYLabel || yCols[0];
 
     const heatValues = [];
     xCategories.forEach((xc, xIdx) => {
       yCategories.forEach((yc, yIdx) => {
-        const matchRows = plotRows.filter(r => String(r[xCol]) === xc && String(r[yCols[0]]) === yc);
-        const vals = matchRows.map(r => Number(r[yCols[1] || yCols[0]])).filter(v => !isNaN(v));
-        const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-        heatValues.push([xIdx, yIdx, parseFloat(avg.toFixed(3))]);
+        const matchRows = heatmapRows.filter(r => String(r[xCol]) === xc && String(r[yCols[0]]) === yc);
+        const value = aggregateNumericValues(matchRows.map(r => r[heatmapValueCol]), aggregation);
+        if (value !== null) heatValues.push([xIdx, yIdx, Number(value.toFixed(6))]);
       });
     });
 
     const valuesOnly = heatValues.map(h => h[2]);
-    const minHeat = Math.min(...valuesOnly);
-    const maxHeat = Math.max(...valuesOnly);
+    let minHeat = Math.min(...valuesOnly);
+    let maxHeat = Math.max(...valuesOnly);
+    if (minHeat === maxHeat) {
+      const padding = Math.abs(minHeat) * 0.05 || 0.5;
+      minHeat -= padding;
+      maxHeat += padding;
+    }
 
     option.visualMap = {
       min: minHeat,
@@ -4121,12 +4574,16 @@ function drawChart() {
       }
     };
 
-    legendData.push('Heatmap Matrix');
+    option.tooltip = {
+      trigger: 'item',
+      formatter: params => `${xCol}: ${xCategories[params.value[0]]}<br/>${yCols[0]}: ${yCategories[params.value[1]]}<br/>${heatmapValueCol} (${aggregation}): ${params.value[2]}`
+    };
+    if (option.legend) option.legend.show = false;
     option.series.push({
-      name: 'Heatmap Matrix',
+      name: heatmapValueCol,
       type: 'heatmap',
       data: heatValues,
-      label: { show: true },
+      label: { show: showCellValues, formatter: params => params.value[2] },
       emphasis: {
         itemStyle: {
           shadowBlur: 10,
@@ -4139,7 +4596,8 @@ function drawChart() {
 
   } else if (type === 'pie') {
     const activeY = yCols[0];
-    const slices = plotRows.map(r => {
+    const innerRadius = DOM.pieInnerRadius ? Math.max(0, Math.min(65, parseInt(DOM.pieInnerRadius.value, 10))) : 40;
+    const slices = plotRows.filter(r => isNonEmptyValue(r[xCol])).map(r => {
       return { value: Number(r[activeY]), name: String(r[xCol]) };
     }).filter(d => !isNaN(d.value) && d.value > 0);
 
@@ -4156,12 +4614,13 @@ function drawChart() {
     option.series.push({
       name: activeY,
       type: 'pie',
-      radius: ['40%', '70%'],
+      radius: innerRadius === 0 ? '70%' : [`${innerRadius}%`, '70%'],
       avoidLabelOverlap: true,
       itemStyle: {
         borderRadius: 8,
         borderColor: backgroundColor,
-        borderWidth: 2
+        borderWidth: 2,
+        opacity: fillOpacity
       },
       label: {
         show: true,
@@ -4170,6 +4629,7 @@ function drawChart() {
       },
       data: aggregatedSlices
     });
+    option.tooltip = { trigger: 'item', formatter: '{b}: {c} ({d}%)' };
   }
 
   // Filter legend data
@@ -4588,8 +5048,10 @@ function drawChart() {
 
 // Check if array is mostly numeric
 function isNumeric(arr) {
-  const nums = arr.filter(x => typeof x === 'number' && !isNaN(x));
-  return nums.length > arr.length * 0.7; // 70% threshold
+  const populated = arr.filter(isNonEmptyValue);
+  if (populated.length === 0) return false;
+  const nums = populated.filter(isFiniteNumericValue);
+  return nums.length > populated.length * 0.7; // 70% threshold
 }
 
 // Compute Percentile
@@ -4798,6 +5260,25 @@ function updateStyleSettingsVisibility() {
   const violinBwGroup = document.getElementById('style-violinbw-group');
   const violinScaleGroup = document.getElementById('style-violinscale-group');
   const opacityGroup = document.getElementById('style-opacity-group');
+  const pointStyleGrid = document.getElementById('primary-point-style-grid');
+  const pointSizeGroup = document.getElementById('primary-point-size-group');
+  const pointShapeGroup = document.getElementById('primary-point-shape-group');
+  const primaryStyleGroup = document.getElementById('primary-y-style-group');
+  const showPointsOption = document.getElementById('show-points-option');
+  const individualCurvesOption = document.getElementById('individual-curves-option');
+  const plotOptionsGroup = document.getElementById('plot-options-group');
+  const errorBarOptions = document.getElementById('error-bar-options');
+  const boxViolinOptions = document.getElementById('box-violin-options');
+  const histogramParameters = document.getElementById('histogram-parameters');
+  const bubbleParameters = document.getElementById('bubble-parameters');
+  const heatmapParameters = document.getElementById('heatmap-parameters');
+  const pieParameters = document.getElementById('pie-parameters');
+  const legendOptions = document.getElementById('legend-options-group');
+  const xAxisOptions = document.getElementById('x-axis-customization-group');
+  const yAxisOptions = document.getElementById('y-axis-customization-group');
+  const gridlineOptions = document.getElementById('gridlines-options-group');
+  const axisRanges = document.getElementById('axis-ranges-group');
+  const spec = getPlotSpec(type);
 
   const allGroups = [
     lineWidthGroup, lineTypeGroup, barPaddingGroup, barBorderGroup,
@@ -4806,6 +5287,9 @@ function updateStyleSettingsVisibility() {
   ];
   allGroups.forEach(g => {
     if (g) g.style.display = 'none';
+  });
+  [histogramParameters, bubbleParameters, heatmapParameters, pieParameters].forEach(group => {
+    if (group) group.style.display = 'none';
   });
 
   if (type === 'line') {
@@ -4844,6 +5328,42 @@ function updateStyleSettingsVisibility() {
   } else if (type === 'pie') {
     if (opacityGroup) opacityGroup.style.display = 'block';
   }
+
+  const showPointSize = spec.pointStyle;
+  const showPointShape = spec.pointStyle || type === 'bubble';
+  if (pointSizeGroup) pointSizeGroup.style.display = showPointSize ? 'block' : 'none';
+  if (pointShapeGroup) pointShapeGroup.style.display = showPointShape ? 'flex' : 'none';
+  if (pointStyleGrid) {
+    pointStyleGrid.style.display = showPointSize || showPointShape ? 'grid' : 'none';
+    pointStyleGrid.style.gridTemplateColumns = showPointSize && showPointShape ? '1fr 1fr' : '1fr';
+  }
+  if (primaryStyleGroup) {
+    const styleLabel = primaryStyleGroup.querySelector('label[for="palette-select"]');
+    if (styleLabel) {
+      const roleLabels = {
+        histogram: 'Histogram Fill Styling (直方图填充样式)',
+        bubble: 'Bubble Color & Shape (气泡颜色与形状)',
+        heatmap: 'Heatmap Fill Palette (热图填充色板)',
+        pie: 'Slice Color Palette (扇区配色)'
+      };
+      styleLabel.textContent = roleLabels[type] || '1st Y-Axis Styling (Y1 轴样式)';
+    }
+  }
+
+  if (showPointsOption) showPointsOption.style.display = spec.showPoints ? 'flex' : 'none';
+  if (individualCurvesOption) individualCurvesOption.style.display = spec.individualCurves ? 'flex' : 'none';
+  if (plotOptionsGroup) plotOptionsGroup.style.display = spec.showPoints || spec.individualCurves ? 'block' : 'none';
+  if (errorBarOptions) errorBarOptions.style.display = spec.errorBars ? 'block' : 'none';
+  if (boxViolinOptions) boxViolinOptions.style.display = type === 'box' || type === 'violin' ? 'block' : 'none';
+  if (histogramParameters) histogramParameters.style.display = type === 'histogram' ? 'block' : 'none';
+  if (bubbleParameters) bubbleParameters.style.display = type === 'bubble' ? 'block' : 'none';
+  if (heatmapParameters) heatmapParameters.style.display = type === 'heatmap' ? 'block' : 'none';
+  if (pieParameters) pieParameters.style.display = type === 'pie' ? 'block' : 'none';
+  if (legendOptions) legendOptions.style.display = type === 'heatmap' ? 'none' : 'block';
+  if (xAxisOptions) xAxisOptions.style.display = type === 'pie' ? 'none' : 'block';
+  if (yAxisOptions) yAxisOptions.style.display = ['pie', 'heatmap', 'histogram'].includes(type) ? 'none' : 'block';
+  if (gridlineOptions) gridlineOptions.style.display = type === 'pie' ? 'none' : 'block';
+  if (axisRanges) axisRanges.style.display = ['pie', 'heatmap', 'histogram'].includes(type) ? 'none' : 'block';
 }
 
 function createChartTab(name = null, config = null) {
@@ -4856,11 +5376,13 @@ function createChartTab(name = null, config = null) {
     sheetName: appState.activeSheetName || '',
     chartType: appState.currentChartType || 'line',
     xCol: DOM.xSelect.value || '',
-    yCols: getYCols() || [],
-    y2Cols: getY2Cols() || [],
+    yCols: getEffectiveYCols() || [],
+    y2Cols: getPlotSpec().allowY2 ? (getY2Cols() || []) : [],
     hasY2Axis: false,
-    gCol: DOM.groupSelect.value || '',
-    subgroups: getSubgroups() || [],
+    gCol: getPlotSpec().allowGroup ? (DOM.groupSelect.value || '') : '',
+    subgroups: getPlotSpec().allowSubgroups ? (getSubgroups() || []) : [],
+    bubbleSizeCol: DOM.bubbleSizeSelect ? DOM.bubbleSizeSelect.value : '',
+    heatmapValueCol: DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '',
     selectedPalette: appState.selectedPalette || 'ggplot2',
     palette2: DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2',
     
@@ -4882,6 +5404,13 @@ function createChartTab(name = null, config = null) {
     styleViolinTrim: DOM.styleViolinTrim ? DOM.styleViolinTrim.value : 'trim',
     styleViolinBw: DOM.styleViolinBw ? parseFloat(DOM.styleViolinBw.value) : 1.0,
     styleViolinScale: DOM.styleViolinScale ? DOM.styleViolinScale.value : 'width',
+    histogramBins: DOM.histogramBins ? parseInt(DOM.histogramBins.value, 10) : 30,
+    histogramStat: DOM.histogramStat ? DOM.histogramStat.value : 'count',
+    bubbleMinSize: DOM.bubbleMinSize ? parseInt(DOM.bubbleMinSize.value, 10) : 6,
+    bubbleMaxSize: DOM.bubbleMaxSize ? parseInt(DOM.bubbleMaxSize.value, 10) : 50,
+    heatmapAggregation: DOM.heatmapAggregation ? DOM.heatmapAggregation.value : 'mean',
+    heatmapShowValues: DOM.heatmapShowValues ? DOM.heatmapShowValues.checked : true,
+    pieInnerRadius: DOM.pieInnerRadius ? parseInt(DOM.pieInnerRadius.value, 10) : 40,
     xMin: null,
     xMax: null,
     yMin: null,
@@ -4955,11 +5484,14 @@ function saveActiveTabState() {
   tab.sheetName = appState.activeSheetName;
   tab.chartType = appState.currentChartType;
   tab.xCol = DOM.xSelect.value;
-  tab.yCols = getYCols();
-  tab.y2Cols = getY2Cols();
+  const activeSpec = getPlotSpec();
+  tab.yCols = getEffectiveYCols();
+  tab.y2Cols = activeSpec.allowY2 ? getY2Cols() : [];
   tab.hasY2Axis = document.getElementById('y2-axis-group').style.display !== 'none';
-  tab.gCol = DOM.groupSelect.value;
-  tab.subgroups = getSubgroups();
+  tab.gCol = activeSpec.allowGroup ? DOM.groupSelect.value : '';
+  tab.subgroups = activeSpec.allowSubgroups ? getSubgroups() : [];
+  tab.bubbleSizeCol = DOM.bubbleSizeSelect ? DOM.bubbleSizeSelect.value : '';
+  tab.heatmapValueCol = DOM.heatmapValueSelect ? DOM.heatmapValueSelect.value : '';
   tab.selectedPalette = appState.selectedPalette;
   tab.palette2 = DOM.palette2Select ? DOM.palette2Select.value : 'ggplot2';
   
@@ -4983,6 +5515,13 @@ function saveActiveTabState() {
   tab.styleViolinTrim = DOM.styleViolinTrim ? DOM.styleViolinTrim.value : 'trim';
   tab.styleViolinBw = DOM.styleViolinBw ? parseFloat(DOM.styleViolinBw.value) : 1.0;
   tab.styleViolinScale = DOM.styleViolinScale ? DOM.styleViolinScale.value : 'width';
+  tab.histogramBins = DOM.histogramBins ? parseInt(DOM.histogramBins.value, 10) : 30;
+  tab.histogramStat = DOM.histogramStat ? DOM.histogramStat.value : 'count';
+  tab.bubbleMinSize = DOM.bubbleMinSize ? parseInt(DOM.bubbleMinSize.value, 10) : 6;
+  tab.bubbleMaxSize = DOM.bubbleMaxSize ? parseInt(DOM.bubbleMaxSize.value, 10) : 50;
+  tab.heatmapAggregation = DOM.heatmapAggregation ? DOM.heatmapAggregation.value : 'mean';
+  tab.heatmapShowValues = DOM.heatmapShowValues ? DOM.heatmapShowValues.checked : true;
+  tab.pieInnerRadius = DOM.pieInnerRadius ? parseInt(DOM.pieInnerRadius.value, 10) : 40;
   
   const xMinInput = document.getElementById('axis-xmin');
   const xMaxInput = document.getElementById('axis-xmax');
@@ -5110,6 +5649,13 @@ function applyChartTabState(tab) {
   if (tab.gCol !== undefined) {
     DOM.groupSelect.value = tab.gCol;
   }
+
+  if (DOM.bubbleSizeSelect && tab.bubbleSizeCol && Array.from(DOM.bubbleSizeSelect.options).some(option => option.value === tab.bubbleSizeCol)) {
+    DOM.bubbleSizeSelect.value = tab.bubbleSizeCol;
+  }
+  if (DOM.heatmapValueSelect && tab.heatmapValueCol && Array.from(DOM.heatmapValueSelect.options).some(option => option.value === tab.heatmapValueCol)) {
+    DOM.heatmapValueSelect.value = tab.heatmapValueCol;
+  }
   
   renderSubgroupsUI(tab.subgroups || []);
   
@@ -5137,6 +5683,8 @@ function applyChartTabState(tab) {
         c.classList.remove('active');
       }
     });
+    ensurePlotMappingDefaults(tab.chartType, tab);
+    updateColumnMappingInputs(tab.chartType);
     updateStyleSettingsVisibility();
   }
   
@@ -5207,6 +5755,29 @@ function applyChartTabState(tab) {
   }
   if (DOM.styleViolinScale) {
     DOM.styleViolinScale.value = tab.styleViolinScale || 'width';
+  }
+  if (DOM.histogramBins) {
+    DOM.histogramBins.value = tab.histogramBins !== undefined ? tab.histogramBins : 30;
+    const output = document.getElementById('histogram-bins-val');
+    if (output) output.textContent = DOM.histogramBins.value;
+  }
+  if (DOM.histogramStat) DOM.histogramStat.value = tab.histogramStat || 'count';
+  if (DOM.bubbleMinSize) {
+    DOM.bubbleMinSize.value = tab.bubbleMinSize !== undefined ? tab.bubbleMinSize : 6;
+    const output = document.getElementById('bubble-min-size-val');
+    if (output) output.textContent = `${DOM.bubbleMinSize.value} px`;
+  }
+  if (DOM.bubbleMaxSize) {
+    DOM.bubbleMaxSize.value = tab.bubbleMaxSize !== undefined ? tab.bubbleMaxSize : 50;
+    const output = document.getElementById('bubble-max-size-val');
+    if (output) output.textContent = `${DOM.bubbleMaxSize.value} px`;
+  }
+  if (DOM.heatmapAggregation) DOM.heatmapAggregation.value = tab.heatmapAggregation || 'mean';
+  if (DOM.heatmapShowValues) DOM.heatmapShowValues.checked = tab.heatmapShowValues !== undefined ? tab.heatmapShowValues : true;
+  if (DOM.pieInnerRadius) {
+    DOM.pieInnerRadius.value = tab.pieInnerRadius !== undefined ? tab.pieInnerRadius : 40;
+    const output = document.getElementById('pie-inner-radius-val');
+    if (output) output.textContent = `${DOM.pieInnerRadius.value}%`;
   }
 
   if (tab.plotWidth) {
@@ -5401,8 +5972,9 @@ function deleteChartTab(id) {
 let currentSplitGroupTab = 'ALL';
 
 function updateGroupCheckboxes(activeGroups = null, splitChecked = false) {
-  const gCol = DOM.groupSelect.value;
-  const subgroups = typeof getSubgroups === 'function' ? getSubgroups() : [];
+  const spec = getPlotSpec();
+  const gCol = spec.allowGroup ? DOM.groupSelect.value : '';
+  const subgroups = spec.allowSubgroups && typeof getSubgroups === 'function' ? getSubgroups() : [];
   const hasSubgroups = subgroups.length > 0;
   const container = document.getElementById('group-options-container');
   const list = document.getElementById('group-checkboxes-list');
@@ -8180,7 +8752,14 @@ function saveStyleTemplate(name) {
     axisValueFontSize: parseInt(document.getElementById('axis-value-font-size')?.value) || 12,
     axisValueFontColor: document.getElementById('axis-value-font-color')?.value || '#475569',
     legendFontSize: parseInt(document.getElementById('legend-font-size')?.value) || 12,
-    legendFontColor: document.getElementById('legend-font-color')?.value || '#475569'
+    legendFontColor: document.getElementById('legend-font-color')?.value || '#475569',
+    histogramBins: DOM.histogramBins ? parseInt(DOM.histogramBins.value, 10) : 30,
+    histogramStat: DOM.histogramStat ? DOM.histogramStat.value : 'count',
+    bubbleMinSize: DOM.bubbleMinSize ? parseInt(DOM.bubbleMinSize.value, 10) : 6,
+    bubbleMaxSize: DOM.bubbleMaxSize ? parseInt(DOM.bubbleMaxSize.value, 10) : 50,
+    heatmapAggregation: DOM.heatmapAggregation ? DOM.heatmapAggregation.value : 'mean',
+    heatmapShowValues: DOM.heatmapShowValues ? DOM.heatmapShowValues.checked : true,
+    pieInnerRadius: DOM.pieInnerRadius ? parseInt(DOM.pieInnerRadius.value, 10) : 40
   };
 
   templates[name] = config;
@@ -8291,6 +8870,25 @@ function applyStyleTemplate(name) {
   if (config.axisValueFontColor !== undefined) document.getElementById('axis-value-font-color').value = config.axisValueFontColor;
   if (config.legendFontSize !== undefined) document.getElementById('legend-font-size').value = config.legendFontSize;
   if (config.legendFontColor !== undefined) document.getElementById('legend-font-color').value = config.legendFontColor;
+  if (config.histogramBins !== undefined && DOM.histogramBins) {
+    DOM.histogramBins.value = config.histogramBins;
+    document.getElementById('histogram-bins-val').textContent = config.histogramBins;
+  }
+  if (config.histogramStat !== undefined && DOM.histogramStat) DOM.histogramStat.value = config.histogramStat;
+  if (config.bubbleMinSize !== undefined && DOM.bubbleMinSize) {
+    DOM.bubbleMinSize.value = config.bubbleMinSize;
+    document.getElementById('bubble-min-size-val').textContent = `${config.bubbleMinSize} px`;
+  }
+  if (config.bubbleMaxSize !== undefined && DOM.bubbleMaxSize) {
+    DOM.bubbleMaxSize.value = config.bubbleMaxSize;
+    document.getElementById('bubble-max-size-val').textContent = `${config.bubbleMaxSize} px`;
+  }
+  if (config.heatmapAggregation !== undefined && DOM.heatmapAggregation) DOM.heatmapAggregation.value = config.heatmapAggregation;
+  if (config.heatmapShowValues !== undefined && DOM.heatmapShowValues) DOM.heatmapShowValues.checked = config.heatmapShowValues;
+  if (config.pieInnerRadius !== undefined && DOM.pieInnerRadius) {
+    DOM.pieInnerRadius.value = config.pieInnerRadius;
+    document.getElementById('pie-inner-radius-val').textContent = `${config.pieInnerRadius}%`;
+  }
 
   saveActiveTabState();
   if (appState.activeData) drawChart();
@@ -8463,7 +9061,7 @@ function saveProjectFile() {
 
   const project = {
     fileType: 'plotmaster_project',
-    version: '1.0',
+    version: '1.1',
     activeFileName: appState.activeFileName,
     sheets: appState.sheets,
     activeSheetName: appState.activeSheetName,

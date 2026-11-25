@@ -442,6 +442,27 @@ body {
   font-size: 15px;
 }
 
+.mapping-requirements,
+.mapping-validation {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.mapping-requirements {
+  color: var(--text-secondary);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.mapping-validation {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 /* Export Panel */
 .export-panel {
   display: flex;
@@ -953,5 +974,4 @@ input[type="range"]::-webkit-slider-thumb:hover {
 #group-checkboxes-list .checkbox-label:hover {
   background: rgba(255, 255, 255, 0.04);
 }
-
 
