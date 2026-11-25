@@ -193,7 +193,15 @@ let appState = {
   savedCharts: [],        // Saved chart sheets tabs
   activeChartId: null,    // Active chart tab ID
   columnFilters: {},      // Column filters search mapping
-  isRefreshing: false     // Refresh state flag
+  isRefreshing: false,    // Refresh state flag
+  watchFolderHandle: null, // File System Access API directory handle
+  watchPermission: 'unknown', // 'granted' | 'prompt' | 'denied' | 'unknown'
+  watchFiles: [],         // [{ name, lastModified, size, handle }] newest first
+  watchFileHandles: new Map(),
+  watchActiveFileName: '',
+  watchSignature: '',
+  watchLastError: '',
+  watchPollTimer: null
 };
 
 function getFilteredRows() {
@@ -220,6 +228,13 @@ let DOM = {};
 function init() {
   DOM.uploadZone = document.getElementById('upload-zone');
   DOM.fileInput = document.getElementById('file-input');
+  DOM.watchFolderRow = document.getElementById('watch-folder-row');
+  DOM.watchFolderPath = document.getElementById('watch-folder-path');
+  DOM.watchFileSelect = document.getElementById('watch-file-select');
+  DOM.watchFolderHint = document.getElementById('watch-folder-hint');
+  DOM.btnPickFolder = document.getElementById('btn-pick-folder');
+  DOM.btnScanFolder = document.getElementById('btn-scan-folder');
+  DOM.btnRemoveFolder = document.getElementById('btn-remove-folder');
   DOM.xSelect = document.getElementById('x-axis-select');
   DOM.ySelect = document.getElementById('y1-cols-container');
   DOM.y2Select = document.getElementById('y2-cols-container');
@@ -298,6 +313,7 @@ function init() {
   setupAnnotationToolbar();
   loadStyleTemplatesDropdown();
   updateStyleSettingsVisibility();
+  restoreWatchFolder().catch(err => console.warn('Failed to restore detection folder:', err));
 }
 
 // Dynamic Variable Mapping Inputs matching
@@ -743,6 +759,8 @@ function setupEventListeners() {
         });
         if (handle) {
           appState.fileHandle = handle;
+          appState.watchActiveFileName = '';
+          if (DOM.watchFileSelect) DOM.watchFileSelect.value = '';
           const file = await handle.getFile();
           handleFile(file);
         }
@@ -835,6 +853,8 @@ function setupEventListeners() {
           const handle = await item.getAsFileSystemHandle();
           if (handle && handle.kind === 'file') {
             appState.fileHandle = handle;
+            appState.watchActiveFileName = '';
+            if (DOM.watchFileSelect) DOM.watchFileSelect.value = '';
             const file = await handle.getFile();
             handleFile(file);
             return;
@@ -847,6 +867,8 @@ function setupEventListeners() {
 
     if (e.dataTransfer.files.length > 0) {
       appState.fileHandle = null;
+      appState.watchActiveFileName = '';
+      if (DOM.watchFileSelect) DOM.watchFileSelect.value = '';
       handleFile(e.dataTransfer.files[0]);
     }
   });
@@ -854,7 +876,69 @@ function setupEventListeners() {
   DOM.fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
       appState.fileHandle = null;
+      appState.watchActiveFileName = '';
+      if (DOM.watchFileSelect) DOM.watchFileSelect.value = '';
       handleFile(e.target.files[0]);
+    }
+  });
+
+  // Detection folder controls
+  if (DOM.btnPickFolder) {
+    DOM.btnPickFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pickWatchFolder();
+    });
+  }
+
+  if (DOM.btnScanFolder) {
+    DOM.btnScanFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      rescanWatchFolder();
+    });
+  }
+
+  if (DOM.btnRemoveFolder) {
+    DOM.btnRemoveFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeWatchFolder();
+    });
+  }
+
+  if (DOM.watchFolderRow) {
+    DOM.watchFolderRow.addEventListener('click', (e) => {
+      if (e.target.closest('.watch-icon-btn')) return;
+      if (!appState.watchFolderHandle) {
+        pickWatchFolder();
+      } else if (appState.watchPermission !== 'granted') {
+        reconnectWatchFolder();
+      } else {
+        rescanWatchFolder();
+      }
+    });
+
+    DOM.watchFolderRow.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target.closest('.watch-icon-btn')) return;
+      e.preventDefault();
+      DOM.watchFolderRow.click();
+    });
+  }
+
+  if (DOM.watchFileSelect) {
+    DOM.watchFileSelect.addEventListener('change', () => {
+      const name = DOM.watchFileSelect.value;
+      if (!name) {
+        appState.watchActiveFileName = '';
+        renderWatchFolderUI();
+        return;
+      }
+      loadWatchedFile(name);
+    });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && appState.watchFolderHandle && appState.watchPermission === 'granted') {
+      scanWatchFolder().catch(err => console.warn('Watch folder scan failed:', err));
     }
   });
 
@@ -1498,12 +1582,12 @@ function handleFile(file) {
     DOM.fileInput.click();
   };
 
-  if (extension === 'csv') {
+  if (extension === 'csv' || extension === 'tsv') {
     reader.onload = function(e) {
       parseCSV(e.target.result);
     };
     reader.readAsText(file);
-  } else if (extension === 'xlsx' || extension === 'xls') {
+  } else if (extension === 'xlsx' || extension === 'xls' || extension === 'xlsm' || extension === 'xlsb' || extension === 'ods') {
     reader.onload = function(e) {
       parseXLSX(e.target.result);
     };
@@ -1538,7 +1622,7 @@ function handleFile(file) {
     };
     reader.readAsText(file);
   } else {
-    alert('Unsupported file extension. Please load CSV, XLSX, MD, PZFX, PRISM, or PM.');
+    alert('Unsupported file extension. Please load CSV, TSV, XLSX, XLSM, ODS, MD, PZFX, PRISM, or PM.');
   }
 }
 
@@ -1621,6 +1705,438 @@ function onFileLoadSuccess(sheetsMap) {
   // Show refresh button
   const btnRefresh = document.getElementById('btn-refresh-data');
   if (btnRefresh) btnRefresh.style.display = 'flex';
+}
+
+// 6.1 Detection Folder (File System Access API)
+const WATCH_FOLDER_EXTENSIONS = ['xlsx', 'xls', 'xlsm', 'xlsb', 'ods', 'csv', 'tsv'];
+const WATCH_DB_NAME = 'plotmaster-file-access';
+const WATCH_DB_STORE = 'handles';
+const WATCH_DB_FOLDER_KEY = 'watchFolder';
+const WATCH_POLL_INTERVAL_MS = 5000;
+let watchDbPromise = null;
+
+function getFileExtension(name) {
+  const value = String(name || '');
+  const dotIndex = value.lastIndexOf('.');
+  return dotIndex === -1 ? '' : value.slice(dotIndex + 1).toLowerCase();
+}
+
+function isSpreadsheetFileName(name) {
+  const value = String(name || '');
+  const baseName = value.split(/[\\/]/).pop();
+  // Ignore Excel lock/temp files such as "~$report.xlsx".
+  if (baseName.startsWith('~$')) return false;
+  return WATCH_FOLDER_EXTENSIONS.includes(getFileExtension(baseName));
+}
+
+function sortWatchFiles(files) {
+  return files.slice().sort((a, b) => {
+    const diff = (b.lastModified || 0) - (a.lastModified || 0);
+    if (diff !== 0) return diff;
+    return String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' });
+  });
+}
+
+function formatWatchFileTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function getWatchFileSignature(files) {
+  return files.map(file => `${file.name}:${file.lastModified}:${file.size}`).join('|');
+}
+
+function openWatchDb() {
+  if (watchDbPromise) return watchDbPromise;
+  if (!window.indexedDB) return Promise.resolve(null);
+  watchDbPromise = new Promise(resolve => {
+    try {
+      const request = window.indexedDB.open(WATCH_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(WATCH_DB_STORE)) {
+          db.createObjectStore(WATCH_DB_STORE);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    } catch (err) {
+      console.warn('IndexedDB is unavailable for the detection folder:', err);
+      resolve(null);
+    }
+  });
+  return watchDbPromise;
+}
+
+async function readWatchDbValue(key) {
+  const db = await openWatchDb();
+  if (!db) return null;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(WATCH_DB_STORE, 'readonly');
+      const request = tx.objectStore(WATCH_DB_STORE).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => resolve(null);
+    } catch (err) {
+      resolve(null);
+    }
+  });
+}
+
+async function writeWatchDbValue(key, value) {
+  const db = await openWatchDb();
+  if (!db) return;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(WATCH_DB_STORE, 'readwrite');
+      tx.objectStore(WATCH_DB_STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    } catch (err) {
+      resolve();
+    }
+  });
+}
+
+async function deleteWatchDbValue(key) {
+  const db = await openWatchDb();
+  if (!db) return;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(WATCH_DB_STORE, 'readwrite');
+      tx.objectStore(WATCH_DB_STORE).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    } catch (err) {
+      resolve();
+    }
+  });
+}
+
+async function queryWatchPermission(handle, request = false) {
+  if (!handle) return 'denied';
+  if (typeof handle.queryPermission !== 'function') return 'granted';
+  const options = { mode: 'read' };
+  try {
+    let state = await handle.queryPermission(options);
+    if (state === 'prompt' && request && typeof handle.requestPermission === 'function') {
+      state = await handle.requestPermission(options);
+    }
+    return state;
+  } catch (err) {
+    console.warn('Detection folder permission check failed:', err);
+    return 'denied';
+  }
+}
+
+function renderWatchFileOptions({ autoLoadNewest = false, force = false } = {}) {
+  const select = DOM.watchFileSelect;
+  if (!select) return;
+
+  const signature = getWatchFileSignature(appState.watchFiles);
+  const optionsChanged = force || select.dataset.signature !== signature;
+  const previousValue = select.value;
+
+  if (optionsChanged) {
+    select.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    if (!appState.watchFolderHandle) {
+      placeholder.textContent = 'Add a folder to detect spreadsheets';
+    } else if (appState.watchPermission !== 'granted') {
+      placeholder.textContent = 'Folder access not granted';
+    } else if (appState.watchFiles.length === 0) {
+      placeholder.textContent = 'No spreadsheet files found';
+    } else {
+      placeholder.textContent = '— Select detected file —';
+    }
+    select.appendChild(placeholder);
+
+    appState.watchFiles.forEach(file => {
+      const option = document.createElement('option');
+      option.value = file.name;
+      option.textContent = `${file.name} — ${formatWatchFileTimestamp(file.lastModified)}`;
+      select.appendChild(option);
+    });
+
+    select.disabled = appState.watchFiles.length === 0;
+    select.dataset.signature = signature;
+
+    if (appState.watchFiles.some(file => file.name === previousValue)) {
+      select.value = previousValue;
+    } else {
+      select.value = '';
+    }
+  }
+
+  if (autoLoadNewest && appState.watchFiles.length > 0) {
+    select.value = appState.watchFiles[0].name;
+    loadWatchedFile(appState.watchFiles[0].name);
+  }
+}
+
+function renderWatchFolderUI() {
+  const folder = appState.watchFolderHandle;
+  const hasFolder = !!folder;
+
+  if (DOM.watchFolderPath) {
+    DOM.watchFolderPath.textContent = hasFolder ? folder.name : 'No folder added';
+    DOM.watchFolderPath.title = hasFolder
+      ? `${folder.name} (browser security hides the absolute path)`
+      : 'Add a detection folder to auto-detect spreadsheet files';
+  }
+
+  if (DOM.watchFolderRow) {
+    DOM.watchFolderRow.classList.toggle('has-folder', hasFolder);
+    DOM.watchFolderRow.classList.toggle('watching', hasFolder && appState.watchPermission === 'granted');
+    DOM.watchFolderRow.classList.toggle('needs-permission', hasFolder && appState.watchPermission !== 'granted');
+    DOM.watchFolderRow.title = !hasFolder
+      ? 'Click to add a detection folder'
+      : (appState.watchPermission === 'granted'
+        ? 'Click to rescan the detection folder'
+        : 'Click to grant read access to this folder');
+  }
+
+  if (DOM.watchFolderHint) {
+    if (!hasFolder) {
+      DOM.watchFolderHint.textContent = 'Add a folder to auto-detect Excel files. Newest first.';
+    } else if (appState.watchPermission === 'prompt' || appState.watchPermission === 'unknown') {
+      DOM.watchFolderHint.textContent = 'Click the folder to grant read access.';
+    } else if (appState.watchPermission === 'denied') {
+      DOM.watchFolderHint.textContent = 'Folder access was denied. Click the folder to retry.';
+    } else if (appState.watchLastError) {
+      DOM.watchFolderHint.textContent = appState.watchLastError;
+    } else if (appState.watchFiles.length === 0) {
+      DOM.watchFolderHint.textContent = 'No spreadsheet files found in this folder.';
+    } else {
+      const count = appState.watchFiles.length;
+      const selectedName = appState.watchActiveFileName || (DOM.watchFileSelect ? DOM.watchFileSelect.value : '');
+      const selected = appState.watchFiles.find(file => file.name === selectedName);
+      if (selected) {
+        DOM.watchFolderHint.textContent = `${selected.name} · ${formatWatchFileTimestamp(selected.lastModified)} · ${count} detected`;
+      } else {
+        DOM.watchFolderHint.textContent = `${count} spreadsheet${count === 1 ? '' : 's'} detected · newest first · auto-refresh on`;
+      }
+    }
+  }
+
+  if (DOM.btnScanFolder) DOM.btnScanFolder.disabled = !hasFolder;
+  if (DOM.btnRemoveFolder) DOM.btnRemoveFolder.style.display = hasFolder ? 'inline-flex' : 'none';
+}
+
+async function scanWatchFolder({ autoLoadNewest = false } = {}) {
+  const folder = appState.watchFolderHandle;
+  if (!folder) {
+    renderWatchFolderUI();
+    return [];
+  }
+
+  const permission = await queryWatchPermission(folder, false);
+  appState.watchPermission = permission;
+
+  if (permission !== 'granted') {
+    appState.watchFiles = [];
+    appState.watchFileHandles = new Map();
+    appState.watchSignature = '';
+    renderWatchFileOptions({ force: true });
+    renderWatchFolderUI();
+    return [];
+  }
+
+  const files = [];
+  try {
+    for await (const entry of folder.values()) {
+      if (!entry || entry.kind !== 'file' || !isSpreadsheetFileName(entry.name)) continue;
+      try {
+        const file = await entry.getFile();
+        files.push({
+          name: entry.name,
+          lastModified: file.lastModified,
+          size: file.size,
+          handle: entry
+        });
+      } catch (err) {
+        console.warn(`Unable to inspect ${entry.name}:`, err);
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to scan the detection folder:', err);
+    appState.watchLastError = err && err.message ? err.message : String(err);
+    if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+      appState.watchPermission = 'prompt';
+    }
+    renderWatchFolderUI();
+    return [];
+  }
+
+  const sorted = sortWatchFiles(files);
+  appState.watchFiles = sorted;
+  appState.watchFileHandles = new Map(sorted.map(file => [file.name, file.handle]));
+  appState.watchSignature = getWatchFileSignature(sorted);
+  appState.watchLastError = '';
+  appState.watchPermission = 'granted';
+  if (appState.watchActiveFileName && !sorted.some(file => file.name === appState.watchActiveFileName)) {
+    appState.watchActiveFileName = '';
+  }
+
+  renderWatchFileOptions({ autoLoadNewest });
+  renderWatchFolderUI();
+  return sorted;
+}
+
+async function loadWatchedFile(name) {
+  if (!name || !appState.watchFolderHandle) return;
+
+  const permission = await queryWatchPermission(appState.watchFolderHandle, true);
+  appState.watchPermission = permission;
+  if (permission !== 'granted') {
+    renderWatchFolderUI();
+    alert('Read access to the detection folder was not granted.');
+    return;
+  }
+
+  let handle = appState.watchFileHandles.get(name);
+  if (!handle) {
+    await scanWatchFolder();
+    handle = appState.watchFileHandles.get(name);
+  }
+
+  if (!handle) {
+    alert('The selected file is no longer available in the detection folder.');
+    await scanWatchFolder();
+    return;
+  }
+
+  try {
+    const file = await handle.getFile();
+    appState.watchActiveFileName = name;
+    appState.fileHandle = handle;
+    if (DOM.watchFileSelect) DOM.watchFileSelect.value = name;
+    renderWatchFolderUI();
+    handleFile(file);
+  } catch (err) {
+    console.warn('Failed to open the detected file:', err);
+    appState.watchActiveFileName = '';
+    alert('Failed to open the selected file: ' + (err && err.message ? err.message : err));
+    await scanWatchFolder();
+  }
+}
+
+async function pickWatchFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('Folder detection requires a Chromium-based browser (Chrome or Edge). You can still drag & drop files.');
+    return;
+  }
+
+  try {
+    const pickerOptions = { id: 'plotmaster-detection-folder', mode: 'read' };
+    if (appState.watchFolderHandle && appState.watchPermission === 'granted') {
+      pickerOptions.startIn = appState.watchFolderHandle;
+    }
+    const handle = await window.showDirectoryPicker(pickerOptions);
+    if (!handle) return;
+
+    appState.watchFolderHandle = handle;
+    appState.watchPermission = 'granted';
+    appState.watchFiles = [];
+    appState.watchFileHandles = new Map();
+    appState.watchActiveFileName = '';
+    appState.watchSignature = '';
+    appState.watchLastError = '';
+
+    await writeWatchDbValue(WATCH_DB_FOLDER_KEY, handle);
+    renderWatchFolderUI();
+    renderWatchFileOptions({ force: true });
+    await scanWatchFolder({ autoLoadNewest: true });
+    startWatchPolling();
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    console.warn('Directory picker failed:', err);
+    alert('Failed to add the detection folder: ' + (err && err.message ? err.message : err));
+  }
+}
+
+async function restoreWatchFolder() {
+  renderWatchFolderUI();
+  if (!window.showDirectoryPicker) return;
+
+  const handle = await readWatchDbValue(WATCH_DB_FOLDER_KEY);
+  if (!handle) return;
+
+  appState.watchFolderHandle = handle;
+  appState.watchPermission = await queryWatchPermission(handle, false);
+  renderWatchFileOptions({ force: true });
+  renderWatchFolderUI();
+
+  if (appState.watchPermission === 'granted') {
+    await scanWatchFolder({ autoLoadNewest: !appState.activeFile });
+    startWatchPolling();
+  }
+}
+
+async function reconnectWatchFolder() {
+  if (!appState.watchFolderHandle) {
+    await pickWatchFolder();
+    return;
+  }
+
+  const permission = await queryWatchPermission(appState.watchFolderHandle, true);
+  appState.watchPermission = permission;
+  renderWatchFolderUI();
+
+  if (permission === 'granted') {
+    await scanWatchFolder({ autoLoadNewest: !appState.activeFile });
+    startWatchPolling();
+  }
+}
+
+async function rescanWatchFolder() {
+  if (!appState.watchFolderHandle) {
+    await pickWatchFolder();
+    return;
+  }
+  if (appState.watchPermission !== 'granted') {
+    await reconnectWatchFolder();
+    return;
+  }
+  await scanWatchFolder({ autoLoadNewest: !appState.activeFile });
+}
+
+async function removeWatchFolder() {
+  stopWatchPolling();
+  appState.watchFolderHandle = null;
+  appState.watchPermission = 'unknown';
+  appState.watchFiles = [];
+  appState.watchFileHandles = new Map();
+  appState.watchActiveFileName = '';
+  appState.watchSignature = '';
+  appState.watchLastError = '';
+  await deleteWatchDbValue(WATCH_DB_FOLDER_KEY);
+  renderWatchFileOptions({ force: true });
+  renderWatchFolderUI();
+}
+
+function startWatchPolling() {
+  stopWatchPolling();
+  if (!appState.watchFolderHandle) return;
+  appState.watchPollTimer = setInterval(() => {
+    if (document.visibilityState === 'hidden') return;
+    if (appState.watchPermission !== 'granted') return;
+    scanWatchFolder().catch(err => console.warn('Detection folder poll failed:', err));
+  }, WATCH_POLL_INTERVAL_MS);
+}
+
+function stopWatchPolling() {
+  if (appState.watchPollTimer) {
+    clearInterval(appState.watchPollTimer);
+    appState.watchPollTimer = null;
+  }
 }
 
 function switchActiveSheet(sheetName) {

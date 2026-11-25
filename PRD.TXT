@@ -23,13 +23,23 @@
 
    3.1. DATA IMPORT & PARSING
         The system must support the following input formats:
-        - CSV (.csv): Standard comma-separated tabular data.
-        - Excel (.xlsx, .xls): Multiple worksheets, parsing numerical and text cells.
+        - CSV (.csv) and TSV (.tsv): Delimited tabular data with auto-detected
+          delimiters.
+        - Excel (.xlsx, .xls, .xlsm, .xlsb) and OpenDocument (.ods): Multiple
+          worksheets, parsing numerical and text cells.
         - Markdown Tables (.md): Extracts data from standard markdown table syntax.
         - GraphPad Prism XML (.pzfx): Parses data tables, column headers, and subcolumns.
         - GraphPad Prism ZIP (.prism): Extracts CSV files from internal data directories.
         - Dynamic Worksheet Selector: When an uploaded file contains multiple sheets
           (Excel, Prism), a dropdown must allow the user to select which dataset to load.
+        - Data Source panel: "1. Data Source" exposes a manually added local detection
+          folder. The folder handle is remembered in IndexedDB and auto-scanned for
+          spreadsheet files (.xlsx, .xls, .xlsm, .xlsb, .ods, .csv, .tsv) on load,
+          on demand, and periodically while the page is visible. Detected files are
+          sorted by last-modified date (newest first) and listed in a dropdown; the
+          newest file is selected/loaded by default. Drag & drop and manual file
+          picking remain available in a compact zone to the right of the folder
+          controls.
 
    3.2. VARIABLE MAPPING (AESTHETIC MAPPINGS / AES)
         After data selection, users must be able to map active dataset columns to:
@@ -119,6 +129,8 @@
 4. SYSTEM ARCHITECTURE & DATA FLOW
    - Client-Side Only: Runs fully in the user's browser via index.html. No backend server.
    - Excel Parsing: JS SheetJS (XLSX.js) library handles raw parsing.
+   - Local Folder Detection: File System Access API (showDirectoryPicker) with
+     IndexedDB-persisted directory handles; polling refreshes the detected file list.
    - Zip Extraction/Compression: JSZip library handles reading/writing `.prism` files.
    - Charting: Apache ECharts library powers the visualizations.
 

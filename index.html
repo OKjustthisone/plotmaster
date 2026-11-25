@@ -45,23 +45,45 @@
       
       <div class="sidebar-content">
         
-        <!-- Section 1: Upload File -->
-        <section class="panel-section">
+        <!-- Section 1: Data Source -->
+        <section class="panel-section" id="data-source-section">
           <div class="section-title">
-            <i data-lucide="upload-cloud"></i>
-            <span>1. Data Import</span>
+            <i data-lucide="database"></i>
+            <span>1. Data Source</span>
           </div>
-          <div class="upload-zone" id="upload-zone">
-            <i class="upload-icon" data-lucide="file-spreadsheet"></i>
-            <div class="upload-text">
-              <p>Drag & Drop Data File</p>
-              <span>Supports CSV, XLSX, MD, PZFX, PRISM, PM</span>
+          <div class="data-source-grid">
+            <div class="data-source-watch">
+              <div class="watch-folder-label">Default Detection Folder</div>
+              <div class="watch-folder-row" id="watch-folder-row" role="button" tabindex="0" title="Add a detection folder">
+                <i class="watch-folder-icon" data-lucide="folder-search"></i>
+                <span class="watch-folder-path" id="watch-folder-path">No folder added</span>
+                <button class="watch-icon-btn" id="btn-scan-folder" type="button" title="Rescan detection folder" disabled>
+                  <i data-lucide="refresh-cw"></i>
+                </button>
+                <button class="watch-icon-btn" id="btn-pick-folder" type="button" title="Add / change detection folder">
+                  <i data-lucide="folder-plus"></i>
+                </button>
+                <button class="watch-icon-btn watch-icon-btn-danger" id="btn-remove-folder" type="button" title="Remove detection folder" style="display: none;">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+              <select class="form-select watch-file-select" id="watch-file-select" title="Spreadsheet files in the detection folder" disabled>
+                <option value="">Add a folder to detect spreadsheets</option>
+              </select>
+              <div class="watch-folder-hint" id="watch-folder-hint" aria-live="polite">Newest files appear first.</div>
+            </div>
+            <div class="upload-zone upload-zone-compact" id="upload-zone" title="Drag & Drop a data file, or click to browse (CSV, XLSX, XLSM, ODS, MD, PZFX, PRISM, PM)">
+              <i class="upload-icon" data-lucide="file-up"></i>
+              <div class="upload-text">
+                <p>Drag &amp; Drop</p>
+                <span>or click</span>
+              </div>
             </div>
           </div>
           <button class="btn btn-secondary" id="btn-refresh-data" style="display: none; width: 100%; margin-top: 10px; justify-content: center; align-items: center; gap: 8px;">
             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh Data (刷新数据)
           </button>
-          <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.md,.pzfx,.prism,.pm,.json" style="display: none;">
+          <input type="file" id="file-input" accept=".csv,.tsv,.xlsx,.xls,.xlsm,.xlsb,.ods,.md,.pzfx,.prism,.pm,.json" style="display: none;">
         </section>
 
         <!-- Section 2: Plot Selection -->
